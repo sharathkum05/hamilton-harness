@@ -1,0 +1,8 @@
+covers: >
+  Loop Sneakers orders, deliveries, returns, exchanges, refunds, sizing and
+  the shoes Loop sells.
+off_topic_reply: That's not something I can help with here. I'm all yours for anything about your Loop order or our shoes.
+unsure_reply: I don't have that to hand and I'd rather not guess. Want me to get someone who can confirm?
+refuse: [math, coding, writing, trivia]
+strict: false
+ground_numbers: true
