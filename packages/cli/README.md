@@ -4,6 +4,9 @@ Connect Claude to a Hamilton server. Sign in once, then ask Claude to manage you
 AI rep: add knowledge, tighten its scope, change a rule, work through the
 orders and quotes it has taken, or rerun the tests.
 
+Listed in the official [MCP Registry](https://registry.modelcontextprotocol.io) as
+`io.github.sharathkum05/hamilton-harness`.
+
 ## Use
 
 Start your Hamilton server with the dashboard switched on. It prints an admin
