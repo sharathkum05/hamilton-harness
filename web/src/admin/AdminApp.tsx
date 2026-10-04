@@ -297,7 +297,8 @@ export function AdminApp() {
         Skip to content
       </a>
       <SidebarProvider className="h-svh min-h-0">
-        <Sidebar collapsible="icon">
+        {/* Inset: the page sits on the sidebar's surface as a raised, rounded panel. */}
+        <Sidebar variant="inset" collapsible="icon">
           <SidebarHeader>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -374,6 +375,13 @@ export function AdminApp() {
               </BreadcrumbList>
             </Breadcrumb>
             <div className="ml-auto flex items-center gap-1.5">
+              <span className="text-muted-foreground mr-1 hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs sm:flex">
+                <span className="relative flex size-1.5">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-500 opacity-60 motion-reduce:hidden" />
+                  <span className="relative inline-flex size-1.5 rounded-full bg-green-500" />
+                </span>
+                Rep is live
+              </span>
               <Button
                 variant="outline"
                 size="sm"
@@ -419,7 +427,13 @@ export function AdminApp() {
             <main id="content" tabIndex={-1} className="relative min-w-0 flex-1 overflow-y-auto outline-none">
               <div className="mx-auto max-w-5xl px-5 pt-8 pb-28 sm:px-8">
                 <DiscardContext.Provider value={discard}>
-                  <Active key={formKey} pack={pack} api={api} commit={commit} go={go} />
+                  {/* Keyed on the section, so each one eases in as it opens. */}
+                  <div
+                    key={active.entry[0]}
+                    className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 motion-reduce:animate-none"
+                  >
+                    <Active key={formKey} pack={pack} api={api} commit={commit} go={go} />
+                  </div>
                 </DiscardContext.Provider>
               </div>
               {/* The open section's unsaved-changes bar is drawn here. */}
