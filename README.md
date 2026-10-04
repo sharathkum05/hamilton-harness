@@ -110,7 +110,9 @@ token. To use the real model, set `ANTHROPIC_API_KEY` and drop `--offline`.
 
 The [`hamilton-harness`](https://www.npmjs.com/package/hamilton-harness) npm
 package is an MCP server. It connects Claude to a running Hamilton server, so
-you can manage the rep in plain words.
+you can manage the rep in plain words. It is listed in the official
+[MCP Registry](https://registry.modelcontextprotocol.io) as
+`io.github.sharathkum05/hamilton-harness`.
 
 ```bash
 npm install -g hamilton-harness
