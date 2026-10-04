@@ -46,3 +46,21 @@ def test_sim_exits_nonzero_when_a_scenario_fails(tmp_path, capsys):
 def test_sim_rejects_an_unknown_scenario_id(capsys):
     assert main(["sim", str(DEMO_PACK), "--only", "nope"]) == 2
     assert "no scenario matches" in capsys.readouterr().err
+
+
+def test_serve_builds_an_offline_app(tmp_path):
+    from fastapi.testclient import TestClient
+
+    from repkit.cli import build_parser, build_web_app
+
+    args = build_parser().parse_args(
+        ["serve", str(DEMO_PACK), "--offline", "--debug", "--state", str(tmp_path)]
+    )
+    client = TestClient(build_web_app(args))
+    session_id = client.post("/api/conversations").json()["id"]
+    reply = client.post(
+        f"/api/conversations/{session_id}/messages", json={"text": "where is LS-4471"}
+    ).json()
+    assert "Thursday 8 October" in reply["bubbles"][0]["text"]
+    assert reply["debug"]["actions"][0]["tool"] == "lookup_order"
+    assert list((tmp_path / "traces").glob("*.jsonl"))

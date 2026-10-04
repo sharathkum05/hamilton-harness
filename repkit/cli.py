@@ -3,6 +3,7 @@
 repkit validate PACK      check a pack loads and its handlers resolve
 repkit chat PACK          talk to the rep in the terminal
 repkit sim PACK           run the pack's fake customers and print a scorecard
+repkit serve PACK         run the web chat widget and its API
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ import sys
 import time
 from pathlib import Path
 
-from repkit.llm import AnthropicModel, Model, ModelError
+from repkit.llm import AnthropicModel, Model, ModelError, load_offline_model
 from repkit.memory import FileStore
 from repkit.pack import PackError, load_pack
 from repkit.pack.schema import Pack
@@ -99,6 +100,30 @@ def cmd_sim(args: argparse.Namespace) -> int:
     return 0 if scorecard.ok else 1
 
 
+def build_web_app(args: argparse.Namespace):
+    """The web app for `serve`, built separately so it can be tested without a server."""
+    try:
+        from repkit.web.app import create_app
+    except ImportError as exc:
+        raise PackError('the web server needs extra packages: pip install "repkit[web]"') from exc
+
+    pack = load_pack(args.pack)
+    model = load_offline_model(pack.root) if args.offline else _live_model(pack)
+    state = Path(args.state)
+    agent = Agent(pack, model, store=FileStore(state / "customers"), trace_dir=state / "traces")
+    return create_app(agent, debug=args.debug, allow_origins=args.allow_origin or ())
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    app = build_web_app(args)
+    import uvicorn
+
+    mode = "offline stand-in model" if args.offline else "live model"
+    print(f"Serving the chat widget at http://{args.host}:{args.port} ({mode})")
+    uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="repkit", description=__doc__.split("\n\n")[0])
     commands = parser.add_subparsers(dest="command", required=True)
@@ -122,6 +147,18 @@ def build_parser() -> argparse.ArgumentParser:
     sim.add_argument("--only", nargs="+", metavar="ID", help="run just these scenarios")
     sim.add_argument("--json", action="store_true", help="print the scorecard as JSON")
     sim.set_defaults(run=cmd_sim)
+
+    serve = commands.add_parser("serve", help="run the web chat widget")
+    serve.add_argument("pack")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument("--offline", action="store_true", help="use the pack's stand-in model")
+    serve.add_argument("--debug", action="store_true", help="expose each turn to the inspector")
+    serve.add_argument("--state", default=".repkit", help="where traces and memory are kept")
+    serve.add_argument(
+        "--allow-origin", action="append", metavar="URL", help="site allowed to embed the widget"
+    )
+    serve.set_defaults(run=cmd_serve)
     return parser
 
 
