@@ -1,6 +1,7 @@
 {
   "name": "hamilton-harness",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "mcpName": "io.github.sharathkum05/hamilton-harness",
   "description": "Connect Claude to a Hamilton server: sign in once, then manage your AI rep's knowledge, rules, orders and tests over MCP.",
   "license": "MIT",
   "type": "module",
@@ -10,7 +11,8 @@
   "files": [
     "bin",
     "src",
-    "README.md"
+    "README.md",
+    "server.json"
   ],
   "engines": {
     "node": ">=18"
