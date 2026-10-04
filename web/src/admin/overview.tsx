@@ -12,6 +12,7 @@ import type { SectionProps } from '@/admin/sections'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { NumberTicker } from '@/components/ui/number-ticker'
 import type { ChartConfig } from '@/components/ui/chart'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -38,21 +39,38 @@ function Tile({
     <button
       onClick={onClick}
       className={cn(
-        'group flex flex-col gap-3 rounded-2xl border p-5 text-left transition-colors duration-200',
-        strong ? 'bg-primary text-primary-foreground border-transparent' : 'bg-card hover:bg-muted/50',
+        'group flex flex-col gap-3 rounded-2xl border p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
+        strong
+          ? 'bg-primary text-primary-foreground border-transparent'
+          : 'bg-card hover:bg-muted/50',
       )}
     >
       <span className="flex items-center justify-between text-sm">
         <span className={strong ? 'opacity-80' : 'text-muted-foreground'}>{label}</span>
         <ArrowUpRightIcon className="size-4 opacity-0 transition-opacity duration-200 group-hover:opacity-70" />
       </span>
-      <span className="font-heading text-5xl leading-none tabular-nums">{value}</span>
+      <span className="font-heading text-5xl leading-none tabular-nums">
+        {/* Counting up from nothing only makes sense when there is something to count. */}
+        {value === 0 ? (
+          0
+        ) : (
+          <NumberTicker value={value} className="text-inherit dark:text-inherit" />
+        )}
+      </span>
       <span className={cn('text-sm', strong ? 'opacity-80' : 'text-muted-foreground')}>{hint}</span>
     </button>
   )
 }
 
-function Panel({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+function Panel({
+  title,
+  action,
+  children,
+}: {
+  title: string
+  action?: ReactNode
+  children: ReactNode
+}) {
   return (
     <section className="bg-card flex min-w-0 flex-col gap-4 rounded-2xl border p-5">
       <div className="flex items-center justify-between gap-3">
@@ -61,6 +79,35 @@ function Panel({ title, action, children }: { title: string; action?: ReactNode;
       </div>
       {children}
     </section>
+  )
+}
+
+/** One line of the breakdown: a label, a count and a bar scaled to the largest count. */
+function Share({
+  label,
+  value,
+  total,
+  strong,
+}: {
+  label: string
+  value: number
+  total: number
+  strong?: boolean
+}) {
+  const width = total > 0 ? Math.max(value > 0 ? 4 : 0, Math.round((value / total) * 100)) : 0
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-baseline justify-between gap-3 text-sm">
+        <span>{label}</span>
+        <span className="text-muted-foreground font-mono text-xs tabular-nums">{value}</span>
+      </div>
+      <div className="bg-muted h-1.5 overflow-hidden rounded-full">
+        <div
+          className={cn('h-full rounded-full', strong ? 'bg-foreground' : 'bg-muted-foreground/60')}
+          style={{ width: `${width}%` }}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -76,7 +123,9 @@ function Step({ done, title, children }: { done: boolean; title: string; childre
         {done && <CheckIcon className="size-3" />}
       </span>
       <div className="flex flex-col gap-1.5">
-        <span className={cn('text-sm font-medium', done && 'text-muted-foreground line-through')}>{title}</span>
+        <span className={cn('text-sm font-medium', done && 'text-muted-foreground line-through')}>
+          {title}
+        </span>
         {!done && children}
       </div>
     </li>
@@ -88,12 +137,18 @@ export function OverviewSection({ pack, api, go }: SectionProps) {
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
-    api.overview().then(setStats).catch(() => setFailed(true))
+    api
+      .overview()
+      .then(setStats)
+      .catch(() => setFailed(true))
   }, [api])
 
   if (failed) {
     return (
-      <Section title="Overview" description="The numbers could not be loaded. Check that the server is running, then reload.">
+      <Section
+        title="Overview"
+        description="The numbers could not be loaded. Check that the server is running, then reload."
+      >
         <span />
       </Section>
     )
@@ -160,7 +215,8 @@ export function OverviewSection({ pack, api, go }: SectionProps) {
           <ol className="flex flex-col gap-5">
             <Step done={false} title="Talk to the rep yourself">
               <p className="text-muted-foreground text-sm">
-                Use the live preview on the right, or open the demo to see each turn from the inside.
+                Use the live preview on the right, or open the demo to see each turn from the
+                inside.
               </p>
               <Button asChild variant="outline" size="sm" className="self-start">
                 <a href="/demo" target="_blank" rel="noreferrer">
@@ -178,7 +234,12 @@ export function OverviewSection({ pack, api, go }: SectionProps) {
             </Step>
             <Step done={false} title="Put it on your site">
               <p className="text-muted-foreground text-sm">One script tag, for any kind of site.</p>
-              <Button variant="outline" size="sm" className="self-start" onClick={() => go('install')}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="self-start"
+                onClick={() => go('install')}
+              >
                 Get the snippet <ArrowRightIcon />
               </Button>
             </Step>
@@ -186,42 +247,77 @@ export function OverviewSection({ pack, api, go }: SectionProps) {
         </Panel>
       ) : (
         <>
-          <Panel title="The last two weeks">
-            <ChartContainer config={CHART} className="h-60 w-full">
-              <AreaChart data={stats.timeline} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="day"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  minTickGap={28}
-                  tickFormatter={(day: string) =>
-                    new Date(`${day}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
-                  }
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <Panel title="The last two weeks">
+              <ChartContainer config={CHART} className="h-60 w-full">
+                <AreaChart data={stats.timeline} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="day"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    minTickGap={28}
+                    tickFormatter={(day: string) =>
+                      new Date(`${day}T00:00:00`).toLocaleDateString(undefined, {
+                        day: 'numeric',
+                        month: 'short',
+                      })
+                    }
+                  />
+                  <YAxis allowDecimals={false} width={28} tickLine={false} axisLine={false} />
+                  <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+                  <Area
+                    dataKey="conversations"
+                    type="monotone"
+                    stroke="var(--color-conversations)"
+                    fill="var(--color-conversations)"
+                    fillOpacity={0.12}
+                    strokeWidth={2}
+                  />
+                  <Area
+                    dataKey="records"
+                    type="monotone"
+                    stroke="var(--color-records)"
+                    fill="var(--color-records)"
+                    fillOpacity={0.08}
+                    strokeWidth={2}
+                    strokeDasharray="4 4"
+                  />
+                </AreaChart>
+              </ChartContainer>
+            </Panel>
+            <Panel title="How conversations went">
+              <div className="flex flex-col gap-4">
+                <Share
+                  strong
+                  label="Handled by the rep"
+                  value={conversations.total - conversations.handed_off}
+                  total={conversations.total}
                 />
-                <YAxis allowDecimals={false} width={28} tickLine={false} axisLine={false} />
-                <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
-                <Area
-                  dataKey="conversations"
-                  type="monotone"
-                  stroke="var(--color-conversations)"
-                  fill="var(--color-conversations)"
-                  fillOpacity={0.12}
-                  strokeWidth={2}
+                <Share
+                  label="Handed to your team"
+                  value={conversations.handed_off}
+                  total={conversations.total}
                 />
-                <Area
-                  dataKey="records"
-                  type="monotone"
-                  stroke="var(--color-records)"
-                  fill="var(--color-records)"
-                  fillOpacity={0.08}
-                  strokeWidth={2}
-                  strokeDasharray="4 4"
+                <Share
+                  label="Guard stopped an action or reply"
+                  value={conversations.blocked}
+                  total={conversations.total}
                 />
-              </AreaChart>
-            </ChartContainer>
-          </Panel>
+                <Share
+                  label="Had an off-topic message"
+                  value={conversations.refused}
+                  total={conversations.total}
+                />
+              </div>
+              <p className="text-muted-foreground mt-auto text-xs">
+                Out of {conversations.total} conversation
+                {conversations.total === 1 ? '' : 's'}. One conversation can count in more than one
+                line.
+              </p>
+            </Panel>
+          </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Panel
@@ -237,14 +333,21 @@ export function OverviewSection({ pack, api, go }: SectionProps) {
               ) : (
                 <ul className="flex flex-col divide-y">
                   {stats.recent_records.map((record) => (
-                    <li key={record.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                    <li
+                      key={record.id}
+                      className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+                    >
                       <span className="flex min-w-0 flex-col">
                         <span className="font-mono text-xs">{record.id}</span>
                         <span className="text-muted-foreground truncate text-sm">
-                          {labels[record.type] ?? record.type} · {Object.values(record.data).slice(0, 2).join(' · ')}
+                          {labels[record.type] ?? record.type} ·{' '}
+                          {Object.values(record.data).slice(0, 2).join(' · ')}
                         </span>
                       </span>
-                      <Badge variant={record.status === 'new' ? 'default' : 'outline'} className="rounded-md capitalize">
+                      <Badge
+                        variant={record.status === 'new' ? 'default' : 'outline'}
+                        className="rounded-md capitalize"
+                      >
                         {record.status}
                       </Badge>
                     </li>
@@ -265,12 +368,29 @@ export function OverviewSection({ pack, api, go }: SectionProps) {
               ) : (
                 <ul className="flex flex-col divide-y">
                   {stats.recent_conversations.map((item) => (
-                    <li key={item.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
-                      <span className="min-w-0 truncate text-sm">{item.opening || '(no message)'}</span>
+                    <li
+                      key={item.id}
+                      className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+                    >
+                      <span className="min-w-0 truncate text-sm">
+                        {item.opening || '(no message)'}
+                      </span>
                       <span className="flex shrink-0 gap-1">
-                        {item.blocked && <Badge variant="destructive" className="rounded-md">guard</Badge>}
-                        {item.refused && <Badge variant="outline" className="rounded-md">off topic</Badge>}
-                        {item.handed_off && <Badge variant="secondary" className="rounded-md">handed off</Badge>}
+                        {item.blocked && (
+                          <Badge variant="destructive" className="rounded-md">
+                            guard
+                          </Badge>
+                        )}
+                        {item.refused && (
+                          <Badge variant="outline" className="rounded-md">
+                            off topic
+                          </Badge>
+                        )}
+                        {item.handed_off && (
+                          <Badge variant="secondary" className="rounded-md">
+                            handed off
+                          </Badge>
+                        )}
                       </span>
                     </li>
                   ))}
