@@ -1,15 +1,9 @@
 // A command menu on Cmd+K or Ctrl+K: jump to any section or run an action
 // without reaching for the sidebar.
 
-import { useEffect } from "react";
-import type { ComponentType } from "react";
-import {
-  ExternalLinkIcon,
-  MonitorIcon,
-  MoonIcon,
-  PlayIcon,
-  SunIcon,
-} from "lucide-react";
+import { useEffect } from 'react'
+import type { ComponentType } from 'react'
+import { ExternalLinkIcon, MonitorIcon, MoonIcon, PlayIcon, SunIcon } from 'lucide-react'
 
 import {
   Command,
@@ -20,10 +14,10 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@/components/ui/command";
-import type { Theme } from "@/lib/theme";
+} from '@/components/ui/command'
+import type { Theme } from '@/lib/theme'
 
-type Icon = ComponentType<{ className?: string }>;
+type Icon = ComponentType<{ className?: string }>
 
 export function CommandMenu({
   open,
@@ -32,27 +26,27 @@ export function CommandMenu({
   go,
   setTheme,
 }: {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  groups: [string, [string, string, Icon][]][];
-  go: (section: string) => void;
-  setTheme: (theme: Theme) => void;
+  open: boolean
+  setOpen: (open: boolean) => void
+  groups: [string, [string, string, Icon][]][]
+  go: (section: string) => void
+  setTheme: (theme: Theme) => void
 }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        setOpen(!open);
+      if (event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault()
+        setOpen(!open)
       }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, setOpen]);
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, setOpen])
 
   const run = (action: () => void) => {
-    setOpen(false);
-    action();
-  };
+    setOpen(false)
+    action()
+  }
 
   return (
     <CommandDialog
@@ -82,42 +76,28 @@ export function CommandMenu({
           ))}
           <CommandSeparator />
           <CommandGroup heading="Actions">
-            <CommandItem
-              value="run fake customers tests"
-              onSelect={() => run(() => go("test"))}
-            >
+            <CommandItem value="run fake customers tests" onSelect={() => run(() => go('test'))}>
               <PlayIcon />
               Run the fake customers
             </CommandItem>
             <CommandItem
               value="open demo"
-              onSelect={() =>
-                run(() => window.open("/demo", "_blank", "noreferrer"))
-              }
+              onSelect={() => run(() => window.open('/demo', '_blank', 'noreferrer'))}
             >
               <ExternalLinkIcon />
               Open the demo
             </CommandItem>
           </CommandGroup>
           <CommandGroup heading="Theme">
-            <CommandItem
-              value="theme light"
-              onSelect={() => run(() => setTheme("light"))}
-            >
+            <CommandItem value="theme light" onSelect={() => run(() => setTheme('light'))}>
               <SunIcon />
               Light
             </CommandItem>
-            <CommandItem
-              value="theme dark"
-              onSelect={() => run(() => setTheme("dark"))}
-            >
+            <CommandItem value="theme dark" onSelect={() => run(() => setTheme('dark'))}>
               <MoonIcon />
               Dark
             </CommandItem>
-            <CommandItem
-              value="theme system device"
-              onSelect={() => run(() => setTheme("system"))}
-            >
+            <CommandItem value="theme system device" onSelect={() => run(() => setTheme('system'))}>
               <MonitorIcon />
               Follow this device
             </CommandItem>
@@ -125,5 +105,5 @@ export function CommandMenu({
         </CommandList>
       </Command>
     </CommandDialog>
-  );
+  )
 }
