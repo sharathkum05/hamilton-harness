@@ -1,0 +1,37 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.sharathkum05/hamilton-harness",
+  "title": "Hamilton Harness",
+  "description": "Manage your Hamilton Harness AI rep: knowledge, rules, orders, tests and conversations.",
+  "version": "0.1.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "hamilton-harness",
+      "version": "0.1.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "HAMILTON_URL",
+          "description": "Address of your Hamilton Harness server, such as https://chat.example.com",
+          "isRequired": true
+        },
+        {
+          "name": "HAMILTON_ADMIN_TOKEN",
+          "description": "The admin token the server prints when started with --admin",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
