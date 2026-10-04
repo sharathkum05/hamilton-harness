@@ -215,6 +215,28 @@ export default function RootLayout({ children }) {
       </Tabs>
       <Card>
         <CardHeader>
+          <CardTitle>Connect Claude</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <p className="text-muted-foreground text-sm">
+            Install the npm package, sign in to this server with the admin token, and add it to
+            Claude. Claude can then edit knowledge, rules and settings, work through orders and
+            quotes, and rerun the tests.
+          </p>
+          <Snippet
+            code={`npm install -g hamilton-harness
+hamilton-harness login --url ${origin}
+claude mcp add hamilton -- hamilton-harness mcp`}
+          />
+          <p className="text-muted-foreground text-sm">
+            Without installing: <code className="text-foreground">npx -y hamilton-harness mcp</code>,
+            with <code className="text-foreground">HAMILTON_URL</code> and{' '}
+            <code className="text-foreground">HAMILTON_ADMIN_TOKEN</code> set.
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
           <CardTitle>Options</CardTitle>
         </CardHeader>
         <CardContent className="text-muted-foreground grid gap-2 text-sm">
