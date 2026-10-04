@@ -191,7 +191,8 @@ def test_home_is_the_product_page_when_built_and_the_demo_otherwise(pack, tmp_pa
     assert 'src="/widget.js"' in make_client(pack, app_dir=tmp_path / "missing").get("/").text
 
 
-def test_demo_page_and_widget_assets_are_served(client):
+def test_demo_page_and_widget_assets_are_served(pack, tmp_path):
+    client = make_client(pack, app_dir=tmp_path / "missing")
     page = client.get("/demo")
     assert page.status_code == 200
     assert 'src="/widget.js"' in page.text

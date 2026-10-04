@@ -256,16 +256,19 @@ def create_app(
             raise HTTPException(status_code=404, detail="not found")
         return {"turns": session_or_404(session_id).turns}
 
+    def built_or_plain() -> FileResponse:
+        # Without a web build, a plain demo page stands in for the product page and the demo.
+        if not (app_dir / "index.html").is_file():
+            return FileResponse(STATIC_DIR / "index.html")
+        return app_page()
+
     @app.get("/demo", include_in_schema=False)
     def demo_page() -> FileResponse:
-        return FileResponse(STATIC_DIR / "index.html")
+        return built_or_plain()
 
     @app.get("/", include_in_schema=False)
     def home_page() -> FileResponse:
-        # Without a build there is no product page, so the demo stands in for it.
-        if not (app_dir / "index.html").is_file():
-            return demo_page()
-        return app_page()
+        return built_or_plain()
 
     @app.get("/widget.js", include_in_schema=False)
     def widget_script() -> FileResponse:
