@@ -13,3 +13,4 @@ traces/
 .claude/
 web/node_modules/
 repkit/web/static/app/
+skills-lock.json

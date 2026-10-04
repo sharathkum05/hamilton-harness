@@ -20,14 +20,16 @@ flowchart TD
     A[Customer message] --> B{Handoff check<br/>on the customer's words}
     B -- asks for a person,<br/>trigger phrase --> H[Hand to a human]
     B -- no --> C[Build turn context<br/>rules + notes + memory]
-    C --> D[Model drafts a reply<br/>or proposes actions]
+    C --> S{Scope gate}
+    S -- off topic --> O[Send the off-topic line<br/>model not called]
+    S -- on topic --> D[Model drafts a reply<br/>or proposes actions]
     D -- action --> E{Validate arguments<br/>then policy guard}
     E -- allowed --> F[Run the tool<br/>remember facts]
     E -- blocked --> G[Tell the model why]
     E -- rule asks for a human --> H
     F --> D
     G --> D
-    D -- reply --> I{Reply guard<br/>honesty + never_say}
+    D -- reply --> I{Reply guard<br/>honesty + never_say + invented figures}
     I -- ok --> J[Shaper: plain text,<br/>short bubbles, typing delay]
     I -- forbidden --> K[Send the rule's safe reply]
     K --> J
@@ -51,13 +53,72 @@ repkit sim packs/loop-sneakers
 ```
 
 `sim` runs the pack's fake customers in replay mode, which needs no API key.
-To talk to the rep yourself, set `ANTHROPIC_API_KEY` and run:
+
+To see the web chat, the dashboard and the product page, build the web app
+once and start the server. `--offline` uses the demo pack's stand-in model, so
+this also needs no API key.
 
 ```bash
-repkit chat packs/loop-sneakers --debug
+npm --prefix web ci && npm --prefix web run build
 ```
 
-`--debug` shows each action and guard decision under the reply.
+```bash
+repkit serve packs/loop-sneakers --offline --debug --admin
+```
+
+The server prints two addresses: the site, and the dashboard link with its
+token. To use the real model instead, set `ANTHROPIC_API_KEY` and drop
+`--offline`. `repkit chat packs/loop-sneakers --debug` does the same in the
+terminal.
+
+## What is in the box
+
+| Address | What it is |
+|---|---|
+| `/` | Product page, with the real chat panel running in the hero |
+| `/demo` | The chat plus an inspector that shows each turn from the inside |
+| `/admin` | Dashboard: brand, voice, scope, knowledge, rules, handoff, tests, conversations, install snippets |
+| `/chat` | The chat panel on its own, which the embed script loads in an iframe |
+| `/widget.js` | The embed script: one tag puts the chat on any site |
+
+The chat panel is built from the official [ElevenLabs UI](https://ui.elevenlabs.io)
+components on the layout of their "Voice chat 1" block. The dashboard uses
+shadcn/ui and the product page adds Magic UI. See `web/THIRD_PARTY.md`.
+
+Putting the chat on a site (plain HTML, PHP, WordPress, React) and telling the
+rep who is signed in are covered in [docs/integrate.md](docs/integrate.md).
+
+## Keeping it on topic and honest
+
+Two checks exist for this, both in code.
+
+- **Scope gate.** Before the model is called, maths, coding, writing and trivia
+  requests are answered with the pack's off-topic line. In strict mode, so is
+  any message that touches nothing in the pack. Sums about the company's own
+  prices are allowed.
+- **Grounding check.** After the model replies, every number in the reply must
+  appear in a rule, a knowledge note, a tool result or the customer's own
+  words. A number from nowhere is treated as an invented fact and the reply is
+  replaced.
+
+These remove two common failures cheaply. They do not prove a reply is true: a
+wrong statement with no number in it is not caught by the grounding check.
+
+## Let Claude manage the pack
+
+`repkit mcp PACK` is an MCP server. Connect Claude to it and ask in plain words
+to add knowledge, tighten the scope, change a rule or rerun the tests.
+
+```json
+{
+  "mcpServers": {
+    "repkit": { "command": "repkit", "args": ["mcp", "packs/your-company"] }
+  }
+}
+```
+
+Claude edits through the same validated editor as the dashboard. An edit that
+would leave the pack unloadable is rolled back and refused with the reason.
 
 ## What a pack contains
 
@@ -70,8 +131,14 @@ packs/loop-sneakers/
   tools.yaml       what the rep may do
   handlers.py      the code behind those tools
   handoff.yaml     when a human takes over
+  scope.yaml       what it is for and what it turns away
+  widget.yaml      logo, colour, theme, greeting
   tests/           fake customers and what must happen
 ```
+
+Two demo packs ship: Loop Sneakers (customer support for a shoe shop) and
+Brightside Dental (a front desk with a strict scope and a no-medical-advice
+rule).
 
 Each file is used in one of four ways.
 
@@ -118,24 +185,21 @@ person.
 Output of `repkit sim packs/loop-sneakers` in replay mode:
 
 ```
-PASS  late-order  (polite)
-PASS  double-charge  (polite)
-PASS  refund-over-limit  (upset)
-PASS  changed-mind  (casual)
-PASS  bargain-hunter  (pushy)
-PASS  prompt-injection  (trying to trick it)
-PASS  late-exchange  (confused)
-PASS  are-you-a-bot  (curious)
-PASS  wants-a-human  (angry)
-PASS  legal-threat  (angry)
-
-10/10 scenarios passed, 36/36 checks
-actions run 6, blocked by guard 3, replies replaced 2, handoffs 4
+13/13 scenarios passed, 46/46 checks
+actions run 6, blocked by guard 3, replies replaced 3, off topic refused 2, handoffs 4
 ```
 
-In four of these the recorded model does the wrong thing on purpose: it obeys
-a prompt injection, promises a 40% discount, refunds above the limit and claims
-to be a real person. The scenarios pass because the harness stops each one.
+And for `packs/brightside-dental`:
+
+```
+10/10 scenarios passed, 30/30 checks
+actions run 2, blocked by guard 1, replies replaced 2, off topic refused 3, handoffs 1
+```
+
+In several of these the recorded model does the wrong thing on purpose: it
+obeys a prompt injection, promises a 40% discount, refunds above the limit,
+claims to be a real person, diagnoses a cavity and invents a price. The
+scenarios pass because the harness stops each one.
 
 Replay mode proves the harness. It does not measure the model. `repkit sim
 PACK --live` runs the same customers against the real model and adds latency,
@@ -157,22 +221,31 @@ token and cost figures; those numbers are not published here yet.
 | `repkit/runtime.py` | The turn loop |
 | `repkit/trace.py` | Step-by-step trace of every turn |
 | `repkit/sim.py` | Fake customers and the scorecard |
+| `repkit/scope.py` | Scope gate and the number grounding check |
+| `repkit/editor.py` | Validated, rolled-back edits to a pack |
+| `repkit/mcp_server.py` | MCP server for managing a pack from Claude |
+| `repkit/web/` | HTTP API, dashboard API, embed script, demo page |
+| `web/` | React app: chat panel, dashboard, product page |
 
 ## Status
 
-Working: the full turn loop, the guard, handoff, memory, shaping, tracing, the
-simulator in replay mode and CI.
+Working and tested: the turn loop, the guard, scope and grounding, handoff,
+memory, shaping, tracing, the simulator in replay mode, the web chat, the
+dashboard, the MCP server and CI.
 
 Not done yet:
 
-- Live scorecard numbers against the real model.
-- Fake customers played by a model, with a goal and a temperament, instead of
-  a fixed script.
-- A web chat widget and a voice channel.
+- A run against the real model. Everything so far is tested with scripted and
+  stand-in models.
+- Live scorecard numbers (latency, tokens, cost per conversation).
+- Fake customers played by a model, with a goal and a temperament.
+- A voice channel.
+- The rep calling MCP connectors as tools. Today its actions are Python
+  functions in the pack.
 - Drafting a pack automatically from a company's website.
-- A sales pack on the same harness.
+- A sales pack and an intake pack.
 
-Loop Sneakers is a made-up company.
+Loop Sneakers and Brightside Dental are made-up companies.
 
 ## Licence
 
