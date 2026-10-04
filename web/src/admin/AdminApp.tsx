@@ -366,16 +366,16 @@ export function AdminApp() {
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
             <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden sm:block">{active.group}</BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden sm:block" />
+              <BreadcrumbList className="flex-nowrap whitespace-nowrap">
+                <BreadcrumbItem className="hidden lg:block">{active.group}</BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden lg:block" />
                 <BreadcrumbItem>
                   <BreadcrumbPage>{active.entry[1]}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
             <div className="ml-auto flex items-center gap-1.5">
-              <span className="text-muted-foreground mr-1 hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs sm:flex">
+              <span className="text-muted-foreground mr-1 hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap lg:flex">
                 <span className="relative flex size-1.5">
                   <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-500 opacity-60 motion-reduce:hidden" />
                   <span className="relative inline-flex size-1.5 rounded-full bg-green-500" />
