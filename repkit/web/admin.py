@@ -25,6 +25,7 @@ from repkit.editor import (
     read_conversation,
 )
 from repkit.records import Status
+from repkit.stats import overview
 
 MAX_LOGO_BYTES = 512_000
 LOGO_EXTENSIONS = {
@@ -151,6 +152,11 @@ def install_admin(app: FastAPI, holder: Any, token: str) -> None:
             return editor().run_fake_customers()
         except EditError as error:
             raise _refuse(error) from error
+
+    @router.get("/overview")
+    def get_overview() -> dict[str, Any]:
+        """Counts, a two-week timeline and the latest items, for the dashboard's first screen."""
+        return overview(holder.agent.trace_dir, holder.agent.records)
 
     @router.get("/records")
     def list_records(type: str | None = None) -> dict[str, Any]:

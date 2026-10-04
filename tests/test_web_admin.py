@@ -215,3 +215,14 @@ def test_records_are_listed_and_their_status_can_change(client):
     missing = client.patch("/api/admin/records/X-1", headers=AUTH, json={"status": "done"})
     assert missing.status_code == 404
     assert client.get("/api/admin/records").status_code == 401
+
+
+def test_overview_counts_what_has_happened(client):
+    session_id = client.post("/api/conversations").json()["id"]
+    client.post(f"/api/conversations/{session_id}/messages", json={"text": "what is 9 * 9"})
+    client.app.state.holder.agent.records.add("quote", {"quantity": 40})
+    stats = client.get("/api/admin/overview", headers=AUTH).json()
+    assert stats["conversations"]["total"] == 1 and stats["conversations"]["refused"] == 1
+    assert stats["records"]["waiting"] == 1
+    assert stats["timeline"][-1]["conversations"] == 1
+    assert client.get("/api/admin/overview").status_code == 401
