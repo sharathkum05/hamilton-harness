@@ -2,6 +2,8 @@
 // dashboard API, so Claude edits through the same validated editor as the
 // dashboard: a change that would break the rep is refused, with the reason.
 
+import { readFileSync } from 'node:fs'
+
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
@@ -16,11 +18,14 @@ changing rules, scope or knowledge, call run_fake_customers and report the resul
 whether the rep still refuses what it should. Edits are validated; if one is refused, the message
 says which field was wrong.`
 
+// One source for the version, so the server never reports a stale one.
+const { version: VERSION } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+
 const SECTIONS = ['persona', 'scope', 'widget', 'handoff']
 const STATUSES = ['new', 'confirmed', 'done', 'cancelled']
 
 export function buildServer(api) {
-  const server = new McpServer({ name: 'hamilton-harness', version: '0.1.0' }, { instructions: INSTRUCTIONS })
+  const server = new McpServer({ name: 'hamilton-harness', version: VERSION }, { instructions: INSTRUCTIONS })
 
   /** Run a call and hand Claude either the result or a message it can act on. */
   const tool = (name, description, inputSchema, work) =>
