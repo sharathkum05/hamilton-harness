@@ -96,6 +96,25 @@ def _debug_view(result: TurnResult) -> dict[str, Any]:
     }
 
 
+class AgentHolder:
+    """The agent currently serving. The dashboard swaps it when the pack is edited."""
+
+    def __init__(self, agent: Agent) -> None:
+        self.agent = agent
+
+    @property
+    def pack(self) -> Pack:
+        return self.agent.pack
+
+    def reload(self) -> Pack:
+        """Re-read the pack from disk and serve it from the next message on."""
+        from repkit.pack import load_pack
+
+        pack = load_pack(self.agent.pack.root)
+        self.agent = self.agent.with_pack(pack)
+        return pack
+
+
 def _public_session(session: Session) -> dict[str, Any]:
     return {
         "id": session.id,
@@ -117,10 +136,11 @@ def create_app(
     `allow_origins` lists the sites allowed to embed the widget. Leave it empty
     when the widget is served from this same server.
     """
-    pack = agent.pack
+    holder = AgentHolder(agent)
     store = sessions or SessionStore()
-    app = FastAPI(title=f"{pack.persona.company} chat", docs_url=None, redoc_url=None)
+    app = FastAPI(title=f"{agent.pack.persona.company} chat", docs_url=None, redoc_url=None)
     app.state.sessions = store
+    app.state.holder = holder
     if allow_origins:
         app.add_middleware(
             CORSMiddleware,
@@ -141,6 +161,7 @@ def create_app(
 
     @app.get("/api/config")
     def config() -> dict[str, Any]:
+        pack = holder.pack
         persona, widget = pack.persona, pack.widget
         logo = logo_path(pack)
         settings = widget.model_dump(exclude={"logo"})
@@ -156,7 +177,7 @@ def create_app(
 
     @app.get("/brand/logo", include_in_schema=False)
     def brand_logo() -> FileResponse:
-        logo = logo_path(pack)
+        logo = logo_path(holder.pack)
         if logo is None:
             raise HTTPException(status_code=404, detail="no logo")
         return FileResponse(
@@ -171,8 +192,8 @@ def create_app(
 
     @app.post("/api/conversations", status_code=201)
     def start_conversation() -> dict[str, Any]:
-        session = store.create(agent.start())
-        session.say("rep", pack.widget.greeting)
+        session = store.create(holder.agent.start())
+        session.say("rep", holder.pack.widget.greeting)
         return _public_session(session)
 
     @app.get("/api/conversations/{session_id}")
@@ -187,7 +208,7 @@ def create_app(
             raise HTTPException(status_code=409, detail="still answering the last message")
         try:
             session.say("customer", message.text)
-            result = agent.respond(session.conversation, message.text)
+            result = holder.agent.respond(session.conversation, message.text)
             for bubble in result.bubbles:
                 session.say("rep", bubble.text)
             session.turns.append([{"kind": e.kind, **e.data} for e in result.events])
