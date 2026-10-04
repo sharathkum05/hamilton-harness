@@ -135,3 +135,18 @@ def test_evidence_includes_tool_results_and_arguments():
     ]
     evidence = evidence_text("Keep it to 2 sentences.", messages)
     assert ungrounded_numbers("Refunded ₹2,499 on LS-4471, back in 3 to 5 days.", evidence) == []
+
+
+def test_bare_arithmetic_is_refused_even_when_a_number_matches_the_notes(pack):
+    # The size chart mentions 12, which must not make this an in-scope question.
+    message = "what is 348 * 12"
+    context = ContextBuilder(pack).for_turn(message, {})
+    assert ScopeGate(pack.scope).check(message, context).reason == "math"
+
+
+def test_strict_mode_needs_more_than_one_shared_word(pack):
+    strict = ScopeGate(pack.scope.model_copy(update={"strict": True}))
+    off = "tell me about black holes"
+    assert strict.check(off, ContextBuilder(pack).for_turn(off, {})).reason == "strict"
+    on = "do you have it in black"
+    assert strict.check(on, ContextBuilder(pack).for_turn(on, {})).in_scope

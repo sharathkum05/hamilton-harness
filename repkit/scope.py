@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from repkit.context import TurnContext
+from repkit.knowledge import tokenize
 from repkit.pack.schema import ScopeSettings
 
 _DETECTORS: dict[str, list[str]] = {
@@ -77,6 +78,19 @@ class ScopeVerdict:
 IN_SCOPE = ScopeVerdict(True)
 
 
+def _shared_words(message: str, context: TurnContext) -> tuple[int, int]:
+    """How many of the message's words appear in the notes looked up for it, out of how many.
+
+    Numbers are left out: "348 * 12" must not count as on topic because the
+    size chart happens to mention a 12.
+    """
+    words = {word for word in tokenize(message) if word.isalpha()}
+    known: set[str] = set()
+    for chunk in context.notes:
+        known.update(tokenize(f"{chunk.heading} {chunk.text}"))
+    return len(words & known), len(words)
+
+
 class ScopeGate:
     def __init__(self, settings: ScopeSettings) -> None:
         self._settings = settings
@@ -99,18 +113,21 @@ class ScopeGate:
             if match:
                 return ScopeVerdict(False, "custom", match.group(0))
 
-        touches_pack = bool(context.rules or context.notes)
+        shared, total = _shared_words(message, context)
         for kind, pattern in self._detectors:
             match = pattern.search(message)
             if not match:
                 continue
             # "What's 2 x 2,499 for two pairs with shipping?" is sums about our own
             # prices. Everything else on the list is refused whatever it mentions.
-            if kind == "math" and touches_pack:
+            if kind == "math" and (context.rules or shared):
                 continue
             return ScopeVerdict(False, kind, match.group(0))
 
-        if self._settings.strict and not touches_pack:
+        # One shared word is too weak for a longer message: "tell me about black holes"
+        # would pass because a shoe comes in black.
+        covered = bool(context.rules) or (total > 0 and shared >= min(2, total))
+        if self._settings.strict and not covered:
             conversational = (
                 answering or _CONVERSATIONAL.match(message) or _ABOUT_THE_REP.search(message)
             )
