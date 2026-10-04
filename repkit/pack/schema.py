@@ -7,9 +7,10 @@ from.
 
 from __future__ import annotations
 
+import re
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class _Strict(BaseModel):
@@ -79,12 +80,26 @@ class PolicyRule(_Strict):
     on_violation: Literal["block", "handoff"] = "block"
     # Words that make this rule relevant to a customer message.
     topics: list[str] = Field(default_factory=list)
+    # Regular expressions a reply must never match, checked case-insensitively.
+    never_say: list[str] = Field(default_factory=list)
+    # Sent instead of a reply that matched `never_say`.
+    safe_reply: str = "I can't do that one, sorry."
 
     @model_validator(mode="after")
     def _enforceable_rules_name_a_tool(self) -> PolicyRule:
         if (self.limits or self.forbid) and not self.tool:
             raise ValueError(f"rule '{self.id}' has limits or forbid but no tool")
         return self
+
+    @field_validator("never_say")
+    @classmethod
+    def _patterns_compile(cls, patterns: list[str]) -> list[str]:
+        for pattern in patterns:
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                raise ValueError(f"never_say pattern {pattern!r} is not valid: {exc}") from exc
+        return patterns
 
 
 class ToolSpec(_Strict):

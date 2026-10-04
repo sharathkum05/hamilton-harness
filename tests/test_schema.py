@@ -49,3 +49,8 @@ def test_valid_pack_builds():
     pack = Pack(persona=PERSONA, policies=[rule], tools=[REFUND])
     assert pack.handoff.max_guard_blocks == 2
     assert pack.model.name == "claude-opus-5-5"
+
+
+def test_never_say_patterns_must_compile():
+    with pytest.raises(ValidationError, match="is not valid"):
+        PolicyRule(id="r1", text="No discounts.", never_say=["(unclosed"])
