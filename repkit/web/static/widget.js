@@ -1,16 +1,19 @@
-/* repkit chat widget.
+/* repkit embed script.
 
-   Embed on any page:
+   Add the chat to any page:
 
      <script src="https://chat.example.com/widget.js" defer></script>
 
+   It adds a launcher button and, when opened, an iframe holding the chat panel.
+   The iframe keeps the panel's styles and scripts apart from the host page.
+
    Optional attributes on the script tag:
-     data-repkit-server="https://chat.example.com"   API origin, if not the script's own
+     data-repkit-server="https://chat.example.com"   server origin, if not the script's own
      data-repkit-open="true"                          open the panel on load
      data-repkit-pacing="off"                         show replies without typing delays
 
    The page can drive it through window.repkit: open(), close(), send(text), reset().
-   After every turn it fires a "repkit:turn" event on window with the server's response. */
+   It fires "repkit:ready", "repkit:turn" and "repkit:reset" events on window. */
 
 (() => {
   "use strict";
@@ -19,425 +22,163 @@
   const options = script ? script.dataset : {};
   const server = (options.repkitServer || (script ? new URL(script.src).origin : location.origin))
     .replace(/\/$/, "");
-  const pacing = options.repkitPacing !== "off";
-  const STORAGE_KEY = "repkit:conversation";
 
-  const ICONS = {
-    chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg>',
-    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
-    restart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v5h5"/></svg>',
-    send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
-  };
+  const CHAT_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg>';
 
-  const state = { config: null, id: null, open: false, busy: false, started: false, opening: [] };
+  const STYLES = `
+    :host {
+      all: initial;
+      position: fixed;
+      right: max(16px, env(safe-area-inset-right, 0px));
+      bottom: max(16px, env(safe-area-inset-bottom, 0px));
+      z-index: 2147483000;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    :host([data-position="left"]) { right: auto; left: max(16px, env(safe-area-inset-left, 0px)); }
+    [hidden] { display: none !important; }
+    .launcher {
+      display: flex; align-items: center; gap: 8px; margin-left: auto;
+      padding: 11px 16px; border: 0; border-radius: 999px;
+      background: var(--accent); color: var(--on-accent);
+      font: 600 14.5px/1.2 inherit; font-family: inherit; cursor: pointer;
+      box-shadow: 0 12px 32px rgba(15, 15, 20, 0.22);
+    }
+    :host([data-position="left"]) .launcher { margin-left: 0; }
+    :host([data-corners="sharp"]) .launcher { border-radius: 4px; }
+    .launcher:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .launcher svg { width: 18px; height: 18px; flex: none; }
+    .frame {
+      display: block;
+      width: min(400px, calc(100vw - 32px));
+      height: min(640px, calc(100vh - 32px));
+      border: 1px solid rgba(120, 120, 130, 0.28);
+      border-radius: 16px;
+      background: Canvas;
+      box-shadow: 0 16px 44px rgba(15, 15, 20, 0.22), 0 2px 6px rgba(15, 15, 20, 0.08);
+    }
+    :host([data-corners="sharp"]) .frame { border-radius: 4px; }
+    :host([data-corners="round"]) .frame { border-radius: 26px; }
+    @media (max-width: 480px) {
+      :host(.open) { inset: 0; }
+      :host(.open) .frame { width: 100%; height: 100%; border: 0; border-radius: 0; }
+    }
+  `;
+
+  const state = { open: false, ready: false, queue: [] };
   const ui = {};
-
-  // -- storage: per-tab, and optional. A private window may refuse it. ----
-
-  function remembered() {
-    try {
-      return sessionStorage.getItem(STORAGE_KEY);
-    } catch {
-      return null;
-    }
-  }
-
-  function remember(id) {
-    try {
-      if (id) sessionStorage.setItem(STORAGE_KEY, id);
-      else sessionStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* the chat still works for this page view */
-    }
-  }
-
-  // -- server --------------------------------------------------------------
-
-  async function api(path, body) {
-    const response = await fetch(server + path, {
-      method: body === undefined ? "GET" : "POST",
-      headers: body === undefined ? {} : { "content-type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-    if (!response.ok) {
-      const error = new Error(`request failed with ${response.status}`);
-      error.status = response.status;
-      throw error;
-    }
-    return response.json();
-  }
-
-  async function startConversation() {
-    const created = await api("/api/conversations", {});
-    state.id = created.id;
-    remember(created.id);
-    return created;
-  }
-
-  /* Reuse this tab's conversation if the server still has it. */
-  async function loadConversation() {
-    const saved = remembered();
-    if (saved) {
-      try {
-        const existing = await api(`/api/conversations/${encodeURIComponent(saved)}`);
-        state.id = existing.id;
-        return existing;
-      } catch (error) {
-        if (error.status !== 404) throw error;
-      }
-    }
-    return startConversation();
-  }
-
-  // -- drawing -------------------------------------------------------------
-
-  function el(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    // textContent only: nothing the customer or the model writes is parsed as HTML.
-    if (text !== undefined) node.textContent = text;
-    return node;
-  }
-
-  function scrollToEnd() {
-    ui.log.scrollTop = ui.log.scrollHeight;
-  }
-
-  function addMessage(speaker, text) {
-    const bubble = el("div", `rk-msg rk-${speaker === "customer" ? "customer" : "rep"}`, text);
-    ui.log.append(bubble);
-    scrollToEnd();
-    return bubble;
-  }
-
-  function addNote(text, action) {
-    const note = el("div", "rk-note", text);
-    if (action) {
-      const button = el("button", "", action.label);
-      button.type = "button";
-      button.addEventListener("click", () => {
-        note.remove();
-        action.run();
-      });
-      note.append(" ", button);
-    }
-    ui.log.append(note);
-    scrollToEnd();
-    return note;
-  }
-
-  function showTyping(on) {
-    if (on && !ui.typing.isConnected) ui.log.append(ui.typing);
-    if (!on) ui.typing.remove();
-    if (on) scrollToEnd();
-  }
-
-  function setBusy(busy) {
-    state.busy = busy;
-    ui.send.disabled = busy || !ui.input.value.trim();
-  }
-
-  function setHandedOff(handedOff) {
-    ui.status.hidden = !handedOff;
-  }
-
-  function drawTranscript(conversation) {
-    ui.log.replaceChildren();
-    setHandedOff(conversation.handed_off);
-    const customerSpoke = conversation.transcript.some((m) => m.from === "customer");
-    if (customerSpoke) {
-      state.opening = [];
-      for (const message of conversation.transcript) addMessage(message.from, message.text);
-      return;
-    }
-    // Nothing said yet: show the greeting as a welcome, not as a lone bubble.
-    state.opening = conversation.transcript;
-    ui.emptyText.textContent = conversation.transcript.map((m) => m.text).join(" ");
-    ui.log.append(ui.empty);
-  }
-
-  /* Swap the welcome for the real transcript the moment the customer speaks. */
-  function leaveWelcome() {
-    if (!ui.empty.isConnected) return;
-    ui.empty.remove();
-    for (const message of state.opening) addMessage(message.from, message.text);
-    state.opening = [];
-  }
-
-  const sleep = (seconds) => new Promise((resolve) => setTimeout(resolve, seconds * 1000));
-
-  /* Show the reply one bubble at a time, as if it were being typed. */
-  async function playBubbles(bubbles) {
-    for (const bubble of bubbles) {
-      if (pacing) {
-        showTyping(true);
-        await sleep(bubble.delay);
-      }
-      showTyping(false);
-      addMessage("rep", bubble.text);
-    }
-  }
-
-  // -- actions -------------------------------------------------------------
-
-  async function ensureStarted() {
-    if (state.started) return;
-    state.started = true;
-    try {
-      drawTranscript(await loadConversation());
-    } catch {
-      state.started = false;
-      ui.log.replaceChildren();
-      addNote("Couldn't reach the chat.", { label: "Try again", run: ensureStarted });
-    }
-  }
-
-  async function deliver(text, retried) {
-    try {
-      return await api(`/api/conversations/${encodeURIComponent(state.id)}/messages`, { text });
-    } catch (error) {
-      // The server forgot this conversation (restart or timeout): start a new one, once.
-      if (error.status === 404 && !retried) {
-        await startConversation();
-        return deliver(text, true);
-      }
-      throw error;
-    }
-  }
-
-  async function send(text) {
-    text = (text || "").trim();
-    if (!text || state.busy) return;
-    await ensureStarted();
-    if (!state.id) return;
-
-    setBusy(true);
-    leaveWelcome();
-    const bubble = addMessage("customer", text);
-    showTyping(true);
-    try {
-      const response = await deliver(text, false);
-      showTyping(false);
-      await playBubbles(response.bubbles);
-      setHandedOff(response.handed_off);
-      window.dispatchEvent(new CustomEvent("repkit:turn", { detail: { text, response } }));
-    } catch {
-      showTyping(false);
-      bubble.remove();
-      addNote("That didn't send.", { label: "Try again", run: () => send(text) });
-    } finally {
-      setBusy(false);
-      if (state.open) ui.input.focus({ preventScroll: true });
-    }
-  }
-
-  function open() {
-    if (state.open || !ui.host) return;
-    state.open = true;
-    ui.host.classList.add("rk-open");
-    ui.launcher.hidden = true;
-    ui.panel.hidden = false;
-    ui.launcher.setAttribute("aria-expanded", "true");
-    ensureStarted().then(scrollToEnd);
-    // preventScroll: focusing the composer must not move the host page.
-    ui.input.focus({ preventScroll: true });
-  }
-
-  function close() {
-    if (!state.open) return;
-    state.open = false;
-    ui.host.classList.remove("rk-open");
-    ui.panel.hidden = true;
-    ui.launcher.hidden = false;
-    ui.launcher.setAttribute("aria-expanded", "false");
-    ui.launcher.focus({ preventScroll: true });
-  }
-
-  async function reset() {
-    if (state.busy) return;
-    remember(null);
-    state.id = null;
-    state.started = false;
-    await ensureStarted();
-    window.dispatchEvent(new CustomEvent("repkit:reset"));
-  }
-
-  // -- construction --------------------------------------------------------
 
   /* Black or white, whichever reads better on the pack's accent colour. */
   function inkFor(hex) {
     const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
     const linear = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
     const luminance = 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
-    return luminance > 0.4 ? "#14181d" : "#ffffff";
+    return luminance > 0.4 ? "#18181b" : "#ffffff";
   }
 
-  function iconButton(icon, label, onClick) {
-    const button = el("button", "rk-icon-button");
-    button.type = "button";
-    button.innerHTML = ICONS[icon];
-    button.setAttribute("aria-label", label);
-    button.title = label;
-    button.addEventListener("click", onClick);
-    return button;
-  }
-
-  /* The pack's logo, or the rep's initial when it has none. */
-  function avatar(rep, widget) {
-    const node = el("div", "rk-avatar");
-    if (widget.logo_url) {
-      const image = el("img");
-      image.src = server + widget.logo_url;
-      image.alt = "";
-      // A missing or broken logo falls back to the initial.
-      image.addEventListener("error", () => {
-        node.classList.remove("rk-has-logo");
-        node.replaceChildren(rep.name.slice(0, 1).toUpperCase());
-      });
-      node.classList.add("rk-has-logo");
-      node.append(image);
-    } else {
-      node.textContent = rep.name.slice(0, 1).toUpperCase();
+  function post(message) {
+    if (!state.ready) {
+      state.queue.push(message);
+      return;
     }
-    return node;
+    ui.frame.contentWindow.postMessage({ source: "repkit-host", ...message }, server);
+  }
+
+  /* The panel is only loaded once someone opens it, so it costs the page nothing until then. */
+  function ensureFrame() {
+    if (ui.frame) return;
+    const frame = document.createElement("iframe");
+    frame.className = "frame";
+    frame.title = ui.label;
+    frame.src = `${server}/chat${options.repkitPacing === "off" ? "?nopacing" : ""}`;
+    ui.frame = frame;
+    ui.root.append(frame);
+  }
+
+  function open() {
+    if (state.open || !ui.host) return;
+    state.open = true;
+    ensureFrame();
+    ui.host.classList.add("open");
+    ui.launcher.hidden = true;
+    ui.frame.hidden = false;
+    ui.launcher.setAttribute("aria-expanded", "true");
+  }
+
+  function close() {
+    if (!state.open) return;
+    state.open = false;
+    ui.host.classList.remove("open");
+    ui.frame.hidden = true;
+    ui.launcher.hidden = false;
+    ui.launcher.setAttribute("aria-expanded", "false");
+    ui.launcher.focus({ preventScroll: true });
+  }
+
+  function onPanelMessage(event) {
+    if (!ui.frame || event.source !== ui.frame.contentWindow) return;
+    if (event.origin !== server || !event.data || event.data.source !== "repkit") return;
+    const { type, detail } = event.data;
+    if (type === "close") close();
+    if (type === "ready") {
+      state.ready = true;
+      for (const message of state.queue.splice(0)) post(message);
+    }
+    if (type === "ready" || type === "turn" || type === "reset") {
+      window.dispatchEvent(new CustomEvent(`repkit:${type}`, { detail }));
+    }
   }
 
   function build(config) {
     const { rep, widget } = config;
-    const host = el("div");
+    const host = document.createElement("div");
     host.id = "repkit-widget";
-    host.style.setProperty("--rk-accent", widget.accent);
-    host.style.setProperty("--rk-on-accent", inkFor(widget.accent));
-    for (const key of ["theme", "position", "corners", "font", "header"]) {
-      host.dataset[key] = widget[key];
-    }
+    host.dataset.position = widget.position;
+    host.dataset.corners = widget.corners;
+    host.style.setProperty("--accent", widget.accent);
+    host.style.setProperty("--on-accent", inkFor(widget.accent));
     const root = host.attachShadow({ mode: "open" });
 
-    const style = el("link");
-    style.rel = "stylesheet";
-    style.href = `${server}/static/widget.css`;
+    const style = document.createElement("style");
+    style.textContent = STYLES;
 
-    const launcher = el("button", "rk-launcher");
+    const launcher = document.createElement("button");
     launcher.type = "button";
-    launcher.innerHTML = ICONS.chat;
-    launcher.append(el("span", "", widget.launcher_label));
+    launcher.className = "launcher";
+    launcher.innerHTML = CHAT_ICON;
+    const label = document.createElement("span");
+    label.textContent = widget.launcher_label;
+    launcher.append(label);
     launcher.setAttribute("aria-expanded", "false");
     launcher.addEventListener("click", open);
 
-    const panel = el("section", "rk-panel");
-    panel.hidden = true;
-    panel.setAttribute("role", "dialog");
-    panel.setAttribute("aria-label", `Chat with ${rep.name} at ${rep.company}`);
-
-    const header = el("header", "rk-header");
-    const who = el("div", "rk-who");
-    who.append(
-      el("span", "rk-name", widget.title || rep.name),
-      el("span", "rk-sub", `${rep.name} · ${config.disclosure}`),
-    );
-    header.append(
-      avatar(rep, widget),
-      who,
-      iconButton("restart", "Start a new chat", reset),
-      iconButton("close", "Close chat", close),
-    );
-
-    const log = el("div", "rk-log");
-    log.setAttribute("role", "log");
-    log.setAttribute("aria-live", "polite");
-    log.tabIndex = 0;
-
-    const typing = el("div", "rk-typing");
-    typing.setAttribute("aria-label", `${rep.name} is typing`);
-    typing.append(el("span"), el("span"), el("span"));
-
-    const suggestions = el("div", "rk-suggestions");
-    for (const suggestion of widget.suggestions) {
-      const chip = el("button", "", suggestion);
-      chip.type = "button";
-      chip.addEventListener("click", () => send(suggestion));
-      suggestions.append(chip);
-    }
-
-    const empty = el("div", "rk-empty");
-    const emptyText = el("div", "rk-empty-text");
-    empty.append(
-      avatar(rep, widget),
-      el("div", "rk-empty-title", widget.title || `Chat with ${rep.name}`),
-      emptyText,
-      suggestions,
-    );
-    suggestions.hidden = !widget.suggestions.length;
-
-    const status = el("div", "rk-status", "A member of the team is taking over this chat.");
-    status.hidden = true;
-    status.setAttribute("role", "status");
-
-    const form = el("form", "rk-form");
-    const input = el("textarea", "rk-input");
-    input.rows = 1;
-    input.maxLength = 2000;
-    input.placeholder = "Write a message";
-    input.setAttribute("aria-label", "Message");
-    const sendButton = el("button", "rk-send");
-    sendButton.type = "submit";
-    sendButton.disabled = true;
-    sendButton.innerHTML = ICONS.send;
-    sendButton.setAttribute("aria-label", "Send");
-    form.append(input, sendButton);
-
-    const submit = () => {
-      const text = input.value;
-      if (!text.trim() || state.busy) return;
-      input.value = "";
-      input.style.height = "";
-      send(text);
-    };
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      submit();
-    });
-    input.addEventListener("input", () => {
-      input.style.height = "";
-      input.style.height = `${input.scrollHeight}px`;
-      sendButton.disabled = state.busy || !input.value.trim();
-    });
-    input.addEventListener("keydown", (event) => {
-      // Enter sends, Shift+Enter makes a new line. Leave IME composition alone.
-      if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
-        event.preventDefault();
-        submit();
-      }
-    });
-    panel.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") close();
-    });
-
-    const footnote = el(
-      "p",
-      "rk-footnote",
-      `${rep.name} is an AI assistant. Ask for a person at any time.`,
-    );
-
-    panel.append(header, log, status, form, footnote);
-    root.append(style, launcher, panel);
-    Object.assign(ui, {
-      host, launcher, panel, log, typing, empty, emptyText, status, input, send: sendButton,
-    });
+    root.append(style, launcher);
+    Object.assign(ui, { host, root, launcher, label: `Chat with ${rep.name} at ${rep.company}` });
     document.body.append(host);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && state.open) close();
+    });
   }
 
   async function init() {
+    let config;
     try {
-      state.config = await api("/api/config");
+      const response = await fetch(`${server}/api/config`);
+      if (!response.ok) throw new Error(String(response.status));
+      config = await response.json();
     } catch {
       // No chat is better than a broken launcher on someone's shop.
       console.warn("repkit: could not load the chat configuration from", server);
       return;
     }
-    build(state.config);
-    window.repkit = { open, close, send: (text) => (open(), send(text)), reset };
-    window.dispatchEvent(new CustomEvent("repkit:ready", { detail: state.config }));
+    build(config);
+    window.addEventListener("message", onPanelMessage);
+    window.repkit = {
+      open,
+      close,
+      send: (text) => (open(), post({ type: "send", text: String(text) })),
+      reset: () => post({ type: "reset" }),
+    };
     if (options.repkitOpen === "true") open();
   }
 
