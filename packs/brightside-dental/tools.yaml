@@ -1,0 +1,48 @@
+tools:
+  - name: find_slots
+    description: >
+      List the next free appointment slots for a treatment. Call this before
+      offering any time, and offer only times it returns.
+    handler: handlers:find_slots
+    input_schema:
+      type: object
+      properties:
+        treatment:
+          type: string
+          enum: [checkup, filling, whitening, braces_consult, root_canal]
+      required: [treatment]
+      additionalProperties: false
+
+  - name: book_appointment
+    description: >
+      Book a slot returned by find_slots. Needs the patient's name and a
+      phone number.
+    handler: handlers:book_appointment
+    remember:
+      name: patient_name
+      last_booking: booking_id
+    input_schema:
+      type: object
+      properties:
+        patient_name:
+          type: string
+        phone:
+          type: string
+        treatment:
+          type: string
+          enum: [checkup, filling, whitening, braces_consult, root_canal]
+        slot_id:
+          type: string
+      required: [patient_name, phone, treatment, slot_id]
+      additionalProperties: false
+
+  - name: cancel_appointment
+    description: Cancel a booking by its booking reference.
+    handler: handlers:cancel_appointment
+    input_schema:
+      type: object
+      properties:
+        booking_id:
+          type: string
+      required: [booking_id]
+      additionalProperties: false
