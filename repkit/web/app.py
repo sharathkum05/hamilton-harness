@@ -59,6 +59,7 @@ def _debug_view(result: TurnResult) -> dict[str, Any]:
             for action in result.actions
         ],
         "replaced_by": result.replaced_by,
+        "refused": result.refused,
         "handoff": (
             {"reason": result.handoff.reason, "detail": result.handoff.detail}
             if result.handoff

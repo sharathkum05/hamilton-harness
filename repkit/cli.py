@@ -51,6 +51,8 @@ def _print_turn(result: TurnResult, name: str, *, pacing: bool, debug: bool) -> 
             print(f"  · {action.tool} {json.dumps(action.arguments)} -> {action.outcome}{rules}")
         if result.replaced_by:
             print(f"  · draft replaced by rule {result.replaced_by}")
+        if result.refused:
+            print(f"  · turned away as off topic ({result.refused}), model not called")
     for bubble in result.bubbles:
         if pacing:
             time.sleep(bubble.delay)
