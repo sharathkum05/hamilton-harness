@@ -211,3 +211,19 @@ class ScriptedModel:
             usage=Usage(input_tokens=0, output_tokens=len(text.split())),
             model=self.name,
         )
+
+
+def load_offline_model(pack_root: str) -> Model:
+    """Load the stand-in model a pack ships in `offline_model.py`, for demos with no API key."""
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(pack_root) / "offline_model.py"
+    if not path.exists():
+        raise ModelError(f"this pack has no offline model ({path} is missing)")
+    spec = importlib.util.spec_from_file_location(f"repkit_offline_{abs(hash(str(path)))}", path)
+    if spec is None or spec.loader is None:
+        raise ModelError(f"cannot import {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.build()
