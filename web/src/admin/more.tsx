@@ -153,12 +153,12 @@ export function InstallSection(_: SectionProps) {
       `<?php
 // footer.php
 $userId = $_SESSION['user_id'] ?? null;
-$secret = getenv('REPKIT_IDENTITY_SECRET');  // same value as on the chat server
+$secret = getenv('HAMILTON_IDENTITY_SECRET');  // same value as on the chat server
 ?>
 <script src="${origin}/widget.js" defer
 <?php if ($userId): ?>
-  data-repkit-customer="<?= htmlspecialchars($userId, ENT_QUOTES) ?>"
-  data-repkit-signature="<?= hash_hmac('sha256', $userId, $secret) ?>"
+  data-hamilton-customer="<?= htmlspecialchars($userId, ENT_QUOTES) ?>"
+  data-hamilton-signature="<?= hash_hmac('sha256', $userId, $secret) ?>"
 <?php endif; ?>
 ></script>`,
     ],
@@ -167,7 +167,7 @@ $secret = getenv('REPKIT_IDENTITY_SECRET');  // same value as on the chat server
       'WordPress',
       "Add to your theme's functions.php, or to a small plugin.",
       `add_action('wp_enqueue_scripts', function () {
-    wp_enqueue_script('repkit', '${origin}/widget.js', [], null, [
+    wp_enqueue_script('hamilton', '${origin}/widget.js', [], null, [
         'strategy'  => 'defer',
         'in_footer' => true,
     ]);
@@ -219,15 +219,15 @@ export default function RootLayout({ children }) {
         </CardHeader>
         <CardContent className="text-muted-foreground grid gap-2 text-sm">
           <p>
-            <code className="text-foreground">data-repkit-open="true"</code> opens the chat when
+            <code className="text-foreground">data-hamilton-open="true"</code> opens the chat when
             the page loads.
           </p>
           <p>
-            <code className="text-foreground">data-repkit-pacing="off"</code> shows replies at
+            <code className="text-foreground">data-hamilton-pacing="off"</code> shows replies at
             once, without typing delays.
           </p>
           <p>
-            From your own scripts: <code className="text-foreground">window.repkit.open()</code>,{' '}
+            From your own scripts: <code className="text-foreground">window.hamilton.open()</code>,{' '}
             <code className="text-foreground">close()</code> and{' '}
             <code className="text-foreground">send("text")</code>.
           </p>

@@ -27,12 +27,12 @@ import { AnimatedList } from '@/components/ui/animated-list'
 import { AnimatedShinyText } from '@/components/ui/animated-shiny-text'
 import { BentoCard, BentoGrid } from '@/components/ui/bento-grid'
 import { BorderBeam } from '@/components/ui/border-beam'
+import { BrandMark } from '@/components/brand-mark'
 import { Button } from '@/components/ui/button'
 import { FlickeringGrid } from '@/components/ui/flickering-grid'
 import { MagicCard } from '@/components/ui/magic-card'
 import { Marquee } from '@/components/ui/marquee'
 import { NumberTicker } from '@/components/ui/number-ticker'
-import { Orb } from '@/components/ui/orb'
 import { Ripple } from '@/components/ui/ripple'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AnimatedSpan, Terminal, TypingAnimation } from '@/components/ui/terminal'
@@ -51,7 +51,6 @@ import {
 } from '@/landing/data'
 import { cn } from '@/lib/utils'
 
-const GREY_ORB: [string, string] = ['#e4e4e7', '#a1a1aa']
 const HEADING = 'leading-[1.05] text-balance [word-spacing:0.05em]'
 // Headlines fade slightly toward the bottom, which gives large type some depth.
 const FADE = 'bg-gradient-to-b from-foreground to-foreground/65 bg-clip-text text-transparent'
@@ -247,7 +246,7 @@ export function Landing() {
   const strong = dark ? '#fafafa' : '#18181b'
 
   useEffect(() => {
-    document.title = 'repkit: the AI harness for your business'
+    document.title = 'Hamilton Harness: the AI harness for your business'
   }, [])
 
   return (
@@ -258,10 +257,8 @@ export function Landing() {
       <header className="sticky top-3 z-40 px-3">
         <div className="glass mx-auto flex h-13 max-w-3xl items-center justify-between gap-4 rounded-full px-2 pl-5">
           <a href="/" className="font-heading flex items-center gap-2 text-lg">
-            <span className="ring-border size-6 overflow-hidden rounded-full ring-1">
-              <Orb className="size-full" colors={GREY_ORB} />
-            </span>
-            repkit
+            <BrandMark />
+            Hamilton
           </a>
           <nav aria-label="Page sections" className="text-foreground/75 hidden items-center gap-0.5 text-sm md:flex">
             <a className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors" href="#roles">What it runs</a>
@@ -310,7 +307,7 @@ export function Landing() {
                 />
               </div>
               <p className="text-muted-foreground max-w-[60ch] text-lg leading-relaxed text-pretty">
-                repkit turns one language model into your company's own rep. It answers from your
+                Hamilton turns one language model into your company's own rep. It answers from your
                 knowledge, takes orders and quotation requests, and hands over to your team when it
                 should. Code, not a prompt, enforces what it may promise, do and talk about.
               </p>
@@ -346,7 +343,7 @@ export function Landing() {
         </section>
 
         {/* Numbers */}
-        <section aria-label="repkit in numbers" className="border-b">
+        <section aria-label="Hamilton Harness in numbers" className="border-b">
           <dl className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-8 px-4 py-14 sm:px-6 lg:grid-cols-4">
             {STATS.map(([value, label]) => (
               <div key={label} className="flex flex-col gap-1.5">
@@ -467,7 +464,7 @@ export function Landing() {
             </div>
             {/* min-w-0 and wrapping: a long line must not widen the page on a phone. */}
             <Terminal className="max-w-none min-w-0 rounded-2xl [&_code]:whitespace-pre-wrap [&_pre]:overflow-x-auto">
-              <TypingAnimation>$ repkit sim packs/loop-sneakers</TypingAnimation>
+              <TypingAnimation>$ hamilton-harness sim packs/loop-sneakers</TypingAnimation>
               {TERMINAL_LINES.map((line) => (
                 <AnimatedSpan key={line} className="text-muted-foreground">
                   {line}
@@ -501,7 +498,7 @@ export function Landing() {
             <div className="bg-card flex min-w-0 flex-col gap-4 rounded-2xl border p-6">
               <h3 className="text-2xl">Or connect Claude and just ask</h3>
               <p className="text-muted-foreground leading-relaxed">
-                repkit ships an MCP server. Connect Claude to it and say "add our new returns
+                Hamilton ships an MCP server. Connect Claude to it and say "add our new returns
                 policy", "stop it discussing competitors" or "show me today's quotation requests".
                 Claude edits through the same validated editor as the dashboard, and a change that
                 would break the rep is refused.
@@ -509,8 +506,8 @@ export function Landing() {
               <Snippet
                 code={`{
   "mcpServers": {
-    "repkit": {
-      "command": "repkit",
+    "hamilton": {
+      "command": "hamilton-harness",
       "args": ["mcp", "packs/your-company"]
     }
   }
@@ -547,8 +544,8 @@ export function Landing() {
                   code={`<?php $userId = $_SESSION['user_id'] ?? null; ?>
 <script src="${origin}/widget.js" defer
 <?php if ($userId): ?>
-  data-repkit-customer="<?= htmlspecialchars($userId, ENT_QUOTES) ?>"
-  data-repkit-signature="<?= hash_hmac('sha256', $userId, getenv('REPKIT_IDENTITY_SECRET')) ?>"
+  data-hamilton-customer="<?= htmlspecialchars($userId, ENT_QUOTES) ?>"
+  data-hamilton-signature="<?= hash_hmac('sha256', $userId, getenv('HAMILTON_IDENTITY_SECRET')) ?>"
 <?php endif; ?>
 ></script>`}
                 />
@@ -556,7 +553,7 @@ export function Landing() {
               <TabsContent value="wordpress">
                 <Snippet
                   code={`add_action('wp_enqueue_scripts', function () {
-    wp_enqueue_script('repkit', '${origin}/widget.js', [], null, [
+    wp_enqueue_script('hamilton', '${origin}/widget.js', [], null, [
         'strategy' => 'defer', 'in_footer' => true,
     ]);
 });`}
@@ -612,7 +609,10 @@ export function Landing() {
 
       <footer className="border-t">
         <div className="text-muted-foreground mx-auto flex max-w-6xl flex-wrap justify-between gap-2 px-4 py-8 text-sm sm:px-6">
-          <p>repkit · the AI harness for your business · MIT licence</p>
+          <p className="flex items-center gap-2">
+            <BrandMark className="size-5 rounded-md pt-0.5 text-xs" />
+            Hamilton Harness · the AI harness for your business · MIT licence
+          </p>
           <p>Loop Sneakers and Brightside Dental are made-up companies used as demos.</p>
         </div>
       </footer>

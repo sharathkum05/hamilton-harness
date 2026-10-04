@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 export type Theme = 'system' | 'light' | 'dark'
 
-const KEY = 'repkit:theme'
+const KEY = 'hamilton:theme'
 
 function stored(): Theme {
   try {

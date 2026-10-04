@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeftIcon } from 'lucide-react'
 
+import { BrandMark } from '@/components/brand-mark'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -13,7 +14,7 @@ type Turn = { text: string; debug?: TurnDebug }
 
 declare global {
   interface Window {
-    repkit?: { open: () => void; close: () => void; send: (text: string) => void; reset: () => void }
+    hamilton?: { open: () => void; close: () => void; send: (text: string) => void; reset: () => void }
   }
 }
 
@@ -141,7 +142,7 @@ export function Demo() {
   const [config, setConfig] = useState<Config | null>(null)
 
   useEffect(() => {
-    document.title = 'repkit demo'
+    document.title = 'Hamilton Harness demo'
     const system = window.matchMedia('(prefers-color-scheme: dark)')
     const sync = () => document.documentElement.classList.toggle('dark', system.matches)
     sync()
@@ -153,23 +154,23 @@ export function Demo() {
     }
     const onReset = () => setTurns([])
     const onReady = (event: Event) => setConfig((event as CustomEvent).detail)
-    window.addEventListener('repkit:turn', onTurn)
-    window.addEventListener('repkit:reset', onReset)
-    window.addEventListener('repkit:ready', onReady)
+    window.addEventListener('hamilton:turn', onTurn)
+    window.addEventListener('hamilton:reset', onReset)
+    window.addEventListener('hamilton:ready', onReady)
 
     // The same script tag a customer's site would use.
     const script = document.createElement('script')
     script.src = '/widget.js'
-    script.dataset.repkitOpen = 'true'
+    script.dataset.hamiltonOpen = 'true'
     document.body.append(script)
 
     return () => {
       system.removeEventListener('change', sync)
-      window.removeEventListener('repkit:turn', onTurn)
-      window.removeEventListener('repkit:reset', onReset)
-      window.removeEventListener('repkit:ready', onReady)
+      window.removeEventListener('hamilton:turn', onTurn)
+      window.removeEventListener('hamilton:reset', onReset)
+      window.removeEventListener('hamilton:ready', onReady)
       script.remove()
-      document.getElementById('repkit-widget')?.remove()
+      document.getElementById('hamilton-widget')?.remove()
     }
   }, [])
 
@@ -179,7 +180,7 @@ export function Demo() {
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Button asChild variant="ghost" size="sm">
             <a href="/">
-              <ArrowLeftIcon /> repkit
+              <ArrowLeftIcon /> <BrandMark className="size-5 rounded-md pt-0.5 text-xs" /> Hamilton
             </a>
           </Button>
           <Button asChild variant="outline" size="sm">
@@ -211,7 +212,7 @@ export function Demo() {
             {TRIES.map(([say, why]) => (
               <li key={say}>
                 <button
-                  onClick={() => window.repkit?.send(say)}
+                  onClick={() => window.hamilton?.send(say)}
                   className="hover:bg-muted/60 focus-visible:ring-ring flex h-full w-full flex-col gap-1 rounded-lg border p-3 text-left outline-none focus-visible:ring-2"
                 >
                   <span className="text-sm font-medium">{say}</span>

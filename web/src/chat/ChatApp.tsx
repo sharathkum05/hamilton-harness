@@ -10,7 +10,7 @@ import { ApiError, getConfig, getConversation, sendMessage, startConversation } 
 import type { Config, ConversationState, Identity, TranscriptLine } from '@/lib/api'
 import { applyBrand } from '@/lib/brand'
 
-const STORAGE_KEY = 'repkit:conversation'
+const STORAGE_KEY = 'hamilton:conversation'
 // When the panel runs inside the embed script's iframe, it reports to the page.
 const embedded = window.parent !== window
 // Shown inside a page rather than behind a launcher, so there is nothing to close.
@@ -44,7 +44,7 @@ function identityFromHash(): Identity | null {
 const identity = identityFromHash()
 
 function tellPage(type: string, detail?: unknown) {
-  if (embedded) window.parent.postMessage({ source: 'repkit', type, detail }, '*')
+  if (embedded) window.parent.postMessage({ source: 'hamilton', type, detail }, '*')
 }
 
 const sleep = (seconds: number) => new Promise((resolve) => setTimeout(resolve, seconds * 1000))
@@ -159,7 +159,7 @@ export function ChatApp() {
   useEffect(() => {
     if (!embedded) return
     const onMessage = (event: MessageEvent) => {
-      if (event.source !== window.parent || event.data?.source !== 'repkit-host') return
+      if (event.source !== window.parent || event.data?.source !== 'hamilton-host') return
       if (event.data.type === 'send' && typeof event.data.text === 'string') send(event.data.text)
       if (event.data.type === 'reset') reset()
     }

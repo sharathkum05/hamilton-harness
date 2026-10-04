@@ -12,7 +12,7 @@ and text colours were changed so it type-checks and meets contrast guidelines.
 | everything else in the folder | [shadcn/ui](https://github.com/shadcn-ui/ui) | MIT |
 
 The chat panel in `src/chat/ChatPanel.tsx` follows the layout of the ElevenLabs UI
-"Voice chat 1" block and is wired to the repkit API instead of an ElevenLabs
+"Voice chat 1" block and is wired to the Hamilton API instead of an ElevenLabs
 voice agent.
 
 ## Fonts

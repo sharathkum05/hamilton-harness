@@ -1,4 +1,4 @@
-// Typed client for the repkit HTTP API. The browser only ever sends customer
+// Typed client for the Hamilton HTTP API. The browser only ever sends customer
 // text; everything that decides what the rep may do stays on the server.
 
 export type WidgetSettings = {

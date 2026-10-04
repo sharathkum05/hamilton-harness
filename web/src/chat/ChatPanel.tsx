@@ -1,5 +1,5 @@
 // The chat panel. Its layout follows the "Voice chat 1" block from ElevenLabs UI
-// and it is built from the same official components, wired to the repkit API
+// and it is built from the same official components, wired to the Hamilton API
 // instead of an ElevenLabs voice agent.
 
 import { useState } from 'react'

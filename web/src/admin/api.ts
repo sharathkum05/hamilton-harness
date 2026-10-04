@@ -124,7 +124,7 @@ export type ConversationSummary = {
 
 export type TraceEvent = { turn: number; at: number; kind: string } & Record<string, unknown>
 
-const TOKEN_KEY = 'repkit:admin-token'
+const TOKEN_KEY = 'hamilton:admin-token'
 
 /** The token arrives once in the URL fragment, which is never sent to a server. */
 export function loadToken(): string {

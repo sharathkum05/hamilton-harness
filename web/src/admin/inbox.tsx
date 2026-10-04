@@ -42,7 +42,7 @@ const STATUSES: [RecordStatus, string][] = [
 ]
 
 /** Remembered across sections so "open the conversation" lands on the right one. */
-export const OPEN_CONVERSATION_KEY = 'repkit:open-conversation'
+export const OPEN_CONVERSATION_KEY = 'hamilton:open-conversation'
 
 export function InboxSection({ pack, api, go }: SectionProps) {
   const [records, setRecords] = useState<RecordItem[] | null>(null)
