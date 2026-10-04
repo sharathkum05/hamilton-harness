@@ -29,7 +29,7 @@
     send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
   };
 
-  const state = { config: null, id: null, open: false, busy: false, started: false };
+  const state = { config: null, id: null, open: false, busy: false, started: false, opening: [] };
   const ui = {};
 
   // -- storage: per-tab, and optional. A private window may refuse it. ----
@@ -143,11 +143,25 @@
 
   function drawTranscript(conversation) {
     ui.log.replaceChildren();
-    for (const message of conversation.transcript) addMessage(message.from, message.text);
     setHandedOff(conversation.handed_off);
-    // Suggestions are openers: once the customer has spoken, they are in the way.
     const customerSpoke = conversation.transcript.some((m) => m.from === "customer");
-    ui.suggestions.hidden = customerSpoke || !ui.suggestions.childElementCount;
+    if (customerSpoke) {
+      state.opening = [];
+      for (const message of conversation.transcript) addMessage(message.from, message.text);
+      return;
+    }
+    // Nothing said yet: show the greeting as a welcome, not as a lone bubble.
+    state.opening = conversation.transcript;
+    ui.emptyText.textContent = conversation.transcript.map((m) => m.text).join(" ");
+    ui.log.append(ui.empty);
+  }
+
+  /* Swap the welcome for the real transcript the moment the customer speaks. */
+  function leaveWelcome() {
+    if (!ui.empty.isConnected) return;
+    ui.empty.remove();
+    for (const message of state.opening) addMessage(message.from, message.text);
+    state.opening = [];
   }
 
   const sleep = (seconds) => new Promise((resolve) => setTimeout(resolve, seconds * 1000));
@@ -198,7 +212,7 @@
     if (!state.id) return;
 
     setBusy(true);
-    ui.suggestions.hidden = true;
+    leaveWelcome();
     const bubble = addMessage("customer", text);
     showTyping(true);
     try {
@@ -268,12 +282,35 @@
     return button;
   }
 
+  /* The pack's logo, or the rep's initial when it has none. */
+  function avatar(rep, widget) {
+    const node = el("div", "rk-avatar");
+    if (widget.logo_url) {
+      const image = el("img");
+      image.src = server + widget.logo_url;
+      image.alt = "";
+      // A missing or broken logo falls back to the initial.
+      image.addEventListener("error", () => {
+        node.classList.remove("rk-has-logo");
+        node.replaceChildren(rep.name.slice(0, 1).toUpperCase());
+      });
+      node.classList.add("rk-has-logo");
+      node.append(image);
+    } else {
+      node.textContent = rep.name.slice(0, 1).toUpperCase();
+    }
+    return node;
+  }
+
   function build(config) {
     const { rep, widget } = config;
     const host = el("div");
     host.id = "repkit-widget";
     host.style.setProperty("--rk-accent", widget.accent);
     host.style.setProperty("--rk-on-accent", inkFor(widget.accent));
+    for (const key of ["theme", "position", "corners", "font", "header"]) {
+      host.dataset[key] = widget[key];
+    }
     const root = host.attachShadow({ mode: "open" });
 
     const style = el("link");
@@ -295,11 +332,11 @@
     const header = el("header", "rk-header");
     const who = el("div", "rk-who");
     who.append(
-      el("span", "rk-name", rep.name),
-      el("span", "rk-sub", `${rep.company} · ${config.disclosure}`),
+      el("span", "rk-name", widget.title || rep.name),
+      el("span", "rk-sub", `${rep.name} · ${config.disclosure}`),
     );
     header.append(
-      el("div", "rk-avatar", rep.name.slice(0, 1).toUpperCase()),
+      avatar(rep, widget),
       who,
       iconButton("restart", "Start a new chat", reset),
       iconButton("close", "Close chat", close),
@@ -321,6 +358,16 @@
       chip.addEventListener("click", () => send(suggestion));
       suggestions.append(chip);
     }
+
+    const empty = el("div", "rk-empty");
+    const emptyText = el("div", "rk-empty-text");
+    empty.append(
+      avatar(rep, widget),
+      el("div", "rk-empty-title", widget.title || `Chat with ${rep.name}`),
+      emptyText,
+      suggestions,
+    );
+    suggestions.hidden = !widget.suggestions.length;
 
     const status = el("div", "rk-status", "A member of the team is taking over this chat.");
     status.hidden = true;
@@ -372,10 +419,10 @@
       `${rep.name} is an AI assistant. Ask for a person at any time.`,
     );
 
-    panel.append(header, log, suggestions, status, form, footnote);
+    panel.append(header, log, status, form, footnote);
     root.append(style, launcher, panel);
     Object.assign(ui, {
-      host, launcher, panel, log, typing, suggestions, status, input, send: sendButton,
+      host, launcher, panel, log, typing, empty, emptyText, status, input, send: sendButton,
     });
     document.body.append(host);
   }
