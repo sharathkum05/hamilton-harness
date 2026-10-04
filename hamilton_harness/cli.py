@@ -123,12 +123,7 @@ def admin_token(state: Path) -> str:
 
 def build_web_app(args: argparse.Namespace):
     """The web app for `serve`, built separately so it can be tested without a server."""
-    try:
-        from hamilton_harness.web.app import create_app
-    except ImportError as exc:
-        raise PackError(
-            'the web server needs extra packages: pip install "hamilton-harness[web]"'
-        ) from exc
+    from hamilton_harness.web.app import create_app
 
     pack = load_pack(args.pack)
     model = load_offline_model(pack.root) if args.offline else _live_model(pack)
