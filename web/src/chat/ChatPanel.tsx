@@ -33,6 +33,7 @@ type ChatPanelProps = {
   handedOff: boolean
   error: string | null
   embedded: boolean
+  closable: boolean
   onSend: (text: string) => void
   onReset: () => void
   onClose: () => void
@@ -100,6 +101,7 @@ export function ChatPanel({
   handedOff,
   error,
   embedded,
+  closable,
   onSend,
   onReset,
   onClose,
@@ -175,7 +177,7 @@ export function ChatPanel({
           <HeaderAction label="Start a new chat" onClick={onReset}>
             <RotateCcwIcon className="size-4" />
           </HeaderAction>
-          {embedded && (
+          {closable && (
             <HeaderAction label="Close chat" onClick={onClose}>
               <XIcon className="size-4" />
             </HeaderAction>

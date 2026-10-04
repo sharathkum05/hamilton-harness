@@ -13,6 +13,8 @@ import { applyBrand } from '@/lib/brand'
 const STORAGE_KEY = 'repkit:conversation'
 // When the panel runs inside the embed script's iframe, it reports to the page.
 const embedded = window.parent !== window
+// Shown inside a page rather than behind a launcher, so there is nothing to close.
+const inline = new URLSearchParams(window.location.search).has('inline')
 
 function remembered(): string | null {
   try {
@@ -186,6 +188,7 @@ export function ChatApp() {
           handedOff={handedOff}
           error={error}
           embedded={embedded}
+          closable={embedded && !inline}
           onSend={send}
           onReset={reset}
           onClose={() => tellPage('close')}

@@ -218,7 +218,7 @@ export function AdminApp() {
           <iframe
             key={previewKey}
             title="Chat preview"
-            src="/chat?nopacing&preview"
+            src="/chat?nopacing&inline"
             className="min-h-0 flex-1"
           />
         </aside>
