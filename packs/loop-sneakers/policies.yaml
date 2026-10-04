@@ -27,6 +27,11 @@ policies:
       Never offer a discount, a coupon or a price match. If asked, say you
       can't change prices and point to the offers page.
     topics: [discount, coupon, code, price match, cheaper, deal, offer]
+    never_say:
+      - '\d+\s?(%|percent) off'
+      - '\b(here is|here''s|use) (a |the |your )?(discount|coupon|promo) code\b'
+      - '\bI(''ll| will| can) (match|beat) (that|the|their) price\b'
+    safe_reply: I can't change prices or add discounts, sorry. Current offers are on the offers page.
 
   - id: exchange-window
     text: >
