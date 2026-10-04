@@ -1,0 +1,44 @@
+# What the rep can take down for the business. Each type becomes an action
+# (create_order, create_quote) and shows up in the dashboard.
+
+records:
+  - name: order
+    label: Order
+    description: >
+      Take an order when a customer wants to buy up to five pairs. The team
+      calls the customer afterwards to arrange payment and delivery.
+    fields:
+      - name: product
+        label: Product
+        type: choice
+        choices: [Drift Runner, Court Classic, Trail Loop]
+      - name: size
+        label: UK size
+      - name: quantity
+        label: Pairs
+        type: number
+      - name: customer_name
+        label: Name
+      - name: phone
+        label: Phone
+
+  - name: quote
+    label: Quote request
+    description: >
+      Take a quotation request for a bulk or team order of six pairs or more.
+      Never quote a bulk price yourself. The sales team replies with the quote.
+    fields:
+      - name: product
+        label: Product
+        type: choice
+        choices: [Drift Runner, Court Classic, Trail Loop]
+      - name: quantity
+        label: Pairs
+        type: number
+      - name: customer_name
+        label: Name
+      - name: email
+        label: Email
+      - name: notes
+        label: Notes
+        required: false

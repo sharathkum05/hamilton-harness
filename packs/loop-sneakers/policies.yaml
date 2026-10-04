@@ -22,6 +22,17 @@ policies:
     on_violation: block
     topics: [refund, money back, return]
 
+  - id: order-size
+    text: >
+      You can take an order of up to 5 pairs. Six or more is a bulk order, so
+      take a quotation request instead and let the sales team price it.
+    tool: create_order
+    limits:
+      - field: quantity
+        max: 5
+    on_violation: block
+    topics: [buy, purchase, pairs, bulk, quote, quotation, place an order]
+
   - id: no-discounts
     text: >
       Never offer a discount, a coupon or a price match. If asked, say you
