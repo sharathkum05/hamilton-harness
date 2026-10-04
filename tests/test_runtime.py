@@ -330,3 +330,14 @@ def test_strict_scope_lets_an_answer_to_the_reps_question_through(pack):
     assert result.refused == ""
     assert len(model.calls) == 2
     assert agent.respond(conversation, "tell me about black holes").refused == "strict"
+
+
+def test_with_pack_keeps_the_model_store_and_trace_dir(pack, tmp_path):
+    store = InMemoryStore()
+    agent, model = agent_for(pack, ["Hello!"], store=store, trace_dir=tmp_path, max_steps=3)
+    renamed = pack.model_copy(update={"persona": pack.persona.model_copy(update={"name": "Zoya"})})
+    swapped = agent.with_pack(renamed)
+    assert swapped.model is model
+    assert swapped.store is store
+    assert swapped.trace_dir == tmp_path
+    assert "You are Zoya" in swapped.context.system_prompt

@@ -103,10 +103,22 @@ class Agent:
             ]
         )
         self.store = store or InMemoryStore()
+        self.trace_dir = Path(trace_dir) if trace_dir else None
         self._writer = TraceWriter(trace_dir) if trace_dir else None
         self._tool_definitions = self.tools.definitions()
         self._max_steps = max_steps
         self._retry_wait = retry_wait
+
+    def with_pack(self, pack: Pack) -> Agent:
+        """The same agent on a different pack, for when a pack is edited while serving."""
+        return Agent(
+            pack,
+            self.model,
+            store=self.store,
+            trace_dir=self.trace_dir,
+            max_steps=self._max_steps,
+            retry_wait=self._retry_wait,
+        )
 
     def start(self, customer_id: str | None = None) -> Conversation:
         facts = self.store.load(customer_id) if customer_id else {}
