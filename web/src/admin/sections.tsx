@@ -570,6 +570,15 @@ export function ScopeSection({ pack, api, commit }: SectionProps) {
 
 // -- Knowledge ---------------------------------------------------------------
 
+/** The headings in a knowledge file: each one is a section the rep can find on its own. */
+function outline(text: string): [number, string][] {
+  return text
+    .split('\n')
+    .map((line) => /^(#{1,6})\s+(.*)$/.exec(line))
+    .filter((match): match is RegExpExecArray => match !== null)
+    .map((match) => [match[1].length, match[2].trim()])
+}
+
 export function KnowledgeSection({ pack, api, commit }: SectionProps) {
   const [open, setOpen] = useState(pack.knowledge[0]?.source ?? '')
   const [text, setText] = useState(pack.knowledge[0]?.text ?? '')
@@ -655,15 +664,42 @@ export function KnowledgeSection({ pack, api, commit }: SectionProps) {
                   </Button>
                 )}
               </div>
-              <Textarea
-                aria-label={`Contents of ${open}`}
-                value={text}
-                onChange={(e) => {
-                  setText(e.target.value)
-                  setDirty(true)
-                }}
-                className="min-h-[420px] font-mono text-[13px] leading-relaxed"
-              />
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_200px]">
+                <Textarea
+                  aria-label={`Contents of ${open}`}
+                  value={text}
+                  onChange={(e) => {
+                    setText(e.target.value)
+                    setDirty(true)
+                  }}
+                  className="min-h-[420px] font-mono text-[13px] leading-relaxed"
+                />
+                <aside className="flex flex-col gap-2">
+                  <span className="text-muted-foreground text-xs">
+                    Sections the rep can look up
+                  </span>
+                  {outline(text).length === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                      Add a heading, such as <code>## Delivery times</code>, to make one.
+                    </p>
+                  ) : (
+                    <ol className="flex flex-col gap-1 text-sm">
+                      {outline(text).map(([depth, title], index) => (
+                        <li
+                          key={index}
+                          className="truncate"
+                          style={{ paddingLeft: `${(depth - 1) * 12}px` }}
+                        >
+                          {title}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                  <span className="text-muted-foreground mt-auto font-mono text-xs tabular-nums">
+                    {text.trim() ? text.trim().split(/\s+/).length : 0} words
+                  </span>
+                </aside>
+              </div>
             </>
           ) : (
             <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-sm">
