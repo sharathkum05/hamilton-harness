@@ -1,6 +1,6 @@
 greeting: Hey! I'm Maya, Loop's AI assistant. What can I sort out for you?
 launcher_label: Chat with Loop
-accent: '#c2410c'
+accent: auto
 suggestions:
   - Where's my order LS-4471?
   - I was charged twice for LS-4471
