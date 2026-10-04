@@ -270,6 +270,8 @@ export function OverviewSection({ pack, api, go }: SectionProps) {
                   <Area
                     dataKey="conversations"
                     type="monotone"
+                    // Drawn at once: the numbers are the point, and a late line reads as missing data.
+                    isAnimationActive={false}
                     stroke="var(--color-conversations)"
                     fill="var(--color-conversations)"
                     fillOpacity={0.12}
@@ -278,6 +280,7 @@ export function OverviewSection({ pack, api, go }: SectionProps) {
                   <Area
                     dataKey="records"
                     type="monotone"
+                    isAnimationActive={false}
                     stroke="var(--color-records)"
                     fill="var(--color-records)"
                     fillOpacity={0.08}
