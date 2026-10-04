@@ -7,6 +7,12 @@ import { PlusIcon, Trash2Icon, UploadIcon } from 'lucide-react'
 
 import type { AdminApi, Handoff, Pack, Persona, Rule, Scope, Widget } from '@/admin/api'
 import { DiscardContext, Field, Lines, ROWS, Section, StackField, Toggle } from '@/admin/fields'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -48,7 +54,13 @@ function SaveButton({ dirty, onSave }: { dirty: boolean; onSave: () => void }) {
     >
       <span className="bg-foreground size-1.5 rounded-full" aria-hidden="true" />
       <span>Unsaved changes</span>
-      <Button variant="ghost" size="sm" className="rounded-full" onClick={discard} tabIndex={dirty ? 0 : -1}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="rounded-full"
+        onClick={discard}
+        tabIndex={dirty ? 0 : -1}
+      >
         Discard
       </Button>
       <Button size="sm" className="rounded-full" onClick={onSave} tabIndex={dirty ? 0 : -1}>
@@ -161,7 +173,11 @@ export function BrandSection({ pack, api, commit }: SectionProps) {
             </datalist>
           </Field>
           <Field label="Panel title" htmlFor="title" hint="Shown at the top of the chat.">
-            <Input id="title" value={w.title} onChange={(e) => widget.set({ title: e.target.value })} />
+            <Input
+              id="title"
+              value={w.title}
+              onChange={(e) => widget.set({ title: e.target.value })}
+            />
           </Field>
         </CardContent>
       </Card>
@@ -354,13 +370,31 @@ export function VoiceSection({ pack, api, commit }: SectionProps) {
     >
       <Card>
         <CardContent className={ROWS}>
-          <Field label="How they talk" htmlFor="voice" hint="One trait per line, as you would brief a new hire.">
-            <Lines id="voice" key={pack.persona.voice.join('|')} value={draft.voice} onChange={(voice) => set({ voice })} rows={5} />
+          <Field
+            label="How they talk"
+            htmlFor="voice"
+            hint="One trait per line, as you would brief a new hire."
+          >
+            <Lines
+              id="voice"
+              key={pack.persona.voice.join('|')}
+              value={draft.voice}
+              onChange={(voice) => set({ voice })}
+              rows={5}
+            />
           </Field>
           <Field label="Language" htmlFor="language">
-            <Input id="language" value={draft.language} onChange={(e) => set({ language: e.target.value })} />
+            <Input
+              id="language"
+              value={draft.language}
+              onChange={(e) => set({ language: e.target.value })}
+            />
           </Field>
-          <Field label="Sentences per message" htmlFor="sentences" hint="Longer replies are split into more messages.">
+          <Field
+            label="Sentences per message"
+            htmlFor="sentences"
+            hint="Longer replies are split into more messages."
+          >
             <Input
               id="sentences"
               type="number"
@@ -377,15 +411,30 @@ export function VoiceSection({ pack, api, commit }: SectionProps) {
             checked={draft.emoji}
             onChange={(emoji) => set({ emoji })}
           />
-          <Field label="Phrases the rep never uses" htmlFor="banned" hint="Stock phrases that make it sound like a chatbot. One per line.">
-            <Lines id="banned" key={pack.persona.banned_phrases.join('|')} value={draft.banned_phrases} onChange={(banned_phrases) => set({ banned_phrases })} rows={5} />
+          <Field
+            label="Phrases the rep never uses"
+            htmlFor="banned"
+            hint="Stock phrases that make it sound like a chatbot. One per line."
+          >
+            <Lines
+              id="banned"
+              key={pack.persona.banned_phrases.join('|')}
+              value={draft.banned_phrases}
+              onChange={(banned_phrases) => set({ banned_phrases })}
+              rows={5}
+            />
           </Field>
           <Field
             label="What it says when asked if it is a person"
             htmlFor="disclosure"
             hint="The rep may sound human. It always answers this honestly, with this line."
           >
-            <Textarea id="disclosure" rows={2} value={draft.disclosure} onChange={(e) => set({ disclosure: e.target.value })} />
+            <Textarea
+              id="disclosure"
+              rows={2}
+              value={draft.disclosure}
+              onChange={(e) => set({ disclosure: e.target.value })}
+            />
           </Field>
         </CardContent>
       </Card>
@@ -420,15 +469,34 @@ export function ScopeSection({ pack, api, commit }: SectionProps) {
     <Section
       title="Scope"
       description="What the rep is for, and what it does with everything else. These checks run in code: an off-topic message is answered with your line and never reaches the model."
-      actions={<SaveButton dirty={dirty} onSave={() => commit('Scope saved', () => api.saveSection('scope', draft))} />}
+      actions={
+        <SaveButton
+          dirty={dirty}
+          onSave={() => commit('Scope saved', () => api.saveSection('scope', draft))}
+        />
+      }
     >
       <Card>
         <CardContent className={ROWS}>
-          <Field label="What the rep helps with" htmlFor="covers" hint="Shown to the model as the whole of its job.">
-            <Textarea id="covers" rows={3} value={draft.covers} onChange={(e) => set({ covers: e.target.value })} />
+          <Field
+            label="What the rep helps with"
+            htmlFor="covers"
+            hint="Shown to the model as the whole of its job."
+          >
+            <Textarea
+              id="covers"
+              rows={3}
+              value={draft.covers}
+              onChange={(e) => set({ covers: e.target.value })}
+            />
           </Field>
           <Field label="Reply to anything off topic" htmlFor="off-topic">
-            <Textarea id="off-topic" rows={2} value={draft.off_topic_reply} onChange={(e) => set({ off_topic_reply: e.target.value })} />
+            <Textarea
+              id="off-topic"
+              rows={2}
+              value={draft.off_topic_reply}
+              onChange={(e) => set({ off_topic_reply: e.target.value })}
+            />
           </Field>
         </CardContent>
       </Card>
@@ -457,8 +525,19 @@ export function ScopeSection({ pack, api, commit }: SectionProps) {
             />
           </div>
           <div>
-            <Field label="Also turn away" htmlFor="also-refuse" hint="Extra patterns for your business, one regular expression per line. Example: \bcompetitor\b">
-              <Lines id="also-refuse" key={pack.scope.also_refuse.join('|')} value={draft.also_refuse} onChange={(also_refuse) => set({ also_refuse })} rows={3} mono />
+            <Field
+              label="Also turn away"
+              htmlFor="also-refuse"
+              hint="Extra patterns for your business, one regular expression per line. Example: \bcompetitor\b"
+            >
+              <Lines
+                id="also-refuse"
+                key={pack.scope.also_refuse.join('|')}
+                value={draft.also_refuse}
+                onChange={(also_refuse) => set({ also_refuse })}
+                rows={3}
+                mono
+              />
             </Field>
           </div>
         </CardContent>
@@ -476,7 +555,12 @@ export function ScopeSection({ pack, api, commit }: SectionProps) {
             onChange={(ground_numbers) => set({ ground_numbers })}
           />
           <Field label="What it says instead" htmlFor="unsure">
-            <Textarea id="unsure" rows={2} value={draft.unsure_reply} onChange={(e) => set({ unsure_reply: e.target.value })} />
+            <Textarea
+              id="unsure"
+              rows={2}
+              value={draft.unsure_reply}
+              onChange={(e) => set({ unsure_reply: e.target.value })}
+            />
           </Field>
         </CardContent>
       </Card>
@@ -498,7 +582,11 @@ export function KnowledgeSection({ pack, api, commit }: SectionProps) {
     setDirty(false)
   }
   const create = () => {
-    const name = newName.trim().replace(/\.md$/, '').replace(/[^A-Za-z0-9_-]+/g, '-') + '.md'
+    const name =
+      newName
+        .trim()
+        .replace(/\.md$/, '')
+        .replace(/[^A-Za-z0-9_-]+/g, '-') + '.md'
     if (name === '.md') return
     setNewName('')
     setOpen(name)
@@ -598,6 +686,7 @@ function ruleKind(rule: Rule) {
 
 export function RulesSection({ pack, api, commit }: SectionProps) {
   const [rules, setRules] = useState<Rule[]>(pack.policies)
+  const [open, setOpen] = useState('')
   const [dirty, setDirty] = useState(false)
   useEffect(() => {
     setRules(pack.policies)
@@ -623,6 +712,7 @@ export function RulesSection({ pack, api, commit }: SectionProps) {
         safe_reply: "I can't do that one, sorry.",
       },
     ])
+    setOpen(String(rules.length))
     setDirty(true)
   }
 
@@ -635,104 +725,178 @@ export function RulesSection({ pack, api, commit }: SectionProps) {
           <Button variant="outline" onClick={add}>
             <PlusIcon /> Add rule
           </Button>
-          <SaveButton dirty={dirty} onSave={() => commit('Rules saved', () => api.saveSection('policies', rules))} />
+          <SaveButton
+            dirty={dirty}
+            onSave={() => commit('Rules saved', () => api.saveSection('policies', rules))}
+          />
         </div>
       }
     >
-      {rules.map((rule, index) => (
-        <Card key={index}>
-          <CardHeader className="flex flex-row items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <Input
-                aria-label="Rule id"
-                value={rule.id}
-                onChange={(e) => change(index, { id: e.target.value })}
-                className="h-8 w-48 font-mono text-xs"
-              />
-              <Badge variant={ruleKind(rule) === 'Guidance' ? 'outline' : 'default'}>{ruleKind(rule)}</Badge>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground size-8"
-              onClick={() => {
-                setRules((current) => current.filter((_, i) => i !== index))
-                setDirty(true)
-              }}
-            >
-              <Trash2Icon />
-              <span className="sr-only">Delete rule {rule.id}</span>
-            </Button>
-          </CardHeader>
-          <CardContent className="grid gap-4">
-            <StackField label="The rule, in plain words" htmlFor={`text-${index}`}>
-              <Textarea id={`text-${index}`} rows={2} value={rule.text} onChange={(e) => change(index, { text: e.target.value })} />
-            </StackField>
-            <StackField label="Shown when a message mentions" htmlFor={`topics-${index}`} hint="Comma-separated words. Leave empty to show the rule on every message.">
-              <Input
-                id={`topics-${index}`}
-                defaultValue={rule.topics.join(', ')}
-                onBlur={(e) => change(index, { topics: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) })}
-              />
-            </StackField>
-            {rule.tool && (
-              <div className="bg-muted/50 grid gap-3 rounded-lg p-3 sm:grid-cols-2">
-                <p className="text-sm sm:col-span-2">
-                  Checked in code on <code>{rule.tool}</code>
-                  {rule.forbid && ': the rep may never use it.'}
-                </p>
-                {rule.limits.map((limit, li) => (
-                  <StackField
-                    key={li}
-                    label={limit.allowed ? `Allowed values for ${limit.field}` : `Maximum ${limit.field}`}
-                    htmlFor={`limit-${index}-${li}`}
+      {/* Each rule is one line until it is opened, so the list reads as a list. */}
+      <Accordion
+        type="single"
+        collapsible
+        value={open}
+        onValueChange={setOpen}
+        className="flex flex-col gap-2"
+      >
+        {rules.map((rule, index) => (
+          <AccordionItem
+            key={index}
+            value={String(index)}
+            className="bg-card rounded-2xl border px-5 last:border-b"
+          >
+            <AccordionTrigger className="items-center gap-4 py-4 hover:no-underline">
+              <span className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+                <span className="flex shrink-0 items-center gap-2">
+                  <code className="text-sm">{rule.id}</code>
+                  <Badge
+                    variant={ruleKind(rule) === 'Guidance' ? 'outline' : 'default'}
+                    className="rounded-md"
                   >
-                    {limit.allowed ? (
-                      <Input
-                        id={`limit-${index}-${li}`}
-                        defaultValue={limit.allowed.join(', ')}
-                        onBlur={(e) => {
-                          const allowed = e.target.value.split(',').map((v) => v.trim()).filter(Boolean)
-                          change(index, { limits: rule.limits.map((l, i) => (i === li ? { ...l, allowed } : l)) })
-                        }}
-                      />
-                    ) : (
-                      <Input
-                        id={`limit-${index}-${li}`}
-                        type="number"
-                        value={limit.max ?? ''}
-                        onChange={(e) => {
-                          const max = e.target.value === '' ? null : Number(e.target.value)
-                          change(index, { limits: rule.limits.map((l, i) => (i === li ? { ...l, max } : l)) })
-                        }}
-                      />
-                    )}
+                    {ruleKind(rule)}
+                  </Badge>
+                </span>
+                <span className="text-muted-foreground truncate text-sm font-normal">
+                  {rule.text}
+                </span>
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="grid gap-4 pb-5">
+              <div className="flex items-end justify-between gap-3">
+                <StackField label="Rule id" htmlFor={`id-${index}`}>
+                  <Input
+                    id={`id-${index}`}
+                    value={rule.id}
+                    onChange={(e) => change(index, { id: e.target.value })}
+                    className="h-8 w-56 font-mono text-xs"
+                  />
+                </StackField>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={() => {
+                    setRules((current) => current.filter((_, i) => i !== index))
+                    setOpen('')
+                    setDirty(true)
+                  }}
+                >
+                  <Trash2Icon /> Delete rule
+                </Button>
+              </div>
+              <StackField label="The rule, in plain words" htmlFor={`text-${index}`}>
+                <Textarea
+                  id={`text-${index}`}
+                  rows={2}
+                  value={rule.text}
+                  onChange={(e) => change(index, { text: e.target.value })}
+                />
+              </StackField>
+              <StackField
+                label="Shown when a message mentions"
+                htmlFor={`topics-${index}`}
+                hint="Comma-separated words. Leave empty to show the rule on every message."
+              >
+                <Input
+                  id={`topics-${index}`}
+                  defaultValue={rule.topics.join(', ')}
+                  onBlur={(e) =>
+                    change(index, {
+                      topics: e.target.value
+                        .split(',')
+                        .map((t) => t.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                />
+              </StackField>
+              {rule.tool && (
+                <div className="bg-muted/50 grid gap-3 rounded-lg p-3 sm:grid-cols-2">
+                  <p className="text-sm sm:col-span-2">
+                    Checked in code on <code>{rule.tool}</code>
+                    {rule.forbid && ': the rep may never use it.'}
+                  </p>
+                  {rule.limits.map((limit, li) => (
+                    <StackField
+                      key={li}
+                      label={
+                        limit.allowed
+                          ? `Allowed values for ${limit.field}`
+                          : `Maximum ${limit.field}`
+                      }
+                      htmlFor={`limit-${index}-${li}`}
+                    >
+                      {limit.allowed ? (
+                        <Input
+                          id={`limit-${index}-${li}`}
+                          defaultValue={limit.allowed.join(', ')}
+                          onBlur={(e) => {
+                            const allowed = e.target.value
+                              .split(',')
+                              .map((v) => v.trim())
+                              .filter(Boolean)
+                            change(index, {
+                              limits: rule.limits.map((l, i) => (i === li ? { ...l, allowed } : l)),
+                            })
+                          }}
+                        />
+                      ) : (
+                        <Input
+                          id={`limit-${index}-${li}`}
+                          type="number"
+                          value={limit.max ?? ''}
+                          onChange={(e) => {
+                            const max = e.target.value === '' ? null : Number(e.target.value)
+                            change(index, {
+                              limits: rule.limits.map((l, i) => (i === li ? { ...l, max } : l)),
+                            })
+                          }}
+                        />
+                      )}
+                    </StackField>
+                  ))}
+                  <StackField label="When broken" htmlFor={`violation-${index}`}>
+                    <Choice
+                      id={`violation-${index}`}
+                      value={rule.on_violation}
+                      onChange={(on_violation) => change(index, { on_violation })}
+                      options={[
+                        ['block', 'Refuse the action'],
+                        ['handoff', 'Hand to a human'],
+                      ]}
+                    />
                   </StackField>
-                ))}
-                <StackField label="When broken" htmlFor={`violation-${index}`}>
-                  <Choice
-                    id={`violation-${index}`}
-                    value={rule.on_violation}
-                    onChange={(on_violation) => change(index, { on_violation })}
-                    options={[
-                      ['block', 'Refuse the action'],
-                      ['handoff', 'Hand to a human'],
-                    ]}
+                </div>
+              )}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <StackField
+                  label="The rep must never say"
+                  htmlFor={`never-${index}`}
+                  hint="Regular expressions, one per line."
+                >
+                  <Lines
+                    id={`never-${index}`}
+                    key={rule.never_say.join('|')}
+                    value={rule.never_say}
+                    onChange={(never_say) => change(index, { never_say })}
+                    rows={3}
+                    mono
+                  />
+                </StackField>
+                <StackField label="Sent instead" htmlFor={`safe-${index}`}>
+                  <Textarea
+                    id={`safe-${index}`}
+                    rows={3}
+                    value={rule.safe_reply}
+                    onChange={(e) => change(index, { safe_reply: e.target.value })}
                   />
                 </StackField>
               </div>
-            )}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <StackField label="The rep must never say" htmlFor={`never-${index}`} hint="Regular expressions, one per line.">
-                <Lines id={`never-${index}`} key={rule.never_say.join('|')} value={rule.never_say} onChange={(never_say) => change(index, { never_say })} rows={3} mono />
-              </StackField>
-              <StackField label="Sent instead" htmlFor={`safe-${index}`}>
-                <Textarea id={`safe-${index}`} rows={3} value={rule.safe_reply} onChange={(e) => change(index, { safe_reply: e.target.value })} />
-              </StackField>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
       <Card>
         <CardHeader>
           <CardTitle>Actions the rep can take</CardTitle>
@@ -761,12 +925,27 @@ export function HandoffSection({ pack, api, commit }: SectionProps) {
     <Section
       title="Handoff"
       description="When a person takes over. These are checked on the customer's own words, before the model sees them."
-      actions={<SaveButton dirty={dirty} onSave={() => commit('Handoff saved', () => api.saveSection('handoff', draft))} />}
+      actions={
+        <SaveButton
+          dirty={dirty}
+          onSave={() => commit('Handoff saved', () => api.saveSection('handoff', draft))}
+        />
+      }
     >
       <Card>
         <CardContent className={ROWS}>
-          <Field label="Hand off at once when a customer says" htmlFor="phrases" hint="One phrase per line.">
-            <Lines id="phrases" key={pack.handoff.phrases.join('|')} value={draft.phrases} onChange={(phrases) => set({ phrases })} rows={6} />
+          <Field
+            label="Hand off at once when a customer says"
+            htmlFor="phrases"
+            hint="One phrase per line."
+          >
+            <Lines
+              id="phrases"
+              key={pack.handoff.phrases.join('|')}
+              value={draft.phrases}
+              onChange={(phrases) => set({ phrases })}
+              rows={6}
+            />
           </Field>
           <Toggle
             id="on-request"
@@ -785,7 +964,12 @@ export function HandoffSection({ pack, api, commit }: SectionProps) {
             />
           </Field>
           <Field label="What the rep says as it hands over" htmlFor="handoff-message">
-            <Textarea id="handoff-message" rows={2} value={draft.message} onChange={(e) => set({ message: e.target.value })} />
+            <Textarea
+              id="handoff-message"
+              rows={2}
+              value={draft.message}
+              onChange={(e) => set({ message: e.target.value })}
+            />
           </Field>
         </CardContent>
       </Card>
