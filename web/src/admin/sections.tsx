@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom'
 import { PlusIcon, Trash2Icon, UploadIcon } from 'lucide-react'
 
 import type { AdminApi, Handoff, Pack, Persona, Rule, Scope, Widget } from '@/admin/api'
-import { DiscardContext, Field, Lines, Section, Toggle } from '@/admin/fields'
+import { DiscardContext, Field, Lines, ROWS, Section, StackField, Toggle } from '@/admin/fields'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -128,7 +128,7 @@ export function BrandSection({ pack, api, commit }: SectionProps) {
         <CardHeader>
           <CardTitle>Identity</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
+        <CardContent className={ROWS}>
           <Field label="Rep's name" htmlFor="rep-name">
             <Input
               id="rep-name"
@@ -170,7 +170,7 @@ export function BrandSection({ pack, api, commit }: SectionProps) {
         <CardHeader>
           <CardTitle>Logo and colour</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
+        <CardContent className={ROWS}>
           <Field label="Logo" hint="PNG, JPG, WebP or SVG, under 500 KB. Square works best.">
             <div className="flex items-center gap-3">
               <div className="bg-muted ring-border size-12 shrink-0 overflow-hidden rounded-full ring-1">
@@ -314,7 +314,7 @@ export function BrandSection({ pack, api, commit }: SectionProps) {
         <CardHeader>
           <CardTitle>Opening</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className={ROWS}>
           <Field label="Greeting" htmlFor="greeting" hint="The first thing a visitor reads.">
             <Textarea
               id="greeting"
@@ -353,25 +353,23 @@ export function VoiceSection({ pack, api, commit }: SectionProps) {
       }
     >
       <Card>
-        <CardContent className="grid gap-4">
+        <CardContent className={ROWS}>
           <Field label="How they talk" htmlFor="voice" hint="One trait per line, as you would brief a new hire.">
             <Lines id="voice" key={pack.persona.voice.join('|')} value={draft.voice} onChange={(voice) => set({ voice })} rows={5} />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Language" htmlFor="language">
-              <Input id="language" value={draft.language} onChange={(e) => set({ language: e.target.value })} />
-            </Field>
-            <Field label="Sentences per message" htmlFor="sentences" hint="Longer replies are split into more messages.">
-              <Input
-                id="sentences"
-                type="number"
-                min={1}
-                max={6}
-                value={draft.max_sentences}
-                onChange={(e) => set({ max_sentences: Math.max(1, Number(e.target.value) || 1) })}
-              />
-            </Field>
-          </div>
+          <Field label="Language" htmlFor="language">
+            <Input id="language" value={draft.language} onChange={(e) => set({ language: e.target.value })} />
+          </Field>
+          <Field label="Sentences per message" htmlFor="sentences" hint="Longer replies are split into more messages.">
+            <Input
+              id="sentences"
+              type="number"
+              min={1}
+              max={6}
+              value={draft.max_sentences}
+              onChange={(e) => set({ max_sentences: Math.max(1, Number(e.target.value) || 1) })}
+            />
+          </Field>
           <Toggle
             id="emoji"
             label="Allow emoji"
@@ -425,7 +423,7 @@ export function ScopeSection({ pack, api, commit }: SectionProps) {
       actions={<SaveButton dirty={dirty} onSave={() => commit('Scope saved', () => api.saveSection('scope', draft))} />}
     >
       <Card>
-        <CardContent className="grid gap-4">
+        <CardContent className={ROWS}>
           <Field label="What the rep helps with" htmlFor="covers" hint="Shown to the model as the whole of its job.">
             <Textarea id="covers" rows={3} value={draft.covers} onChange={(e) => set({ covers: e.target.value })} />
           </Field>
@@ -438,7 +436,7 @@ export function ScopeSection({ pack, api, commit }: SectionProps) {
         <CardHeader>
           <CardTitle>Always turned away</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
+        <CardContent className={ROWS}>
           {REFUSALS.map(([kind, label, hint]) => (
             <Toggle
               key={kind}
@@ -449,7 +447,7 @@ export function ScopeSection({ pack, api, commit }: SectionProps) {
               onChange={(on) => toggle(kind, on)}
             />
           ))}
-          <div className="sm:col-span-2">
+          <div>
             <Toggle
               id="strict"
               label="Strict: only answer what the pack covers"
@@ -458,7 +456,7 @@ export function ScopeSection({ pack, api, commit }: SectionProps) {
               onChange={(strict) => set({ strict })}
             />
           </div>
-          <div className="sm:col-span-2">
+          <div>
             <Field label="Also turn away" htmlFor="also-refuse" hint="Extra patterns for your business, one regular expression per line. Example: \bcompetitor\b">
               <Lines id="also-refuse" key={pack.scope.also_refuse.join('|')} value={draft.also_refuse} onChange={(also_refuse) => set({ also_refuse })} rows={3} mono />
             </Field>
@@ -469,7 +467,7 @@ export function ScopeSection({ pack, api, commit }: SectionProps) {
         <CardHeader>
           <CardTitle>Made-up facts</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className={ROWS}>
           <Toggle
             id="ground"
             label="Block figures the rep was never given"
@@ -667,16 +665,16 @@ export function RulesSection({ pack, api, commit }: SectionProps) {
             </Button>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <Field label="The rule, in plain words" htmlFor={`text-${index}`}>
+            <StackField label="The rule, in plain words" htmlFor={`text-${index}`}>
               <Textarea id={`text-${index}`} rows={2} value={rule.text} onChange={(e) => change(index, { text: e.target.value })} />
-            </Field>
-            <Field label="Shown when a message mentions" htmlFor={`topics-${index}`} hint="Comma-separated words. Leave empty to show the rule on every message.">
+            </StackField>
+            <StackField label="Shown when a message mentions" htmlFor={`topics-${index}`} hint="Comma-separated words. Leave empty to show the rule on every message.">
               <Input
                 id={`topics-${index}`}
                 defaultValue={rule.topics.join(', ')}
                 onBlur={(e) => change(index, { topics: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) })}
               />
-            </Field>
+            </StackField>
             {rule.tool && (
               <div className="bg-muted/50 grid gap-3 rounded-lg p-3 sm:grid-cols-2">
                 <p className="text-sm sm:col-span-2">
@@ -684,7 +682,7 @@ export function RulesSection({ pack, api, commit }: SectionProps) {
                   {rule.forbid && ': the rep may never use it.'}
                 </p>
                 {rule.limits.map((limit, li) => (
-                  <Field
+                  <StackField
                     key={li}
                     label={limit.allowed ? `Allowed values for ${limit.field}` : `Maximum ${limit.field}`}
                     htmlFor={`limit-${index}-${li}`}
@@ -709,9 +707,9 @@ export function RulesSection({ pack, api, commit }: SectionProps) {
                         }}
                       />
                     )}
-                  </Field>
+                  </StackField>
                 ))}
-                <Field label="When broken" htmlFor={`violation-${index}`}>
+                <StackField label="When broken" htmlFor={`violation-${index}`}>
                   <Choice
                     id={`violation-${index}`}
                     value={rule.on_violation}
@@ -721,16 +719,16 @@ export function RulesSection({ pack, api, commit }: SectionProps) {
                       ['handoff', 'Hand to a human'],
                     ]}
                   />
-                </Field>
+                </StackField>
               </div>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="The rep must never say" htmlFor={`never-${index}`} hint="Regular expressions, one per line.">
+              <StackField label="The rep must never say" htmlFor={`never-${index}`} hint="Regular expressions, one per line.">
                 <Lines id={`never-${index}`} key={rule.never_say.join('|')} value={rule.never_say} onChange={(never_say) => change(index, { never_say })} rows={3} mono />
-              </Field>
-              <Field label="Sent instead" htmlFor={`safe-${index}`}>
+              </StackField>
+              <StackField label="Sent instead" htmlFor={`safe-${index}`}>
                 <Textarea id={`safe-${index}`} rows={3} value={rule.safe_reply} onChange={(e) => change(index, { safe_reply: e.target.value })} />
-              </Field>
+              </StackField>
             </div>
           </CardContent>
         </Card>
@@ -766,7 +764,7 @@ export function HandoffSection({ pack, api, commit }: SectionProps) {
       actions={<SaveButton dirty={dirty} onSave={() => commit('Handoff saved', () => api.saveSection('handoff', draft))} />}
     >
       <Card>
-        <CardContent className="grid gap-4">
+        <CardContent className={ROWS}>
           <Field label="Hand off at once when a customer says" htmlFor="phrases" hint="One phrase per line.">
             <Lines id="phrases" key={pack.handoff.phrases.join('|')} value={draft.phrases} onChange={(phrases) => set({ phrases })} rows={6} />
           </Field>
