@@ -25,6 +25,7 @@ export function tint(hex: string, amount: number): string {
 
 /** The two colours of the orb, drawn from the brand's accent. */
 export function orbColors(accent: string): [string, string] {
+  if (accent === 'auto') return ['#e4e4e7', '#a1a1aa']
   return [tint(accent, 0.72), tint(accent, 0.38)]
 }
 
@@ -40,9 +41,16 @@ const FONTS = {
 /** Apply the brand to the document. Returns a function that undoes the theme listener. */
 export function applyBrand(widget: WidgetSettings): () => void {
   const root = document.documentElement
-  root.style.setProperty('--primary', widget.accent)
-  root.style.setProperty('--primary-foreground', inkFor(widget.accent))
-  root.style.setProperty('--ring', widget.accent)
+  if (widget.accent === 'auto') {
+    // No brand colour: leave the theme's own black and white in place.
+    for (const name of ['--primary', '--primary-foreground', '--ring']) {
+      root.style.removeProperty(name)
+    }
+  } else {
+    root.style.setProperty('--primary', widget.accent)
+    root.style.setProperty('--primary-foreground', inkFor(widget.accent))
+    root.style.setProperty('--ring', widget.accent)
+  }
   root.style.setProperty('--radius', RADIUS[widget.corners])
   root.style.setProperty('--font-sans', FONTS[widget.font])
 
