@@ -32,7 +32,7 @@ export function orbColors(accent: string): [string, string] {
 const RADIUS = { sharp: '0.2rem', soft: '0.625rem', round: '1.1rem' }
 
 const FONTS = {
-  system: "'Geist Variable', system-ui, sans-serif",
+  system: '',
   serif: "Georgia, 'Iowan Old Style', 'Times New Roman', serif",
   rounded: "ui-rounded, 'SF Pro Rounded', 'Nunito', system-ui, sans-serif",
   mono: "ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
@@ -52,7 +52,11 @@ export function applyBrand(widget: WidgetSettings): () => void {
     root.style.setProperty('--ring', widget.accent)
   }
   root.style.setProperty('--radius', RADIUS[widget.corners])
-  root.style.setProperty('--font-sans', FONTS[widget.font])
+  // "system" keeps the app's own pairing; any other choice sets body and headings alike.
+  for (const name of ['--app-font-sans', '--app-font-heading']) {
+    if (FONTS[widget.font]) root.style.setProperty(name, FONTS[widget.font])
+    else root.style.removeProperty(name)
+  }
 
   const system = window.matchMedia('(prefers-color-scheme: dark)')
   const sync = () => {
