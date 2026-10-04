@@ -2,7 +2,8 @@
 
 [![CI](https://github.com/sharathkum05/repkit/actions/workflows/ci.yml/badge.svg)](https://github.com/sharathkum05/repkit/actions/workflows/ci.yml)
 
-A harness that turns one LLM into a company's own sales or support rep.
+**The AI harness for your business.** It turns one LLM into your company's own
+rep: customer support, an order desk, quotation requests or a front desk.
 
 A company describes its rep in a folder called a **pack**: who the rep is, what
 it knows, what it may promise and do, and when a human takes over. The harness
@@ -77,13 +78,36 @@ terminal.
 |---|---|
 | `/` | Product page, with the real chat panel running in the hero |
 | `/demo` | The chat plus an inspector that shows each turn from the inside |
-| `/admin` | Dashboard: brand, voice, scope, knowledge, rules, handoff, tests, conversations, install snippets |
+| `/admin` | Dashboard: an inbox of orders and quotes, conversations, brand, voice, scope, knowledge, rules, handoff, tests, install snippets |
 | `/chat` | The chat panel on its own, which the embed script loads in an iframe |
 | `/widget.js` | The embed script: one tag puts the chat on any site |
 
 The chat panel is built from the official [ElevenLabs UI](https://ui.elevenlabs.io)
-components on the layout of their "Voice chat 1" block. The dashboard uses
-shadcn/ui and the product page adds Magic UI. See `web/THIRD_PARTY.md`.
+components on the layout of their "Voice chat 1" block. The dashboard is on the
+shadcn/ui sidebar and the product page adds Magic UI. The theme is black and
+white by default; a pack can set its own brand colour. See `web/THIRD_PARTY.md`.
+
+## Orders, quotes and other records
+
+A pack can list things the rep takes down for the business in `records.yaml`:
+
+```yaml
+records:
+  - name: quote
+    label: Quote request
+    description: Take a quotation request for a bulk order of six pairs or more.
+    fields:
+      - {name: product, type: choice, choices: [Drift Runner, Court Classic, Trail Loop]}
+      - {name: quantity, type: number}
+      - {name: customer_name}
+      - {name: email}
+```
+
+Each type becomes an action (`create_quote`) built from its fields. The rep
+asks for every required field, the call is validated and checked by the guard
+like any other action, and the customer is given a reference such as
+`QUO-0001`. The business sees every record in the dashboard's inbox and marks
+it confirmed, done or cancelled. The rep does not take payment.
 
 Putting the chat on a site (plain HTML, PHP, WordPress, React) and telling the
 rep who is signed in are covered in [docs/integrate.md](docs/integrate.md).
@@ -185,8 +209,8 @@ person.
 Output of `repkit sim packs/loop-sneakers` in replay mode:
 
 ```
-13/13 scenarios passed, 46/46 checks
-actions run 6, blocked by guard 3, replies replaced 3, off topic refused 2, handoffs 4
+16/16 scenarios passed, 57/57 checks
+actions run 8, blocked by guard 4, replies replaced 3, off topic refused 2, handoffs 4
 ```
 
 And for `packs/brightside-dental`:
@@ -222,6 +246,7 @@ token and cost figures; those numbers are not published here yet.
 | `repkit/trace.py` | Step-by-step trace of every turn |
 | `repkit/sim.py` | Fake customers and the scorecard |
 | `repkit/scope.py` | Scope gate and the number grounding check |
+| `repkit/records.py` | Orders, quotes and other records the rep takes down |
 | `repkit/editor.py` | Validated, rolled-back edits to a pack |
 | `repkit/mcp_server.py` | MCP server for managing a pack from Claude |
 | `repkit/web/` | HTTP API, dashboard API, embed script, demo page |
@@ -230,8 +255,8 @@ token and cost figures; those numbers are not published here yet.
 ## Status
 
 Working and tested: the turn loop, the guard, scope and grounding, handoff,
-memory, shaping, tracing, the simulator in replay mode, the web chat, the
-dashboard, the MCP server and CI.
+memory, shaping, tracing, records, the simulator in replay mode, the web chat,
+the dashboard, the MCP server and CI.
 
 Not done yet:
 
