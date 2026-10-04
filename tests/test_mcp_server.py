@@ -64,4 +64,4 @@ def test_a_bad_edit_comes_back_as_a_message_not_a_crash(root):
 
 def test_claude_can_run_the_fake_customers(root):
     report = call(build_server(root), "run_fake_customers")
-    assert report["summary"]["passed"] == 13
+    assert report["summary"]["passed"] == 16

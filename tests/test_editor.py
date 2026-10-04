@@ -67,7 +67,7 @@ def test_on_change_runs_only_after_a_successful_edit(tmp_path):
 
 
 def test_fake_customers_run_against_the_pack_on_disk(editor):
-    assert editor.run_fake_customers()["summary"]["passed"] == 13
+    assert editor.run_fake_customers()["summary"]["passed"] == 16
     # Raising the refund limit lets a refund through that a scenario expects to be blocked.
     rules = [rule.model_dump(mode="json") for rule in editor.load().policies]
     next(r for r in rules if r["id"] == "refund-limit")["limits"][0]["max"] = 99999

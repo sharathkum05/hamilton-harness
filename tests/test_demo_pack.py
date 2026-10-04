@@ -6,6 +6,7 @@ def test_demo_pack_loads(pack):
         "create_exchange",
         "send_tracking_link",
     }
+    assert [r.tool_name for r in pack.records] == ["create_order", "create_quote"]
     assert len(pack.examples) == 3
     assert len(pack.knowledge) == 4
 

@@ -13,8 +13,8 @@ def test_demo_scenarios_all_pass_in_replay(pack):
     scorecard = run_scenarios(pack, load_scenarios(pack))
     assert scorecard.ok, scorecard.render()
     summary = scorecard.summary()
-    assert summary["scenarios"] == 13
-    assert summary["actions_blocked"] == 3
+    assert summary["scenarios"] == 16
+    assert summary["actions_blocked"] == 4
     assert summary["replies_replaced"] == 3
     assert summary["off_topic_refused"] == 2
     assert summary["handoffs"] == 4
