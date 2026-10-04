@@ -60,6 +60,24 @@ export type Handoff = {
   message: string
 }
 
+export type RecordType = {
+  name: string
+  label: string
+  description: string
+  fields: { name: string; label: string; type: string; required: boolean }[]
+}
+
+export type RecordStatus = 'new' | 'confirmed' | 'done' | 'cancelled'
+
+export type RecordItem = {
+  id: string
+  type: string
+  data: Record<string, string | number>
+  status: RecordStatus
+  created_at: string
+  conversation_id: string
+}
+
 export type Pack = {
   persona: Persona
   scope: Scope
@@ -67,6 +85,7 @@ export type Pack = {
   handoff: Handoff
   policies: Rule[]
   tools: { name: string; description: string; handler: string }[]
+  records: RecordType[]
   knowledge: { source: string; text: string }[]
   examples: { title: string; turns: { speaker: string; text: string }[] }[]
   scenarios: number
@@ -150,6 +169,9 @@ export function adminApi(token: string) {
         throw new Error(body.detail ?? 'upload failed')
       }
     },
+    records: () => call<{ records: RecordItem[] }>('/records'),
+    setRecordStatus: (id: string, status: RecordStatus) =>
+      call<RecordItem>(`/records/${encodeURIComponent(id)}`, { method: 'PATCH', body: { status } }),
     sim: () => call<SimReport>('/sim', { method: 'POST', body: {} }),
     conversations: () => call<{ conversations: ConversationSummary[] }>('/conversations'),
     conversation: (id: string) => call<{ id: string; events: TraceEvent[] }>(`/conversations/${id}`),
