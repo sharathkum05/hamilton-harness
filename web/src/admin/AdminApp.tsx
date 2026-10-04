@@ -61,6 +61,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar'
 import { Toaster } from '@/components/ui/sonner'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { ApiError } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
@@ -209,6 +210,8 @@ export function AdminApp() {
   const Active = active.entry[3]
 
   return (
+    // The sidebar's collapsed buttons show tooltips, which need this provider above them.
+    <TooltipProvider>
     <SidebarProvider className="h-svh min-h-0">
       <Sidebar collapsible="icon">
         <SidebarHeader>
@@ -317,5 +320,6 @@ export function AdminApp() {
       </SidebarInset>
       <Toaster position="bottom-center" />
     </SidebarProvider>
+    </TooltipProvider>
   )
 }
