@@ -24,6 +24,7 @@ from repkit.handoff import HandoffDecision, HandoffDetector
 from repkit.llm import Model, ModelError, ModelResponse, ToolCall, Usage
 from repkit.memory import Conversation, CustomerStore, InMemoryStore, facts_from_result
 from repkit.pack.schema import Pack
+from repkit.scope import ScopeGate, evidence_text, ungrounded_numbers
 from repkit.shaper import Bubble, ReplyShaper
 from repkit.tools import ToolRegistry
 from repkit.trace import Event, Trace, TraceWriter
@@ -50,6 +51,8 @@ class TurnResult:
     model_calls: int = 0
     # Rule that replaced the model's draft, if the reply guard stepped in.
     replaced_by: str = ""
+    # Why the message was turned away as off topic, if it was.
+    refused: str = ""
     dropped: list[str] = field(default_factory=list)
     events: list[Event] = field(default_factory=list)
 
@@ -85,7 +88,20 @@ class Agent:
         self.guard = PolicyGuard(pack.policies, pack.persona)
         self.handoffs = HandoffDetector(pack.handoff)
         self.context = ContextBuilder(pack)
+        self.scope = ScopeGate(pack.scope)
         self.shaper = ReplyShaper(pack.persona)
+        # Fixed lines the rep may say, whose numbers therefore count as given.
+        self._static_evidence = " ".join(
+            [
+                pack.persona.disclosure,
+                pack.widget.greeting,
+                pack.handoff.message,
+                pack.scope.off_topic_reply,
+                pack.scope.unsure_reply,
+                *(rule.safe_reply for rule in pack.policies),
+                *(rule.text for rule in pack.policies if not rule.topics),
+            ]
+        )
         self.store = store or InMemoryStore()
         self._writer = TraceWriter(trace_dir) if trace_dir else None
         self._tool_definitions = self.tools.definitions()
@@ -144,6 +160,12 @@ class Agent:
             notes=[f"{c.source} > {c.heading}" for c in context.notes],
             facts=context.facts,
         )
+        answering = conversation.last_reply.rstrip().endswith("?")
+        scope = self.scope.check(message, context, answering=answering)
+        if not scope.in_scope:
+            self._refuse(conversation, message, scope.reason, scope.matched, trace, result)
+            return
+
         conversation.messages.extend(
             user_turn(message, context, system_turns=self.model.supports_system_turns)
         )
@@ -294,7 +316,16 @@ class Agent:
         result: TurnResult,
     ) -> None:
         verdict = self.guard.check_reply(response.text)
-        if verdict.ok:
+        invented = self._invented_numbers(conversation, response.text) if verdict.ok else []
+        if invented:
+            # A figure from nowhere is an invented fact. Say so instead of sending it.
+            text = self.pack.scope.unsure_reply
+            result.replaced_by = "grounding"
+            conversation.messages.append({"role": "assistant", "content": text})
+            trace.add(
+                "reply_blocked", rule="grounding", matched=", ".join(invented), draft=response.text
+            )
+        elif verdict.ok:
             text = response.text
             conversation.messages.append({"role": "assistant", "content": response.content})
         else:
@@ -308,6 +339,7 @@ class Agent:
             )
 
         shaped = self.shaper.shape(text)
+        conversation.last_reply = shaped.text
         result.bubbles = shaped.bubbles
         result.dropped = shaped.dropped
         trace.add(
@@ -317,6 +349,30 @@ class Agent:
             dropped=shaped.dropped,
             removed_phrases=shaped.removed_phrases,
         )
+
+    def _invented_numbers(self, conversation: Conversation, draft: str) -> list[str]:
+        if not self.pack.scope.ground_numbers:
+            return []
+        evidence = evidence_text(self._static_evidence, conversation.messages)
+        return ungrounded_numbers(draft, evidence)
+
+    def _refuse(
+        self,
+        conversation: Conversation,
+        message: str,
+        reason: str,
+        matched: str,
+        trace: Trace,
+        result: TurnResult,
+    ) -> None:
+        """Turn away an off-topic message without calling the model."""
+        reply = self.pack.scope.off_topic_reply
+        conversation.messages.append({"role": "user", "content": message})
+        conversation.messages.append({"role": "assistant", "content": reply})
+        conversation.last_reply = reply
+        result.refused = reason
+        result.bubbles = self.shaper.shape(reply).bubbles
+        trace.add("scope_refused", reason=reason, matched=matched)
 
     def _hand_off(
         self,
@@ -328,6 +384,7 @@ class Agent:
         repeat: bool = False,
     ) -> None:
         conversation.handoff = decision
+        conversation.last_reply = decision.message
         conversation.messages.append({"role": "assistant", "content": decision.message})
         result.handoff = decision
         result.bubbles = self.shaper.shape(decision.message).bubbles

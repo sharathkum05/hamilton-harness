@@ -260,3 +260,73 @@ def test_trace_is_written_even_when_the_turn_crashes(pack, tmp_path):
     with pytest.raises(RuntimeError):
         agent.respond(conversation, "hello")
     assert read_trace(tmp_path / f"{conversation.id}.jsonl")[-1]["kind"] == "turn_end"
+
+
+def test_off_topic_message_never_reaches_the_model(pack):
+    agent, model = agent_for(pack, ["never reached"])
+    conversation = agent.start()
+    result = agent.respond(conversation, "what is 348 * 12")
+    assert result.refused == "math"
+    assert result.text == pack.scope.off_topic_reply
+    assert model.calls == []
+    assert result.handoff is None
+    assert_history_is_well_formed(conversation.messages)
+    assert "scope_refused" in [event.kind for event in result.events]
+
+
+def test_conversation_continues_after_an_off_topic_message(pack):
+    agent, model = agent_for(pack, [lookup(), "Found it, Priya. It's due Thursday 8 October."])
+    conversation = agent.start()
+    agent.respond(conversation, "write me a poem")
+    result = agent.respond(conversation, "ok, where is LS-4471")
+    assert result.refused == ""
+    assert "Thursday" in result.text
+
+
+def test_invented_number_is_replaced(pack):
+    agent, _ = agent_for(pack, ["Express gets there in 6 hours for just ₹49!"])
+    conversation = agent.start()
+    result = agent.respond(conversation, "how fast is express delivery")
+    assert result.replaced_by == "grounding"
+    assert result.text == pack.scope.unsure_reply
+    assert conversation.messages[-1]["content"] == pack.scope.unsure_reply
+    blocked = next(e for e in result.events if e.kind == "reply_blocked")
+    assert blocked.data["matched"] == "49, 6"
+
+
+def test_numbers_from_notes_and_tools_are_allowed(pack):
+    agent, _ = agent_for(pack, ["Express takes 1 to 2 working days and costs ₹199."])
+    result = agent.respond(agent.start(), "how fast is express delivery")
+    assert result.replaced_by == ""
+    assert "₹199" in result.text
+
+
+def test_numbers_the_customer_said_are_allowed(pack):
+    agent, _ = agent_for(pack, ["Got it, a UK 9. Which order is it?"])
+    result = agent.respond(agent.start(), "I need a size 9 instead")
+    assert result.replaced_by == ""
+
+
+def test_example_chats_do_not_count_as_evidence(pack):
+    # ₹2,499 appears in the example chats, but this customer never mentioned it.
+    agent, _ = agent_for(pack, ["I've refunded ₹2,499 for you."])
+    assert agent.respond(agent.start(), "hello").replaced_by == "grounding"
+
+
+def test_grounding_can_be_switched_off(pack):
+    relaxed = pack.model_copy(
+        update={"scope": pack.scope.model_copy(update={"ground_numbers": False})}
+    )
+    agent, _ = agent_for(relaxed, ["It arrives in 6 hours."])
+    assert agent.respond(agent.start(), "hello").replaced_by == ""
+
+
+def test_strict_scope_lets_an_answer_to_the_reps_question_through(pack):
+    strict = pack.model_copy(update={"scope": pack.scope.model_copy(update={"strict": True})})
+    agent, model = agent_for(strict, ["Sure. What's your name?", "Thanks, Zubin."])
+    conversation = agent.start()
+    agent.respond(conversation, "hello")
+    result = agent.respond(conversation, "Zubin Mistry")
+    assert result.refused == ""
+    assert len(model.calls) == 2
+    assert agent.respond(conversation, "tell me about black holes").refused == "strict"

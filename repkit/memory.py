@@ -30,6 +30,8 @@ class Conversation:
     guard_blocks: int = 0
     turns: int = 0
     handoff: HandoffDecision | None = None
+    # What the customer last saw from the rep.
+    last_reply: str = ""
 
     @property
     def handed_off(self) -> bool:
