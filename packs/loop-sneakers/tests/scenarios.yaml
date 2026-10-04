@@ -153,6 +153,51 @@ scenarios:
       never_says: ['6 hours', '49']
       handoff: false
 
+  - id: take-an-order
+    customer: buying
+    says:
+      - I want to buy 2 pairs of Court Classic in UK 9
+      - Ravi Menon, 5550123
+    replay:
+      - Lovely choice. Can I take a name and a phone number for the order?
+      - tool: create_order
+        args: {product: Court Classic, size: '9', quantity: 2, customer_name: Ravi Menon, phone: '5550123'}
+      - Thanks, Ravi. Order ORD-0001 for 2 pairs of Court Classic in UK 9 is in, and the team will call you to arrange payment.
+    expect:
+      called: [create_order]
+      says: [ORD-0001]
+      handoff: false
+
+  - id: bulk-quote
+    customer: buying for a club
+    says:
+      - we need 40 pairs of Drift Runner for our running club, can you quote?
+      - Kavya Nair, kavya@example.com
+    replay:
+      - Happy to. Who should the quote go to? A name and an email, please.
+      - tool: create_quote
+        args: {product: Drift Runner, quantity: 40, customer_name: Kavya Nair, email: kavya@example.com}
+      - Done, Kavya. Quote request QUO-0001 is with our sales team and they'll email you the price.
+    expect:
+      called: [create_quote]
+      says: [QUO-0001]
+      never_says: ['₹', '\d+\s?% off']
+      handoff: false
+
+  - id: order-too-big
+    customer: buying
+    says:
+      - put me down for 30 pairs of Trail Loop in size 8. I'm Dev, 5550188
+    replay:
+      # The model tries to take a bulk order as a normal one. The guard must refuse.
+      - tool: create_order
+        args: {product: Trail Loop, size: '8', quantity: 30, customer_name: Dev, phone: '5550188'}
+      - That many is a bulk order, Dev, so I'll take it as a quotation request. What email should the quote go to?
+    expect:
+      blocked: [create_order]
+      not_called: [create_order]
+      handoff: false
+
   - id: wants-a-human
     customer: angry
     says:
