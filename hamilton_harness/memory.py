@@ -15,8 +15,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
 
-from repkit.handoff import HandoffDecision
-from repkit.pack.schema import ToolSpec
+from hamilton_harness.handoff import HandoffDecision
+from hamilton_harness.pack.schema import ToolSpec
 
 
 @dataclass

@@ -16,7 +16,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from repkit.editor import (
+from hamilton_harness.editor import (
     MAX_KNOWLEDGE_CHARS,
     EditError,
     PackEditor,
@@ -24,8 +24,8 @@ from repkit.editor import (
     list_conversations,
     read_conversation,
 )
-from repkit.records import Status
-from repkit.stats import overview
+from hamilton_harness.records import Status
+from hamilton_harness.stats import overview
 
 MAX_LOGO_BYTES = 512_000
 LOGO_EXTENSIONS = {

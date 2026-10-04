@@ -2,7 +2,7 @@ import json
 
 from conftest import DEMO_PACK
 
-from repkit.cli import main
+from hamilton_harness.cli import main
 
 
 def test_validate_describes_the_pack(capsys):
@@ -51,7 +51,7 @@ def test_sim_rejects_an_unknown_scenario_id(capsys):
 def test_serve_builds_an_offline_app(tmp_path):
     from fastapi.testclient import TestClient
 
-    from repkit.cli import build_parser, build_web_app
+    from hamilton_harness.cli import build_parser, build_web_app
 
     args = build_parser().parse_args(
         ["serve", str(DEMO_PACK), "--offline", "--debug", "--state", str(tmp_path)]
@@ -67,23 +67,23 @@ def test_serve_builds_an_offline_app(tmp_path):
 
 
 def test_admin_token_is_created_once_and_kept_private(tmp_path, monkeypatch):
-    from repkit.cli import admin_token
+    from hamilton_harness.cli import admin_token
 
-    monkeypatch.delenv("REPKIT_ADMIN_TOKEN", raising=False)
+    monkeypatch.delenv("HAMILTON_ADMIN_TOKEN", raising=False)
     first = admin_token(tmp_path)
     assert len(first) >= 24
     assert admin_token(tmp_path) == first
     assert (tmp_path / "admin-token").stat().st_mode & 0o077 == 0
-    monkeypatch.setenv("REPKIT_ADMIN_TOKEN", "from-env")
+    monkeypatch.setenv("HAMILTON_ADMIN_TOKEN", "from-env")
     assert admin_token(tmp_path) == "from-env"
 
 
 def test_serve_admin_switches_the_dashboard_on(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
 
-    from repkit.cli import build_parser, build_web_app
+    from hamilton_harness.cli import build_parser, build_web_app
 
-    monkeypatch.setenv("REPKIT_ADMIN_TOKEN", "tok")
+    monkeypatch.setenv("HAMILTON_ADMIN_TOKEN", "tok")
     base = ["serve", str(DEMO_PACK), "--offline", "--state", str(tmp_path)]
     on = TestClient(build_web_app(build_parser().parse_args([*base, "--admin"])))
     off = TestClient(build_web_app(build_parser().parse_args(base)))

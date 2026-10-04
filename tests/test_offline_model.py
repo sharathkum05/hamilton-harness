@@ -1,7 +1,7 @@
 import pytest
 
-from repkit.llm import ModelError, load_offline_model
-from repkit.runtime import Agent
+from hamilton_harness.llm import ModelError, load_offline_model
+from hamilton_harness.runtime import Agent
 
 
 @pytest.fixture

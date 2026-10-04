@@ -13,7 +13,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass
 
-from repkit.pack.schema import KnowledgeDoc
+from hamilton_harness.pack.schema import KnowledgeDoc
 
 _HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
 _WORD = re.compile(r"[a-z0-9]+")

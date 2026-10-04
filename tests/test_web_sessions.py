@@ -1,5 +1,5 @@
-from repkit.memory import Conversation
-from repkit.web.sessions import SessionStore
+from hamilton_harness.memory import Conversation
+from hamilton_harness.web.sessions import SessionStore
 
 
 class Clock:

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from types import SimpleNamespace
 
-from repkit.trace import Trace, TraceWriter, jsonable, read_trace
+from hamilton_harness.trace import Trace, TraceWriter, jsonable, read_trace
 
 
 @dataclass

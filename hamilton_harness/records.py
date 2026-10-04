@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
-from repkit.pack.schema import RecordType
+from hamilton_harness.pack.schema import RecordType
 
 Status = Literal["new", "confirmed", "done", "cancelled"]
 STATUSES: tuple[Status, ...] = ("new", "confirmed", "done", "cancelled")

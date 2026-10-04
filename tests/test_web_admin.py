@@ -4,10 +4,10 @@ import pytest
 from conftest import DEMO_PACK
 from fastapi.testclient import TestClient
 
-from repkit.llm import ScriptedModel
-from repkit.pack import load_pack
-from repkit.runtime import Agent
-from repkit.web.app import create_app, sign_customer
+from hamilton_harness.llm import ScriptedModel
+from hamilton_harness.pack import load_pack
+from hamilton_harness.runtime import Agent
+from hamilton_harness.web.app import create_app, sign_customer
 
 TOKEN = "test-admin-token"
 AUTH = {"Authorization": f"Bearer {TOKEN}"}

@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from repkit.pack.schema import HandoffRules
+from hamilton_harness.pack.schema import HandoffRules
 
 _WANTS = r"(?:talk|speak|chat|connect|transfer|escalate|get|give|want|need|put)\w*"
 _HUMAN = r"(?:human|person|manager|supervisor|representative|someone real|real agent|live agent)"

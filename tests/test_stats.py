@@ -2,8 +2,8 @@ import json
 import os
 from datetime import UTC, date, datetime
 
-from repkit.records import MemoryRecordStore
-from repkit.stats import overview
+from hamilton_harness.records import MemoryRecordStore
+from hamilton_harness.stats import overview
 
 TODAY = date(2026, 10, 4)
 

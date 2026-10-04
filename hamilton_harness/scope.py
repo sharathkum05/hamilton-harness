@@ -21,9 +21,9 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from repkit.context import TurnContext
-from repkit.knowledge import tokenize
-from repkit.pack.schema import ScopeSettings
+from hamilton_harness.context import TurnContext
+from hamilton_harness.knowledge import tokenize
+from hamilton_harness.pack.schema import ScopeSettings
 
 _DETECTORS: dict[str, list[str]] = {
     "math": [

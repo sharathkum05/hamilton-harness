@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from repkit.pack.schema import Persona
+from hamilton_harness.pack.schema import Persona
 
 _SENTENCE_END = re.compile(r"(?<=[.!?])[\"')\]]*\s+(?=[A-Z0-9\"'(₹$€£])")
 _BULLET = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+")

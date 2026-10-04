@@ -1,9 +1,9 @@
 import pytest
 from pydantic import ValidationError
 
-from repkit.context import ContextBuilder, TurnContext
-from repkit.pack.schema import ScopeSettings
-from repkit.scope import ScopeGate, evidence_text, ungrounded_numbers
+from hamilton_harness.context import ContextBuilder, TurnContext
+from hamilton_harness.pack.schema import ScopeSettings
+from hamilton_harness.scope import ScopeGate, evidence_text, ungrounded_numbers
 
 EMPTY = TurnContext()
 

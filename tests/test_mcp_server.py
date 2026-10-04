@@ -5,8 +5,8 @@ import shutil
 import pytest
 from conftest import DEMO_PACK
 
-from repkit.mcp_server import build_server
-from repkit.pack import load_pack
+from hamilton_harness.mcp_server import build_server
+from hamilton_harness.pack import load_pack
 
 
 @pytest.fixture

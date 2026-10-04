@@ -30,9 +30,9 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
-from repkit.pack.schema import Pack
-from repkit.runtime import Agent, TurnResult
-from repkit.web.sessions import Session, SessionStore
+from hamilton_harness.pack.schema import Pack
+from hamilton_harness.runtime import Agent, TurnResult
+from hamilton_harness.web.sessions import Session, SessionStore
 
 MAX_MESSAGE_CHARS = 2000
 STATIC_DIR = Path(__file__).parent / "static"
@@ -125,7 +125,7 @@ class AgentHolder:
 
     def reload(self) -> Pack:
         """Re-read the pack from disk and serve it from the next message on."""
-        from repkit.pack import load_pack
+        from hamilton_harness.pack import load_pack
 
         pack = load_pack(self.agent.pack.root)
         self.agent = self.agent.with_pack(pack)
@@ -286,7 +286,7 @@ def create_app(
         return app_page()
 
     if admin_token:
-        from repkit.web.admin import install_admin
+        from hamilton_harness.web.admin import install_admin
 
         install_admin(app, holder, admin_token)
 

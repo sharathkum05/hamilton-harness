@@ -1,4 +1,4 @@
-from repkit.context import (
+from hamilton_harness.context import (
     ContextBuilder,
     TurnContext,
     build_system_prompt,
@@ -6,7 +6,7 @@ from repkit.context import (
     select_rules,
     user_turn,
 )
-from repkit.pack.schema import Pack, Persona, PolicyRule
+from hamilton_harness.pack.schema import Pack, Persona, PolicyRule
 
 
 def test_system_prompt_carries_the_persona(pack):

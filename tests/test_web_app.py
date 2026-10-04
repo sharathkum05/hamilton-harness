@@ -1,9 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from repkit.llm import ScriptedModel
-from repkit.runtime import Agent
-from repkit.web.app import create_app
+from hamilton_harness.llm import ScriptedModel
+from hamilton_harness.runtime import Agent
+from hamilton_harness.web.app import create_app
 
 
 def make_client(pack, steps=(), **kwargs):
@@ -198,7 +198,7 @@ def test_demo_page_and_widget_assets_are_served(pack, tmp_path):
     assert 'src="/widget.js"' in page.text
     script = client.get("/widget.js")
     assert script.headers["content-type"].startswith("text/javascript")
-    assert "repkit:turn" in script.text
+    assert "hamilton:turn" in script.text
 
 
 def test_chat_page_is_served_from_the_built_app(pack, tmp_path):

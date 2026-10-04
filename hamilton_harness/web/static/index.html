@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>repkit demo</title>
+<title>Hamilton Harness demo</title>
 <style>
   /* Layout: a narrow reading column on the left, with the right of the screen
      left clear for the chat panel. The inspector is the point of the page. */
@@ -84,7 +84,7 @@
 <body>
 <main>
   <header>
-    <p class="mode" id="mode">repkit demo</p>
+    <p class="mode" id="mode">Hamilton Harness demo</p>
     <h1>Talk to the rep, and watch what the harness does</h1>
     <p class="lead">The chat is in the corner. Every message you send shows up below with the
       rules the rep was given, the actions it tried, and what the guard allowed or stopped.</p>
@@ -125,7 +125,7 @@
     const button = el("button");
     button.type = "button";
     button.append(el("span", "say", say), el("span", "why", why));
-    button.addEventListener("click", () => window.repkit && window.repkit.send(say));
+    button.addEventListener("click", () => window.hamilton && window.hamilton.send(say));
     const item = el("li");
     item.append(button);
     tries.append(item);
@@ -180,21 +180,21 @@
     return card;
   }
 
-  window.addEventListener("repkit:turn", (event) => {
+  window.addEventListener("hamilton:turn", (event) => {
     document.getElementById("empty")?.remove();
     turns.prepend(renderTurn(event.detail.text, event.detail.response.debug));
   });
-  window.addEventListener("repkit:reset", () => {
+  window.addEventListener("hamilton:reset", () => {
     turns.replaceChildren(el("p", "empty", "Send a message to see inside the turn."));
     turns.firstChild.id = "empty";
   });
-  window.addEventListener("repkit:ready", (event) => {
+  window.addEventListener("hamilton:ready", (event) => {
     const { rep, debug } = event.detail;
     document.getElementById("mode").textContent =
       `${rep.company} · ${rep.role}${debug ? " · inspector on" : ""}`;
     document.title = `${rep.company} chat demo`;
   });
 </script>
-<script src="/widget.js" data-repkit-open="true" defer></script>
+<script src="/widget.js" data-hamilton-open="true" defer></script>
 </body>
 </html>

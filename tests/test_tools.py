@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from repkit.pack.schema import Pack, Persona, ToolSpec
-from repkit.tools import ToolError, ToolRegistry
+from hamilton_harness.pack.schema import Pack, Persona, ToolSpec
+from hamilton_harness.tools import ToolError, ToolRegistry
 
 SCHEMA = {
     "type": "object",

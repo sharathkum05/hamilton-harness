@@ -6,7 +6,7 @@ rules and run the fake customers, all through the same validated editor the
 dashboard uses. An edit that would break the pack is refused with the reason,
 so Claude can correct it.
 
-    repkit mcp packs/your-company
+    hamilton-harness mcp packs/your-company
 """
 
 from __future__ import annotations
@@ -17,8 +17,8 @@ from typing import Any, Literal
 
 from mcp.server.mcpserver import MCPServer
 
-from repkit.editor import EditError, PackEditor, list_conversations, read_conversation
-from repkit.records import FileRecordStore, Status
+from hamilton_harness.editor import EditError, PackEditor, list_conversations, read_conversation
+from hamilton_harness.records import FileRecordStore, Status
 
 INSTRUCTIONS = """\
 This server manages one company's AI rep (a "pack"): who the rep is, what it
@@ -44,7 +44,7 @@ def build_server(
     editor = PackEditor(pack_root)
     traces = Path(trace_dir) if trace_dir else None
     records = FileRecordStore(records_path) if records_path else None
-    server = MCPServer("repkit", instructions=INSTRUCTIONS)
+    server = MCPServer("hamilton-harness", instructions=INSTRUCTIONS)
 
     def guarded(work):
         """Turn a refused edit into a message Claude can act on."""

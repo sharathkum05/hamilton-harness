@@ -12,8 +12,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from repkit.knowledge import Chunk, KnowledgeBase
-from repkit.pack.schema import ExampleChat, Pack, PolicyRule
+from hamilton_harness.knowledge import Chunk, KnowledgeBase
+from hamilton_harness.pack.schema import ExampleChat, Pack, PolicyRule
 
 
 def _example(chat: ExampleChat) -> str:

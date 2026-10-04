@@ -1,5 +1,5 @@
-from repkit.pack.schema import Persona
-from repkit.shaper import ReplyShaper, split_sentences, strip_formatting, typing_delay
+from hamilton_harness.pack.schema import Persona
+from hamilton_harness.shaper import ReplyShaper, split_sentences, strip_formatting, typing_delay
 
 
 def persona(**kwargs):

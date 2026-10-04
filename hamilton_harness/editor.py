@@ -16,10 +16,16 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ValidationError
 
-from repkit.pack import Pack, PackError, load_pack
-from repkit.pack.schema import HandoffRules, Persona, PolicyRule, ScopeSettings, WidgetSettings
-from repkit.sim import load_scenarios, run_scenarios
-from repkit.trace import read_trace
+from hamilton_harness.pack import Pack, PackError, load_pack
+from hamilton_harness.pack.schema import (
+    HandoffRules,
+    Persona,
+    PolicyRule,
+    ScopeSettings,
+    WidgetSettings,
+)
+from hamilton_harness.sim import load_scenarios, run_scenarios
+from hamilton_harness.trace import read_trace
 
 # Parts of the pack stored as one YAML mapping each.
 SECTIONS: dict[str, type[BaseModel]] = {

@@ -22,10 +22,10 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from repkit.llm import Model, ScriptedModel, Usage
-from repkit.pack.loader import PackError
-from repkit.pack.schema import Pack
-from repkit.runtime import Agent, TurnResult
+from hamilton_harness.llm import Model, ScriptedModel, Usage
+from hamilton_harness.pack.loader import PackError
+from hamilton_harness.pack.schema import Pack
+from hamilton_harness.runtime import Agent, TurnResult
 
 # US dollars per million tokens: (input, output, cache read).
 PRICES: dict[str, tuple[float, float, float]] = {

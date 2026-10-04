@@ -1,7 +1,7 @@
 import pytest
 
-from repkit.handoff import HandoffDetector
-from repkit.pack.schema import HandoffRules
+from hamilton_harness.handoff import HandoffDetector
+from hamilton_harness.pack.schema import HandoffRules
 
 
 @pytest.fixture

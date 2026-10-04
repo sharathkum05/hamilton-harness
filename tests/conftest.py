@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from repkit.pack import Pack, load_pack
+from hamilton_harness.pack import Pack, load_pack
 
 DEMO_PACK = Path(__file__).parent.parent / "packs" / "loop-sneakers"
 

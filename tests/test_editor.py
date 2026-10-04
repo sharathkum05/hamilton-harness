@@ -3,7 +3,7 @@ import shutil
 import pytest
 from conftest import DEMO_PACK
 
-from repkit.editor import EditError, PackEditor, list_conversations, read_conversation
+from hamilton_harness.editor import EditError, PackEditor, list_conversations, read_conversation
 
 
 @pytest.fixture

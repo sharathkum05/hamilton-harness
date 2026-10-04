@@ -1,9 +1,9 @@
 import pytest
 
-from repkit.llm import ModelError, ScriptedModel
-from repkit.memory import InMemoryStore
-from repkit.runtime import Agent
-from repkit.trace import read_trace
+from hamilton_harness.llm import ModelError, ScriptedModel
+from hamilton_harness.memory import InMemoryStore
+from hamilton_harness.runtime import Agent
+from hamilton_harness.trace import read_trace
 
 
 def lookup(order_id="LS-4471"):

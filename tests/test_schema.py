@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from repkit.pack.schema import Limit, Pack, Persona, PolicyRule, ToolSpec
+from hamilton_harness.pack.schema import Limit, Pack, Persona, PolicyRule, ToolSpec
 
 PERSONA = Persona(name="Maya", company="Loop Sneakers")
 REFUND = ToolSpec(
@@ -57,7 +57,7 @@ def test_never_say_patterns_must_compile():
 
 
 def test_widget_accent_must_be_a_hex_colour():
-    from repkit.pack.schema import WidgetSettings
+    from hamilton_harness.pack.schema import WidgetSettings
 
     assert WidgetSettings(accent="#FF5A1F").accent == "#ff5a1f"
     assert WidgetSettings().accent == "auto"
@@ -68,14 +68,14 @@ def test_widget_accent_must_be_a_hex_colour():
 
 
 def test_widget_allows_at_most_four_suggestions():
-    from repkit.pack.schema import WidgetSettings
+    from hamilton_harness.pack.schema import WidgetSettings
 
     with pytest.raises(ValidationError):
         WidgetSettings(suggestions=["a", "b", "c", "d", "e"])
 
 
 def test_widget_logo_must_be_an_image_inside_the_pack():
-    from repkit.pack.schema import WidgetSettings
+    from hamilton_harness.pack.schema import WidgetSettings
 
     assert WidgetSettings(logo="brand/logo.svg").logo == "brand/logo.svg"
     for bad in ("../secrets.png", "/etc/passwd", "brand/logo.exe", "brand/../../x.png", "a b.png"):
@@ -84,7 +84,7 @@ def test_widget_logo_must_be_an_image_inside_the_pack():
 
 
 def test_widget_look_options_are_validated():
-    from repkit.pack.schema import WidgetSettings
+    from hamilton_harness.pack.schema import WidgetSettings
 
     look = WidgetSettings(theme="dark", position="left", corners="round", font="serif")
     assert look.header == "plain"

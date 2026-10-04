@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from repkit.pack.schema import Limit, Persona, PolicyRule
+from hamilton_harness.pack.schema import Limit, Persona, PolicyRule
 
 Action = Literal["allow", "block", "handoff"]
 

@@ -8,8 +8,8 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from repkit.editor import list_conversations
-from repkit.records import RecordStore
+from hamilton_harness.editor import list_conversations
+from hamilton_harness.records import RecordStore
 
 
 def _day(moment: datetime) -> str:

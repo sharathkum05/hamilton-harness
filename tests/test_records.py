@@ -1,11 +1,11 @@
 import pytest
 from pydantic import ValidationError
 
-from repkit.llm import ScriptedModel
-from repkit.pack.schema import Pack, Persona, RecordField, RecordType
-from repkit.records import FileRecordStore, MemoryRecordStore, input_schema
-from repkit.runtime import Agent
-from repkit.tools import ToolRegistry
+from hamilton_harness.llm import ScriptedModel
+from hamilton_harness.pack.schema import Pack, Persona, RecordField, RecordType
+from hamilton_harness.records import FileRecordStore, MemoryRecordStore, input_schema
+from hamilton_harness.runtime import Agent
+from hamilton_harness.tools import ToolRegistry
 
 ORDER = {
     "product": "Court Classic",

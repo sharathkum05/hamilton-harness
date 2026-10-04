@@ -1,8 +1,15 @@
 import pytest
 
-from repkit.llm import ScriptedModel
-from repkit.pack import PackError
-from repkit.sim import Expect, Scenario, Scorecard, load_scenarios, run_scenario, run_scenarios
+from hamilton_harness.llm import ScriptedModel
+from hamilton_harness.pack import PackError
+from hamilton_harness.sim import (
+    Expect,
+    Scenario,
+    Scorecard,
+    load_scenarios,
+    run_scenario,
+    run_scenarios,
+)
 
 
 def scripted(steps):
@@ -94,7 +101,7 @@ def test_duplicate_scenario_ids_are_rejected(pack, tmp_path):
 def test_dental_pack_stays_on_topic_in_replay():
     from pathlib import Path
 
-    from repkit.pack import load_pack
+    from hamilton_harness.pack import load_pack
 
     dental = load_pack(Path(__file__).parent.parent / "packs" / "brightside-dental")
     scorecard = run_scenarios(dental, load_scenarios(dental))

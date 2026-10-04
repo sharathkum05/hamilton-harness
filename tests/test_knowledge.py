@@ -1,5 +1,5 @@
-from repkit.knowledge import KnowledgeBase, split_markdown, tokenize
-from repkit.pack.schema import KnowledgeDoc
+from hamilton_harness.knowledge import KnowledgeBase, split_markdown, tokenize
+from hamilton_harness.pack.schema import KnowledgeDoc
 
 
 def test_tokenize_drops_stopwords_and_punctuation():

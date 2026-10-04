@@ -18,17 +18,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
-from repkit.context import ContextBuilder, user_turn
-from repkit.guard import PolicyGuard
-from repkit.handoff import HandoffDecision, HandoffDetector
-from repkit.llm import Model, ModelError, ModelResponse, ToolCall, Usage
-from repkit.memory import Conversation, CustomerStore, InMemoryStore, facts_from_result
-from repkit.pack.schema import Pack
-from repkit.records import RecordStore
-from repkit.scope import ScopeGate, evidence_text, ungrounded_numbers
-from repkit.shaper import Bubble, ReplyShaper
-from repkit.tools import ToolRegistry
-from repkit.trace import Event, Trace, TraceWriter
+from hamilton_harness.context import ContextBuilder, user_turn
+from hamilton_harness.guard import PolicyGuard
+from hamilton_harness.handoff import HandoffDecision, HandoffDetector
+from hamilton_harness.llm import Model, ModelError, ModelResponse, ToolCall, Usage
+from hamilton_harness.memory import Conversation, CustomerStore, InMemoryStore, facts_from_result
+from hamilton_harness.pack.schema import Pack
+from hamilton_harness.records import RecordStore
+from hamilton_harness.scope import ScopeGate, evidence_text, ungrounded_numbers
+from hamilton_harness.shaper import Bubble, ReplyShaper
+from hamilton_harness.tools import ToolRegistry
+from hamilton_harness.trace import Event, Trace, TraceWriter
 
 Outcome = Literal["ok", "error", "invalid", "blocked"]
 

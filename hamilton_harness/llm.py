@@ -13,7 +13,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-from repkit.pack.schema import ModelSettings
+from hamilton_harness.pack.schema import ModelSettings
 
 
 class ModelError(Exception):
@@ -221,7 +221,7 @@ def load_offline_model(pack_root: str) -> Model:
     path = Path(pack_root) / "offline_model.py"
     if not path.exists():
         raise ModelError(f"this pack has no offline model ({path} is missing)")
-    spec = importlib.util.spec_from_file_location(f"repkit_offline_{abs(hash(str(path)))}", path)
+    spec = importlib.util.spec_from_file_location(f"hamilton_offline_{abs(hash(str(path)))}", path)
     if spec is None or spec.loader is None:
         raise ModelError(f"cannot import {path}")
     module = importlib.util.module_from_spec(spec)

@@ -19,8 +19,8 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
-from repkit.pack.schema import Pack, RecordType, ToolSpec
-from repkit.records import MemoryRecordStore, RecordStore, input_schema, tool_description
+from hamilton_harness.pack.schema import Pack, RecordType, ToolSpec
+from hamilton_harness.records import MemoryRecordStore, RecordStore, input_schema, tool_description
 
 log = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ class ToolRegistry:
                 name=record_type.tool_name,
                 description=tool_description(record_type),
                 input_schema=input_schema(record_type),
-                handler="repkit:records",
+                handler="hamilton:records",
                 remember={f"last_{record_type.name}": "reference"},
             )
             self._specs[spec.name] = spec
@@ -79,7 +79,7 @@ class ToolRegistry:
             raise ToolError(f"handler module {path} does not exist")
         # Two packs may both ship a handlers.py, so key the module on its path.
         digest = hashlib.sha1(str(path).encode()).hexdigest()[:10]
-        spec = importlib.util.spec_from_file_location(f"repkit_pack_{digest}_{name}", path)
+        spec = importlib.util.spec_from_file_location(f"hamilton_pack_{digest}_{name}", path)
         if spec is None or spec.loader is None:
             raise ToolError(f"cannot import {path}")
         module = importlib.util.module_from_spec(spec)

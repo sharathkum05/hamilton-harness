@@ -23,7 +23,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from repkit.pack.schema import ExampleChat, ExampleTurn, KnowledgeDoc, Pack
+from hamilton_harness.pack.schema import ExampleChat, ExampleTurn, KnowledgeDoc, Pack
 
 
 class PackError(Exception):

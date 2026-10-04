@@ -1,5 +1,5 @@
-from repkit.guard import PolicyGuard
-from repkit.pack.schema import Limit, PolicyRule
+from hamilton_harness.guard import PolicyGuard
+from hamilton_harness.pack.schema import Limit, PolicyRule
 
 
 def rule(**kwargs):

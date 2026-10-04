@@ -1,7 +1,7 @@
 import pytest
 
-from repkit.pack import PackError, load_pack
-from repkit.pack.loader import parse_example
+from hamilton_harness.pack import PackError, load_pack
+from hamilton_harness.pack.loader import parse_example
 
 
 def write(root, name, text):

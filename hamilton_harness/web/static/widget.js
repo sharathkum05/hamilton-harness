@@ -1,4 +1,4 @@
-/* repkit embed script.
+/* Hamilton Harness embed script.
 
    Add the chat to any page:
 
@@ -8,21 +8,21 @@
    The iframe keeps the panel's styles and scripts apart from the host page.
 
    Optional attributes on the script tag:
-     data-repkit-server="https://chat.example.com"   server origin, if not the script's own
-     data-repkit-open="true"                          open the panel on load
-     data-repkit-pacing="off"                         show replies without typing delays
-     data-repkit-customer="id"                        a signed-in customer's id, with
-     data-repkit-signature="hmac"                     its HMAC-SHA256 made on your server
+     data-hamilton-server="https://chat.example.com"   server origin, if not the script's own
+     data-hamilton-open="true"                          open the panel on load
+     data-hamilton-pacing="off"                         show replies without typing delays
+     data-hamilton-customer="id"                        a signed-in customer's id, with
+     data-hamilton-signature="hmac"                     its HMAC-SHA256 made on your server
 
-   The page can drive it through window.repkit: open(), close(), send(text), reset().
-   It fires "repkit:ready", "repkit:turn" and "repkit:reset" events on window. */
+   The page can drive it through window.hamilton: open(), close(), send(text), reset().
+   It fires "hamilton:ready", "hamilton:turn" and "hamilton:reset" events on window. */
 
 (() => {
   "use strict";
 
   const script = document.currentScript;
   const options = script ? script.dataset : {};
-  const server = (options.repkitServer || (script ? new URL(script.src).origin : location.origin))
+  const server = (options.hamiltonServer || (script ? new URL(script.src).origin : location.origin))
     .replace(/\/$/, "");
 
   const CHAT_ICON =
@@ -89,7 +89,7 @@
       state.queue.push(message);
       return;
     }
-    ui.frame.contentWindow.postMessage({ source: "repkit-host", ...message }, server);
+    ui.frame.contentWindow.postMessage({ source: "hamilton-host", ...message }, server);
   }
 
   /* The panel is only loaded once someone opens it, so it costs the page nothing until then. */
@@ -98,12 +98,12 @@
     const frame = document.createElement("iframe");
     frame.className = "frame";
     frame.title = ui.label;
-    let source = `${server}/chat${options.repkitPacing === "off" ? "?nopacing" : ""}`;
-    if (options.repkitCustomer && options.repkitSignature) {
+    let source = `${server}/chat${options.hamiltonPacing === "off" ? "?nopacing" : ""}`;
+    if (options.hamiltonCustomer && options.hamiltonSignature) {
       // In the fragment, so the id never appears in a request line or a server log.
       const who = new URLSearchParams({
-        customer: options.repkitCustomer,
-        signature: options.repkitSignature,
+        customer: options.hamiltonCustomer,
+        signature: options.hamiltonSignature,
       });
       source += `#${who}`;
     }
@@ -134,7 +134,7 @@
 
   function onPanelMessage(event) {
     if (!ui.frame || event.source !== ui.frame.contentWindow) return;
-    if (event.origin !== server || !event.data || event.data.source !== "repkit") return;
+    if (event.origin !== server || !event.data || event.data.source !== "hamilton") return;
     const { type, detail } = event.data;
     if (type === "close") close();
     if (type === "ready") {
@@ -142,14 +142,14 @@
       for (const message of state.queue.splice(0)) post(message);
     }
     if (type === "ready" || type === "turn" || type === "reset") {
-      window.dispatchEvent(new CustomEvent(`repkit:${type}`, { detail }));
+      window.dispatchEvent(new CustomEvent(`hamilton:${type}`, { detail }));
     }
   }
 
   function build(config) {
     const { rep, widget } = config;
     const host = document.createElement("div");
-    host.id = "repkit-widget";
+    host.id = "hamilton-widget";
     host.dataset.position = widget.position;
     host.dataset.corners = widget.corners;
     host.dataset.theme = widget.theme;
@@ -188,18 +188,18 @@
       config = await response.json();
     } catch {
       // No chat is better than a broken launcher on someone's shop.
-      console.warn("repkit: could not load the chat configuration from", server);
+      console.warn("hamilton: could not load the chat configuration from", server);
       return;
     }
     build(config);
     window.addEventListener("message", onPanelMessage);
-    window.repkit = {
+    window.hamilton = {
       open,
       close,
       send: (text) => (open(), post({ type: "send", text: String(text) })),
       reset: () => post({ type: "reset" }),
     };
-    if (options.repkitOpen === "true") open();
+    if (options.hamiltonOpen === "true") open();
   }
 
   if (document.readyState === "loading") {

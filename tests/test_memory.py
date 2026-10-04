@@ -1,5 +1,5 @@
-from repkit.memory import Conversation, FileStore, InMemoryStore, facts_from_result
-from repkit.tools import ToolRegistry
+from hamilton_harness.memory import Conversation, FileStore, InMemoryStore, facts_from_result
+from hamilton_harness.tools import ToolRegistry
 
 
 def test_conversations_get_distinct_ids():

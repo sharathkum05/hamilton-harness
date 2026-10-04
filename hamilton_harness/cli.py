@@ -1,10 +1,10 @@
 """Command line entry point.
 
-repkit validate PACK      check a pack loads and its handlers resolve
-repkit chat PACK          talk to the rep in the terminal
-repkit sim PACK           run the pack's fake customers and print a scorecard
-repkit serve PACK         run the web chat widget and its API
-repkit mcp PACK           let Claude manage the pack over MCP
+hamilton-harness validate PACK      check a pack loads and its handlers resolve
+hamilton-harness chat PACK          talk to the rep in the terminal
+hamilton-harness sim PACK           run the pack's fake customers and print a scorecard
+hamilton-harness serve PACK         run the web chat widget and its API
+hamilton-harness mcp PACK           let Claude manage the pack over MCP
 """
 
 from __future__ import annotations
@@ -17,14 +17,14 @@ import sys
 import time
 from pathlib import Path
 
-from repkit.llm import AnthropicModel, Model, ModelError, load_offline_model
-from repkit.memory import FileStore
-from repkit.pack import PackError, load_pack
-from repkit.pack.schema import Pack
-from repkit.records import FileRecordStore
-from repkit.runtime import Agent, TurnResult
-from repkit.sim import load_scenarios, replay_model, run_scenarios
-from repkit.tools import ToolError, ToolRegistry
+from hamilton_harness.llm import AnthropicModel, Model, ModelError, load_offline_model
+from hamilton_harness.memory import FileStore
+from hamilton_harness.pack import PackError, load_pack
+from hamilton_harness.pack.schema import Pack
+from hamilton_harness.records import FileRecordStore
+from hamilton_harness.runtime import Agent, TurnResult
+from hamilton_harness.sim import load_scenarios, replay_model, run_scenarios
+from hamilton_harness.tools import ToolError, ToolRegistry
 
 
 def _live_model(pack: Pack) -> Model:
@@ -108,7 +108,7 @@ def cmd_sim(args: argparse.Namespace) -> int:
 
 def admin_token(state: Path) -> str:
     """The dashboard's token: from the environment, or made once and kept in the state folder."""
-    from_env = os.environ.get("REPKIT_ADMIN_TOKEN", "").strip()
+    from_env = os.environ.get("HAMILTON_ADMIN_TOKEN", "").strip()
     if from_env:
         return from_env
     path = state / "admin-token"
@@ -124,9 +124,11 @@ def admin_token(state: Path) -> str:
 def build_web_app(args: argparse.Namespace):
     """The web app for `serve`, built separately so it can be tested without a server."""
     try:
-        from repkit.web.app import create_app
+        from hamilton_harness.web.app import create_app
     except ImportError as exc:
-        raise PackError('the web server needs extra packages: pip install "repkit[web]"') from exc
+        raise PackError(
+            'the web server needs extra packages: pip install "hamilton-harness[web]"'
+        ) from exc
 
     pack = load_pack(args.pack)
     model = load_offline_model(pack.root) if args.offline else _live_model(pack)
@@ -143,7 +145,7 @@ def build_web_app(args: argparse.Namespace):
         debug=args.debug,
         allow_origins=args.allow_origin or (),
         admin_token=admin_token(state) if args.admin else None,
-        identity_secret=os.environ.get("REPKIT_IDENTITY_SECRET") or None,
+        identity_secret=os.environ.get("HAMILTON_IDENTITY_SECRET") or None,
     )
 
 
@@ -163,9 +165,11 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
 def cmd_mcp(args: argparse.Namespace) -> int:
     try:
-        from repkit.mcp_server import build_server
+        from hamilton_harness.mcp_server import build_server
     except ImportError as exc:
-        raise PackError('the MCP server needs an extra package: pip install "repkit[mcp]"') from exc
+        raise PackError(
+            'the MCP server needs an extra package: pip install "hamilton-harness[mcp]"'
+        ) from exc
 
     load_pack(args.pack)  # fail early, with a clear message, on a pack that does not load
     state = Path(args.state)
@@ -176,7 +180,7 @@ def cmd_mcp(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="repkit", description=__doc__.split("\n\n")[0])
+    parser = argparse.ArgumentParser(prog="hamilton-harness", description=__doc__.split("\n\n")[0])
     commands = parser.add_subparsers(dest="command", required=True)
 
     validate = commands.add_parser("validate", help="check a pack")
@@ -186,7 +190,7 @@ def build_parser() -> argparse.ArgumentParser:
     chat = commands.add_parser("chat", help="talk to the rep")
     chat.add_argument("pack")
     chat.add_argument("--customer", help="customer id, to remember facts between chats")
-    chat.add_argument("--state", default=".repkit", help="where traces and memory are kept")
+    chat.add_argument("--state", default=".hamilton", help="where traces and memory are kept")
     chat.add_argument("--no-pacing", action="store_true", help="print replies without delays")
     chat.add_argument("--debug", action="store_true", help="show actions and guard decisions")
     chat.set_defaults(run=cmd_chat)
@@ -205,7 +209,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--port", type=int, default=8000)
     serve.add_argument("--offline", action="store_true", help="use the pack's stand-in model")
     serve.add_argument("--debug", action="store_true", help="expose each turn to the inspector")
-    serve.add_argument("--state", default=".repkit", help="where traces and memory are kept")
+    serve.add_argument("--state", default=".hamilton", help="where traces and memory are kept")
     serve.add_argument("--admin", action="store_true", help="switch on the dashboard at /admin")
     serve.add_argument(
         "--allow-origin", action="append", metavar="URL", help="site allowed to embed the widget"
@@ -214,7 +218,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     mcp = commands.add_parser("mcp", help="let Claude manage the pack over MCP")
     mcp.add_argument("pack")
-    mcp.add_argument("--state", default=".repkit", help="where the server keeps traces")
+    mcp.add_argument("--state", default=".hamilton", help="where the server keeps traces")
     mcp.set_defaults(run=cmd_mcp)
     return parser
 

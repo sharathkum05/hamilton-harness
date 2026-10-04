@@ -4,8 +4,8 @@ import anthropic
 import httpx2
 import pytest
 
-from repkit.llm import AnthropicModel, ModelError, ScriptedModel, Usage
-from repkit.pack.schema import ModelSettings
+from hamilton_harness.llm import AnthropicModel, ModelError, ScriptedModel, Usage
+from hamilton_harness.pack.schema import ModelSettings
 
 
 def test_scripted_text_step():
