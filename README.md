@@ -109,6 +109,10 @@ like any other action, and the customer is given a reference such as
 `QUO-0001`. The business sees every record in the dashboard's inbox and marks
 it confirmed, done or cancelled. The rep does not take payment.
 
+A hosted copy of the demo runs at https://hamilton-harness.vercel.app on the
+stand-in model. Vercel's functions keep nothing between restarts, so its
+conversations and orders are temporary and its dashboard is switched off.
+
 Putting the chat on a site (plain HTML, PHP, WordPress, React) and telling the
 rep who is signed in are covered in [docs/integrate.md](docs/integrate.md).
 
