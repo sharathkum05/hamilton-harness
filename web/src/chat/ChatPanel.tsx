@@ -16,8 +16,8 @@ import {
 } from '@/components/ui/conversation'
 import { Input } from '@/components/ui/input'
 import { Message, MessageContent } from '@/components/ui/message'
+import { MessageLoading } from '@/components/ui/message-loading'
 import { Orb } from '@/components/ui/orb'
-import { Response } from '@/components/ui/response'
 import { ShimmeringText } from '@/components/ui/shimmering-text'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { Config, TranscriptLine } from '@/lib/api'
@@ -247,9 +247,9 @@ export function ChatPanel({
                       className={cn('py-1', next && next.from !== message.from && 'pb-3')}
                     >
                       <MessageContent className="max-w-[82%] min-w-0 px-3.5 py-2.5">
-                        <Response className="w-auto [overflow-wrap:anywhere] whitespace-pre-wrap">
-                          {message.text}
-                        </Response>
+                        {/* Plain text on purpose: nothing a customer or the model writes is
+                            parsed as Markdown, so an email address or a link shows as typed. */}
+                        <p className="[overflow-wrap:anywhere] whitespace-pre-wrap">{message.text}</p>
                       </MessageContent>
                       {from === 'assistant' &&
                         (endsRun && status !== 'typing' ? (
@@ -262,8 +262,8 @@ export function ChatPanel({
                 })}
                 {status === 'typing' && (
                   <Message from="assistant" className="py-1">
-                    <MessageContent className="px-3.5 py-2.5">
-                      <ShimmeringText text="Typing…" />
+                    <MessageContent className="px-3.5 py-1.5">
+                      <MessageLoading />
                     </MessageContent>
                     <Mark config={config} className="size-6 shrink-0" talking />
                   </Message>
