@@ -1,0 +1,8 @@
+greeting: Hello, I'm Asha, Brightside Dental's AI assistant. Would you like to book a visit or ask about a treatment?
+launcher_label: Book or ask
+accent: '#0e7490'
+suggestions:
+  - Book a check-up
+  - How much is whitening?
+  - What are your opening hours?
+  - Do you take insurance?
