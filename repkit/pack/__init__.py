@@ -1,3 +1,4 @@
+from repkit.pack.loader import PackError, load_pack
 from repkit.pack.schema import (
     ExampleChat,
     ExampleTurn,
@@ -19,7 +20,9 @@ __all__ = [
     "Limit",
     "ModelSettings",
     "Pack",
+    "PackError",
     "Persona",
     "PolicyRule",
     "ToolSpec",
+    "load_pack",
 ]
