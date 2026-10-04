@@ -10,6 +10,7 @@ from repkit.pack.schema import (
     Persona,
     PolicyRule,
     ToolSpec,
+    WidgetSettings,
 )
 
 __all__ = [
@@ -24,5 +25,6 @@ __all__ = [
     "Persona",
     "PolicyRule",
     "ToolSpec",
+    "WidgetSettings",
     "load_pack",
 ]

@@ -132,6 +132,25 @@ class ModelSettings(_Strict):
     max_tokens: int = Field(default=16000, ge=256)
 
 
+class WidgetSettings(_Strict):
+    """How the web chat widget looks and opens for this company."""
+
+    greeting: str = "Hi! How can I help?"
+    launcher_label: str = "Chat with us"
+    # Brand colour for the launcher, header and the customer's bubbles.
+    accent: str = "#0b6e6e"
+    # One-tap openers shown before the customer has typed anything.
+    suggestions: list[str] = Field(default_factory=list, max_length=4)
+
+    @field_validator("accent")
+    @classmethod
+    def _accent_is_a_hex_colour(cls, value: str) -> str:
+        # The value is written into a stylesheet, so nothing but a colour may pass.
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", value):
+            raise ValueError("accent must be a six-digit hex colour such as #0b6e6e")
+        return value.lower()
+
+
 class Pack(_Strict):
     persona: Persona
     examples: list[ExampleChat] = Field(default_factory=list)
@@ -140,6 +159,7 @@ class Pack(_Strict):
     tools: list[ToolSpec] = Field(default_factory=list)
     handoff: HandoffRules = Field(default_factory=HandoffRules)
     model: ModelSettings = Field(default_factory=ModelSettings)
+    widget: WidgetSettings = Field(default_factory=WidgetSettings)
     root: str = ""
 
     @model_validator(mode="after")

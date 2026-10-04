@@ -71,3 +71,12 @@ def test_example_lines_without_speaker_continue_the_turn():
 def test_example_must_start_with_a_speaker():
     with pytest.raises(PackError, match="must start with"):
         parse_example("t", "hello there")
+
+
+def test_widget_settings_are_optional(tmp_path):
+    minimal(tmp_path)
+    assert load_pack(tmp_path).widget.greeting == "Hi! How can I help?"
+    write(tmp_path, "widget.yaml", "greeting: Hey there\naccent: '#ff5a1f'\n")
+    widget = load_pack(tmp_path).widget
+    assert widget.greeting == "Hey there"
+    assert widget.accent == "#ff5a1f"
