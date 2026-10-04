@@ -226,7 +226,7 @@ export function ConversationsSection({ api }: SectionProps) {
 
 // -- Install -----------------------------------------------------------------
 
-function Snippet({ code }: { code: string }) {
+export function Snippet({ code }: { code: string }) {
   const [copied, setCopied] = useState(false)
   const copy = async () => {
     try {
