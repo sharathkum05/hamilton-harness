@@ -37,7 +37,18 @@ import { Ripple } from '@/components/ui/ripple'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AnimatedSpan, Terminal, TypingAnimation } from '@/components/ui/terminal'
 import { WordRotate } from '@/components/ui/word-rotate'
-import { DASHBOARD, EVENTS, FAQ, GUARDS, ROLES, SAID, STATS, TERMINAL_LINES } from '@/landing/data'
+import {
+  BUSINESSES,
+  DASHBOARD,
+  EVENTS,
+  FAQ,
+  GUARDS,
+  ROLES,
+  SAID,
+  STATS,
+  SYSTEMS,
+  TERMINAL_LINES,
+} from '@/landing/data'
 import { cn } from '@/lib/utils'
 
 const GREY_ORB: [string, string] = ['#e4e4e7', '#a1a1aa']
@@ -218,6 +229,18 @@ function SaidChip({ said, outcome }: { said: string; outcome: string }) {
   )
 }
 
+function SystemCard({ Icon, name, kind }: { Icon: ComponentType<{ className?: string }>; name: string; kind: string }) {
+  return (
+    <div className="bg-card flex h-36 w-52 shrink-0 flex-col justify-between rounded-lg border p-5">
+      <Icon className="size-6" />
+      <div className="flex flex-col gap-0.5">
+        <span className="text-lg leading-tight">{name}</span>
+        <span className="text-muted-foreground text-sm">{kind}</span>
+      </div>
+    </div>
+  )
+}
+
 export function Landing() {
   const origin = window.location.origin
   const dark = useDarkTheme()
@@ -241,6 +264,7 @@ export function Landing() {
           </a>
           <nav aria-label="Page sections" className="text-muted-foreground hidden items-center gap-5 text-sm md:flex">
             <a className="hover:text-foreground transition-colors" href="#roles">What it runs</a>
+            <a className="hover:text-foreground transition-colors" href="#integrations">Integrations</a>
             <a className="hover:text-foreground transition-colors" href="#guardrails">Guardrails</a>
             <a className="hover:text-foreground transition-colors" href="#dashboard">Dashboard</a>
             <a className="hover:text-foreground transition-colors" href="#install">Install</a>
@@ -364,6 +388,38 @@ export function Landing() {
           </div>
         </section>
 
+        {/* Integrations */}
+        <section id="integrations" className="scroll-mt-20 border-t py-20 lg:py-32">
+          <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 px-4 text-center sm:px-6">
+            <p className="text-muted-foreground flex items-center gap-3 font-mono text-sm">
+              <span className="bg-border h-px w-8" aria-hidden="true" />
+              Integrations
+              <span className="bg-border h-px w-8" aria-hidden="true" />
+            </p>
+            <h2 className={cn('text-4xl sm:text-5xl lg:text-6xl', HEADING, FADE)}>
+              Connects to your internal systems.
+            </h2>
+            <p className="text-muted-foreground max-w-[60ch] text-lg leading-relaxed text-pretty">
+              The rep collects the details in every conversation and writes them straight to your
+              calendar, CRM and tools, so your team never re-enters a thing. Each connection is a
+              short action you define over that system's API, so anything with an API can be
+              connected, HubSpot, Salesforce, Cal.com and Slack included.
+            </p>
+          </div>
+          <div className="mt-14 flex flex-col gap-4 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+            <Marquee pauseOnHover className="p-0 [--duration:44s] [--gap:1rem]">
+              {SYSTEMS.map(([Icon, name, kind]) => (
+                <SystemCard key={name} Icon={Icon} name={name} kind={kind} />
+              ))}
+            </Marquee>
+            <Marquee reverse pauseOnHover className="p-0 [--duration:44s] [--gap:1rem]">
+              {BUSINESSES.map(([Icon, name, kind]) => (
+                <SystemCard key={name} Icon={Icon} name={name} kind={kind} />
+              ))}
+            </Marquee>
+          </div>
+        </section>
+
         {/* Flow */}
         <section id="how" className="bg-muted/40 scroll-mt-20 border-y px-4 py-20 sm:px-6 lg:py-32">
           <SectionHeader eyebrow="How it works" title="A prompt asks. Code enforces.">
@@ -428,8 +484,9 @@ export function Landing() {
             See the orders and quotation requests it has taken, read any conversation step by step,
             and change anything about the rep without touching code.
           </SectionHeader>
-          <div className="mx-auto mt-12 grid max-w-6xl gap-4 lg:grid-cols-2">
-            <ul className="grid gap-4 sm:grid-cols-2">
+          {/* minmax(0, 1fr) and min-w-0: the code sample must not widen the column on a phone. */}
+          <div className="mx-auto mt-12 grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
+            <ul className="grid min-w-0 gap-4 sm:grid-cols-2">
               {DASHBOARD.map(([Icon, name, text]) => (
                 <li key={name} className="bg-card flex flex-col gap-2 rounded-2xl border p-5">
                   <span className="bg-muted flex size-9 items-center justify-center rounded-lg border">
@@ -440,7 +497,7 @@ export function Landing() {
                 </li>
               ))}
             </ul>
-            <div className="bg-card flex flex-col gap-4 rounded-2xl border p-6">
+            <div className="bg-card flex min-w-0 flex-col gap-4 rounded-2xl border p-6">
               <h3 className="text-2xl">Or connect Claude and just ask</h3>
               <p className="text-muted-foreground leading-relaxed">
                 repkit ships an MCP server. Connect Claude to it and say "add our new returns
