@@ -64,3 +64,29 @@ def test_serve_builds_an_offline_app(tmp_path):
     assert "Thursday 8 October" in reply["bubbles"][0]["text"]
     assert reply["debug"]["actions"][0]["tool"] == "lookup_order"
     assert list((tmp_path / "traces").glob("*.jsonl"))
+
+
+def test_admin_token_is_created_once_and_kept_private(tmp_path, monkeypatch):
+    from repkit.cli import admin_token
+
+    monkeypatch.delenv("REPKIT_ADMIN_TOKEN", raising=False)
+    first = admin_token(tmp_path)
+    assert len(first) >= 24
+    assert admin_token(tmp_path) == first
+    assert (tmp_path / "admin-token").stat().st_mode & 0o077 == 0
+    monkeypatch.setenv("REPKIT_ADMIN_TOKEN", "from-env")
+    assert admin_token(tmp_path) == "from-env"
+
+
+def test_serve_admin_switches_the_dashboard_on(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from repkit.cli import build_parser, build_web_app
+
+    monkeypatch.setenv("REPKIT_ADMIN_TOKEN", "tok")
+    base = ["serve", str(DEMO_PACK), "--offline", "--state", str(tmp_path)]
+    on = TestClient(build_web_app(build_parser().parse_args([*base, "--admin"])))
+    off = TestClient(build_web_app(build_parser().parse_args(base)))
+    headers = {"Authorization": "Bearer tok"}
+    assert on.get("/api/admin/pack", headers=headers).status_code == 200
+    assert off.get("/api/admin/pack", headers=headers).status_code == 404

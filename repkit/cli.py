@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import secrets
 import sys
 import time
 from pathlib import Path
@@ -102,6 +104,21 @@ def cmd_sim(args: argparse.Namespace) -> int:
     return 0 if scorecard.ok else 1
 
 
+def admin_token(state: Path) -> str:
+    """The dashboard's token: from the environment, or made once and kept in the state folder."""
+    from_env = os.environ.get("REPKIT_ADMIN_TOKEN", "").strip()
+    if from_env:
+        return from_env
+    path = state / "admin-token"
+    if path.exists():
+        return path.read_text(encoding="utf-8").strip()
+    state.mkdir(parents=True, exist_ok=True)
+    token = secrets.token_urlsafe(24)
+    path.write_text(token, encoding="utf-8")
+    path.chmod(0o600)
+    return token
+
+
 def build_web_app(args: argparse.Namespace):
     """The web app for `serve`, built separately so it can be tested without a server."""
     try:
@@ -113,7 +130,13 @@ def build_web_app(args: argparse.Namespace):
     model = load_offline_model(pack.root) if args.offline else _live_model(pack)
     state = Path(args.state)
     agent = Agent(pack, model, store=FileStore(state / "customers"), trace_dir=state / "traces")
-    return create_app(agent, debug=args.debug, allow_origins=args.allow_origin or ())
+    return create_app(
+        agent,
+        debug=args.debug,
+        allow_origins=args.allow_origin or (),
+        admin_token=admin_token(state) if args.admin else None,
+        identity_secret=os.environ.get("REPKIT_IDENTITY_SECRET") or None,
+    )
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
@@ -122,6 +145,10 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
     mode = "offline stand-in model" if args.offline else "live model"
     print(f"Serving the chat widget at http://{args.host}:{args.port} ({mode})")
+    if args.admin:
+        # The token rides in the URL fragment, which browsers never send to a server.
+        token = admin_token(Path(args.state))
+        print(f"Dashboard: http://{args.host}:{args.port}/admin#token={token}")
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
     return 0
 
@@ -157,6 +184,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--offline", action="store_true", help="use the pack's stand-in model")
     serve.add_argument("--debug", action="store_true", help="expose each turn to the inspector")
     serve.add_argument("--state", default=".repkit", help="where traces and memory are kept")
+    serve.add_argument("--admin", action="store_true", help="switch on the dashboard at /admin")
     serve.add_argument(
         "--allow-origin", action="append", metavar="URL", help="site allowed to embed the widget"
     )
