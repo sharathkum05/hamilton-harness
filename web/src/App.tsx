@@ -1,6 +1,7 @@
+import { AdminApp } from '@/admin/AdminApp'
 import { ChatApp } from '@/chat/ChatApp'
 
-// One bundle, routed by path: /chat is the customer's panel.
+// One bundle, routed by path: /admin is the dashboard, anything else the chat panel.
 export default function App() {
-  return <ChatApp />
+  return window.location.pathname.startsWith('/admin') ? <AdminApp /> : <ChatApp />
 }
