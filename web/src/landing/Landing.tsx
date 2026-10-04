@@ -526,7 +526,7 @@ export function Landing() {
         <section id="install" className="bg-muted/40 scroll-mt-20 border-y px-4 py-20 sm:px-6 lg:py-32">
           <SectionHeader eyebrow="Install" title="One script tag.">
             It works on a hand-written page, a PHP site, WordPress or a React app. The chat loads in
-            its own frame, so it cannot clash with your styles.
+            its own frame, so it cannot clash with your styles. One npm package connects Claude.
           </SectionHeader>
           <div className="mx-auto mt-12 max-w-6xl">
             <Tabs defaultValue="html">
@@ -535,6 +535,7 @@ export function Landing() {
                 <TabsTrigger value="php">PHP</TabsTrigger>
                 <TabsTrigger value="wordpress">WordPress</TabsTrigger>
                 <TabsTrigger value="react">React</TabsTrigger>
+                <TabsTrigger value="claude">Claude</TabsTrigger>
               </TabsList>
               <TabsContent value="html">
                 <Snippet code={`<script src="${origin}/widget.js" defer></script>`} />
@@ -564,6 +565,17 @@ export function Landing() {
                   code={`import Script from 'next/script'
 
 <Script src="${origin}/widget.js" strategy="lazyOnload" />`}
+                />
+              </TabsContent>
+              <TabsContent value="claude" className="flex flex-col gap-3">
+                <p className="text-muted-foreground text-sm">
+                  Install the npm package, sign in to your server once, and add it to Claude. Then
+                  ask Claude to update the rep in plain words.
+                </p>
+                <Snippet
+                  code={`npm install -g hamilton-harness
+hamilton-harness login --url ${origin}
+claude mcp add hamilton -- hamilton-harness mcp`}
                 />
               </TabsContent>
             </Tabs>
