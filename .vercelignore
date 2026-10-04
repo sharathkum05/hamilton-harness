@@ -1,5 +1,4 @@
-# The web app is built locally and uploaded as built files, so its sources and
-# everything else the demo does not run stay out of the upload.
+# Keep what the demo does not run out of the upload.
 .git
 .venv
 .hamilton
@@ -7,8 +6,6 @@
 .github
 node_modules
 web/node_modules
-web/src
-web/public
 packages
 tests
 docs
