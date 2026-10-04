@@ -8,6 +8,8 @@
     GET  /                                  demo page with the widget
     GET  /widget.js                         the embed script: a launcher and an iframe
     GET  /chat                              the chat panel (React, built from web/)
+    GET  /admin                             the dashboard, when an admin token is set
+    /api/admin/...                          the dashboard's API (see admin.py)
 
 The browser only ever sends customer text. Everything that decides what the
 rep may do stays on the server.
@@ -15,6 +17,8 @@ rep may do stays on the server.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -34,6 +38,18 @@ STATIC_DIR = Path(__file__).parent / "static"
 # The React app in web/ builds into here. It is not committed, so it may be missing.
 APP_DIR = STATIC_DIR / "app"
 NOT_BUILT = "The web UI has not been built. Run: npm --prefix web ci && npm --prefix web run build"
+
+
+class NewConversation(BaseModel):
+    """Optional proof of who the customer is, made by the company's own server."""
+
+    customer_id: str = Field(default="", max_length=200)
+    signature: str = Field(default="", max_length=128)
+
+
+def sign_customer(secret: str, customer_id: str) -> str:
+    """The signature a company's server gives the widget for a signed-in customer."""
+    return hmac.new(secret.encode(), customer_id.encode(), hashlib.sha256).hexdigest()
 
 
 class CustomerMessage(BaseModel):
@@ -130,11 +146,14 @@ def create_app(
     sessions: SessionStore | None = None,
     allow_origins: Sequence[str] = (),
     app_dir: Path = APP_DIR,
+    admin_token: str | None = None,
+    identity_secret: str | None = None,
 ) -> FastAPI:
     """Build the app.
 
-    `allow_origins` lists the sites allowed to embed the widget. Leave it empty
-    when the widget is served from this same server.
+    `allow_origins` lists the sites allowed to call the API from their own
+    pages. `admin_token` switches the dashboard on. `identity_secret` lets a
+    company's server vouch for a signed-in customer, so the rep remembers them.
     """
     holder = AgentHolder(agent)
     store = sessions or SessionStore()
@@ -191,8 +210,14 @@ def create_app(
         )
 
     @app.post("/api/conversations", status_code=201)
-    def start_conversation() -> dict[str, Any]:
-        session = store.create(holder.agent.start())
+    def start_conversation(who: NewConversation | None = None) -> dict[str, Any]:
+        customer_id = None
+        if who and who.customer_id and identity_secret:
+            expected = sign_customer(identity_secret, who.customer_id)
+            # An id without a valid signature is a claim anyone could make, so it is ignored.
+            if hmac.compare_digest(expected, who.signature):
+                customer_id = who.customer_id
+        session = store.create(holder.agent.start(customer_id))
         session.say("rep", holder.pack.widget.greeting)
         return _public_session(session)
 
@@ -238,13 +263,25 @@ def create_app(
     def widget_script() -> FileResponse:
         return FileResponse(STATIC_DIR / "widget.js", media_type="text/javascript")
 
-    @app.get("/chat", include_in_schema=False)
-    def chat_page() -> FileResponse:
+    def app_page() -> FileResponse:
         page = app_dir / "index.html"
         if not page.is_file():
             raise HTTPException(status_code=503, detail=NOT_BUILT)
         # The page names its scripts by content hash, so it must never be cached itself.
         return FileResponse(page, headers={"Cache-Control": "no-cache"})
+
+    @app.get("/chat", include_in_schema=False)
+    def chat_page() -> FileResponse:
+        return app_page()
+
+    if admin_token:
+        from repkit.web.admin import install_admin
+
+        install_admin(app, holder, admin_token)
+
+        @app.get("/admin", include_in_schema=False)
+        def admin_page() -> FileResponse:
+            return app_page()
 
     if app_dir.is_dir():
         app.mount("/app", StaticFiles(directory=app_dir), name="app")
