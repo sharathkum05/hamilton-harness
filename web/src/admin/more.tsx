@@ -1,16 +1,15 @@
-// The dashboard's read-only screens: testing, conversations and installing.
+// The dashboard's test runner and install snippets.
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { CheckIcon, CopyIcon, PlayIcon } from 'lucide-react'
 
-import type { ConversationSummary, SimReport, TraceEvent } from '@/admin/api'
+import type { SimReport } from '@/admin/api'
 import { Section } from '@/admin/fields'
 import type { SectionProps } from '@/admin/sections'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { cn } from '@/lib/utils'
 
 // -- Test --------------------------------------------------------------------
 
@@ -108,118 +107,6 @@ export function TestSection({ pack, api }: SectionProps) {
           </div>
         </>
       )}
-    </Section>
-  )
-}
-
-// -- Conversations -----------------------------------------------------------
-
-function describe(event: TraceEvent): { tone: 'plain' | 'good' | 'stop' | 'warn'; text: string } | null {
-  const data = event as Record<string, any>
-  switch (event.kind) {
-    case 'customer':
-      return { tone: 'plain', text: `Customer: ${data.text}` }
-    case 'context':
-      return {
-        tone: 'plain',
-        text: `Given rules [${(data.rules ?? []).join(', ') || 'none'}] and ${(data.notes ?? []).length} note(s)`,
-      }
-    case 'action':
-      return {
-        tone: data.outcome === 'ok' ? 'good' : data.outcome === 'blocked' ? 'stop' : 'warn',
-        text: `${data.tool}(${JSON.stringify(data.arguments)}) → ${data.outcome}${
-          data.outcome === 'ok' ? '' : `: ${data.detail}`
-        }`,
-      }
-    case 'scope_refused':
-      return { tone: 'warn', text: `Off topic (${data.reason}); the model was not called` }
-    case 'reply_blocked':
-      return { tone: 'stop', text: `Draft replaced by "${data.rule}". It said: ${data.draft}` }
-    case 'handoff':
-      return { tone: 'warn', text: `Handed to a human (${data.reason}: ${data.detail})` }
-    case 'model_error':
-      return { tone: 'stop', text: `Model error: ${data.error}` }
-    case 'turn_end':
-      return { tone: 'plain', text: `Rep: ${(data.bubbles ?? []).join(' ')}` }
-    default:
-      return null
-  }
-}
-
-const TONES = {
-  plain: '',
-  good: 'text-green-700 dark:text-green-400',
-  stop: 'text-red-700 dark:text-red-400',
-  warn: 'text-amber-700 dark:text-amber-400',
-}
-
-export function ConversationsSection({ api }: SectionProps) {
-  const [list, setList] = useState<ConversationSummary[] | null>(null)
-  const [open, setOpen] = useState<{ id: string; events: TraceEvent[] } | null>(null)
-
-  useEffect(() => {
-    api.conversations().then((body) => setList(body.conversations)).catch(() => setList([]))
-  }, [api])
-
-  return (
-    <Section
-      title="Conversations"
-      description="Every conversation is recorded step by step: what the customer said, which rules the rep was shown, each action and what the guard decided. Open one to see why the rep answered the way it did."
-    >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-2">
-          {list === null && <p className="text-muted-foreground text-sm">Loading…</p>}
-          {list?.length === 0 && (
-            <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-sm">
-              No conversations yet. Send a message in the preview.
-            </p>
-          )}
-          {list?.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => api.conversation(item.id).then(setOpen)}
-              className={cn(
-                'hover:bg-muted/60 flex flex-col gap-1.5 rounded-lg border p-3 text-left text-sm',
-                open?.id === item.id && 'bg-muted',
-              )}
-            >
-              <span className="line-clamp-2">{item.opening || '(no message)'}</span>
-              <span className="flex flex-wrap items-center gap-1.5">
-                <span className="text-muted-foreground text-xs">
-                  {item.turns} turn{item.turns === 1 ? '' : 's'} ·{' '}
-                  {new Date(item.updated_at * 1000).toLocaleString()}
-                </span>
-                {item.blocked && <Badge variant="destructive">guard stepped in</Badge>}
-                {item.refused && <Badge variant="outline">off topic</Badge>}
-                {item.handed_off && <Badge variant="secondary">handed off</Badge>}
-              </span>
-            </button>
-          ))}
-        </div>
-        <Card className="min-w-0">
-          <CardHeader>
-            <CardTitle>{open ? `Conversation ${open.id}` : 'Select a conversation'}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-1.5 font-mono text-xs">
-            {open?.events.map((event, index) => {
-              const line = describe(event)
-              if (!line) return null
-              return (
-                <p
-                  key={index}
-                  className={cn(
-                    '[overflow-wrap:anywhere]',
-                    TONES[line.tone],
-                    event.kind === 'customer' && index > 0 && 'mt-3 border-t pt-3',
-                  )}
-                >
-                  {line.text}
-                </p>
-              )
-            })}
-          </CardContent>
-        </Card>
-      </div>
     </Section>
   )
 }
