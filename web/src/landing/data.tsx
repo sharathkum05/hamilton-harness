@@ -5,7 +5,10 @@ import {
   BookOpenIcon,
   BotIcon,
   BanIcon,
+  BriefcaseIcon,
+  Building2Icon,
   BuildingIcon,
+  CalendarDaysIcon,
   CalculatorIcon,
   ClipboardListIcon,
   FileTextIcon,
@@ -13,12 +16,24 @@ import {
   HandHelpingIcon,
   HeadsetIcon,
   InboxIcon,
+  LifeBuoyIcon,
   LockIcon,
+  MailIcon,
+  MessageSquareIcon,
+  PackageIcon,
   PaletteIcon,
   ScaleIcon,
+  ScissorsIcon,
   ShieldCheckIcon,
+  ShoppingCartIcon,
+  StethoscopeIcon,
+  StoreIcon,
+  TableIcon,
   TargetIcon,
   UserRoundCheckIcon,
+  UsersIcon,
+  UtensilsCrossedIcon,
+  WrenchIcon,
 } from 'lucide-react'
 
 type Icon = ComponentType<{ className?: string }>
@@ -167,4 +182,31 @@ export const SAID: [string, string][] = [
   ['can I get a discount', 'declined'],
   ['my tooth hurts, what do I have?', 'no diagnosis'],
   ['book me a check-up tomorrow', 'booked'],
+]
+
+/**
+ * Kinds of system the rep can write to. These are types, not named products:
+ * each connection is an action the business defines over that system's API.
+ */
+export const SYSTEMS: [Icon, string, string][] = [
+  [UsersIcon, 'CRM', 'Leads and contacts'],
+  [CalendarDaysIcon, 'Calendar', 'Bookings'],
+  [ShoppingCartIcon, 'Order system', 'Orders'],
+  [LifeBuoyIcon, 'Help desk', 'Tickets'],
+  [PackageIcon, 'Inventory', 'Stock checks'],
+  [MessageSquareIcon, 'Team chat', 'Notifications'],
+  [TableIcon, 'Spreadsheets', 'New rows'],
+  [MailIcon, 'Email', 'Follow-ups'],
+]
+
+/** Kinds of business, and what the rep takes down for each. */
+export const BUSINESSES: [Icon, string, string][] = [
+  [UtensilsCrossedIcon, 'Restaurants', 'Reservations'],
+  [StethoscopeIcon, 'Clinics', 'Intake'],
+  [ScissorsIcon, 'Salons', 'Scheduling'],
+  [Building2Icon, 'Real estate', 'Lead capture'],
+  [StoreIcon, 'Retail', 'Orders'],
+  [WrenchIcon, 'Repair shops', 'Job requests'],
+  [BriefcaseIcon, 'Agencies', 'Quotations'],
+  [HeadsetIcon, 'Online shops', 'Support'],
 ]
