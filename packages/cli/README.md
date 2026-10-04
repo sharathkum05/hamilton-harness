@@ -13,6 +13,12 @@ token.
 hamilton-harness serve packs/your-company --admin
 ```
 
+Install it, or use `npx` as below and skip the install:
+
+```bash
+npm install -g hamilton-harness
+```
+
 Sign in from the machine where Claude runs. The token is asked for without
 being shown, checked against the server, and saved in a file only you can read.
 
