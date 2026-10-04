@@ -21,6 +21,7 @@ from repkit.llm import AnthropicModel, Model, ModelError, load_offline_model
 from repkit.memory import FileStore
 from repkit.pack import PackError, load_pack
 from repkit.pack.schema import Pack
+from repkit.records import FileRecordStore
 from repkit.runtime import Agent, TurnResult
 from repkit.sim import load_scenarios, replay_model, run_scenarios
 from repkit.tools import ToolError, ToolRegistry
@@ -130,7 +131,13 @@ def build_web_app(args: argparse.Namespace):
     pack = load_pack(args.pack)
     model = load_offline_model(pack.root) if args.offline else _live_model(pack)
     state = Path(args.state)
-    agent = Agent(pack, model, store=FileStore(state / "customers"), trace_dir=state / "traces")
+    agent = Agent(
+        pack,
+        model,
+        store=FileStore(state / "customers"),
+        records=FileRecordStore(state / "records.json"),
+        trace_dir=state / "traces",
+    )
     return create_app(
         agent,
         debug=args.debug,
@@ -161,7 +168,10 @@ def cmd_mcp(args: argparse.Namespace) -> int:
         raise PackError('the MCP server needs an extra package: pip install "repkit[mcp]"') from exc
 
     load_pack(args.pack)  # fail early, with a clear message, on a pack that does not load
-    build_server(args.pack, trace_dir=Path(args.state) / "traces").run("stdio")
+    state = Path(args.state)
+    build_server(args.pack, trace_dir=state / "traces", records_path=state / "records.json").run(
+        "stdio"
+    )
     return 0
 
 
