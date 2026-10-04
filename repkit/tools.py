@@ -19,7 +19,8 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
-from repkit.pack.schema import Pack, ToolSpec
+from repkit.pack.schema import Pack, RecordType, ToolSpec
+from repkit.records import MemoryRecordStore, RecordStore, input_schema, tool_description
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +41,9 @@ def _fail(message: str) -> ToolResult:
 
 
 class ToolRegistry:
-    def __init__(self, pack: Pack) -> None:
+    def __init__(self, pack: Pack, records: RecordStore | None = None) -> None:
+        self.records = records or MemoryRecordStore()
+        self._record_types: dict[str, RecordType] = {}
         self._root = Path(pack.root) if pack.root else None
         self._specs: dict[str, ToolSpec] = {}
         self._handlers: dict[str, Callable[..., Any]] = {}
@@ -53,6 +56,18 @@ class ToolRegistry:
             self._specs[spec.name] = spec
             self._validators[spec.name] = Draft202012Validator(spec.input_schema)
             self._handlers[spec.name] = self._resolve(spec)
+        for record_type in pack.records:
+            # Each record type is an action the harness provides itself.
+            spec = ToolSpec(
+                name=record_type.tool_name,
+                description=tool_description(record_type),
+                input_schema=input_schema(record_type),
+                handler="repkit:records",
+                remember={f"last_{record_type.name}": "reference"},
+            )
+            self._specs[spec.name] = spec
+            self._validators[spec.name] = Draft202012Validator(spec.input_schema)
+            self._record_types[spec.name] = record_type
 
     def _module(self, name: str) -> ModuleType:
         if name in self._modules:
@@ -114,10 +129,14 @@ class ToolRegistry:
         where = ".".join(str(p) for p in first.path)
         return f"Invalid arguments{f' at {where}' if where else ''}: {first.message}"
 
-    def call(self, name: str, arguments: Any) -> ToolResult:
+    def call(self, name: str, arguments: Any, *, conversation_id: str = "") -> ToolResult:
         problem = self.validate(name, arguments)
         if problem:
             return _fail(problem)
+        if name in self._record_types:
+            record = self.records.add(self._record_types[name].name, arguments, conversation_id)
+            data = {"reference": record.id, "status": "received", **arguments}
+            return ToolResult(ok=True, content=json.dumps(data, ensure_ascii=False), data=data)
         try:
             data = self._handlers[name](**arguments)
         except (LookupError, ValueError) as exc:
