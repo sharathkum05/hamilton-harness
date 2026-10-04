@@ -24,6 +24,7 @@ from repkit.handoff import HandoffDecision, HandoffDetector
 from repkit.llm import Model, ModelError, ModelResponse, ToolCall, Usage
 from repkit.memory import Conversation, CustomerStore, InMemoryStore, facts_from_result
 from repkit.pack.schema import Pack
+from repkit.records import RecordStore
 from repkit.scope import ScopeGate, evidence_text, ungrounded_numbers
 from repkit.shaper import Bubble, ReplyShaper
 from repkit.tools import ToolRegistry
@@ -78,13 +79,15 @@ class Agent:
         model: Model,
         *,
         store: CustomerStore | None = None,
+        records: RecordStore | None = None,
         trace_dir: str | Path | None = None,
         max_steps: int = 6,
         retry_wait: float = 0.5,
     ) -> None:
         self.pack = pack
         self.model = model
-        self.tools = ToolRegistry(pack)
+        self.tools = ToolRegistry(pack, records)
+        self.records = self.tools.records
         self.guard = PolicyGuard(pack.policies, pack.persona)
         self.handoffs = HandoffDetector(pack.handoff)
         self.context = ContextBuilder(pack)
@@ -115,6 +118,7 @@ class Agent:
             pack,
             self.model,
             store=self.store,
+            records=self.records,
             trace_dir=self.trace_dir,
             max_steps=self._max_steps,
             retry_wait=self._retry_wait,
@@ -301,7 +305,7 @@ class Agent:
             )
             return record, content, needs_human
 
-        outcome = self.tools.call(call.name, call.arguments)
+        outcome = self.tools.call(call.name, call.arguments, conversation_id=conversation.id)
         if not outcome.ok:
             record = ActionRecord(call.name, call.arguments, "error", outcome.content)
             return record, outcome.content, False
