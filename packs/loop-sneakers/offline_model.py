@@ -27,6 +27,12 @@ _DISCOUNT = re.compile(r"discount|% off|percent off|coupon|cheaper|price match|\
 _BOT = re.compile(r"\b(bot|robot|ai|human|real person)\b", re.I)
 _YES = re.compile(r"^\s*(yes|yeah|yep|sure|ok|okay|please|pls|yes please|go ahead)\b", re.I)
 _THANKS = re.compile(r"\b(thanks|thank you|thx|cheers)\b", re.I)
+_QUOTE = re.compile(r"\bquot|\bbulk\b", re.I)
+_BUY = re.compile(r"\b(buy|purchase|place an order|want to order|put me down)\b", re.I)
+_PRODUCT = re.compile(r"drift runner|court classic|trail loop", re.I)
+_PAIRS = re.compile(r"(\d+)\s*pairs?", re.I)
+_EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
+_PHONE = re.compile(r"\b\d{7,12}\b")
 _HELLO = re.compile(r"^\s*(hi|hey|hello|yo|hiya)\b[\s!.]*$", re.I)
 
 
@@ -107,6 +113,20 @@ class OfflineModel:
         text, last_reply, results = self._turn(messages)
         order_id = self._order_id(text, messages)
 
+        said = " ".join(
+            _text_of(m) for m in messages if m["role"] == "user" and not _is_tool_results(m)
+        )
+        taken = {
+            b["name"]
+            for m in messages
+            if m["role"] == "assistant" and isinstance(m["content"], list)
+            for b in m["content"]
+            if b.get("type") == "tool_use"
+        }
+        if _QUOTE.search(said) and ("create_quote" not in taken or "create_quote" in results):
+            return self._take(said, text, results, kind="quote")
+        if _BUY.search(said) and ("create_order" not in taken or "create_order" in results):
+            return self._take(said, text, results, kind="order")
         if _BOT.search(text) and re.search(r"\b(are|r) (you|u)\b|is this", text, re.I):
             return (
                 "I'm Maya, Loop's AI assistant. I can get a person on the line any time you want."
@@ -128,6 +148,50 @@ class OfflineModel:
         if _HELLO.search(text):
             return "Hey! What can I sort out for you?"
         return self._from_notes(messages)
+
+    def _take(self, said: str, text: str, results: dict[str, dict[str, Any]], *, kind: str) -> Any:
+        """Take an order or a quotation request, asking for whatever is still missing."""
+        tool = f"create_{kind}"
+        name = re.split(r"[,.]", text)[0].replace("I'm", "").strip().title() or "there"
+        if tool in results:
+            result = results[tool]
+            if result.get("is_error"):
+                return (
+                    "That many is a bulk order, so I'll take it as a quotation request. "
+                    "What email should the quote go to?"
+                )
+            reference = json.loads(result["content"])["reference"]
+            if kind == "quote":
+                return (
+                    f"Done. Quote request {reference} is with our sales team and they'll "
+                    "email you the price."
+                )
+            return (
+                f"Thanks. Order {reference} is in, and the team will call you to arrange payment."
+            )
+
+        product, pairs = _PRODUCT.search(said), _PAIRS.search(said)
+        if not product:
+            return "Sure. Which shoe is it: Drift Runner, Court Classic or Trail Loop?"
+        args: dict[str, Any] = {
+            "product": product.group(0).title(),
+            "quantity": int(pairs.group(1)) if pairs else 1,
+        }
+        if kind == "quote":
+            email = _EMAIL.search(said)
+            if not pairs:
+                return "How many pairs do you need?"
+            if not email:
+                return "Happy to. Who should the quote go to? A name and an email, please."
+            args.update(customer_name=name, email=email.group(0))
+        else:
+            size, phone = _SIZE.search(said), _PHONE.search(said)
+            if not size:
+                return "Which UK size would you like?"
+            if not phone:
+                return "Lovely choice. Can I take a name and a phone number for the order?"
+            args.update(size=size.group(1), customer_name=name, phone=phone.group(0))
+        return {"tool": tool, "args": args}
 
     def _lookup(self, order_id: str | None, results: dict[str, dict[str, Any]]) -> Any:
         """The order, or the step that gets it, or a reply explaining why not."""

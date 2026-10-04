@@ -79,3 +79,20 @@ def test_general_delivery_questions_are_answered_from_the_notes(agent):
     (turn,) = chat(agent, "how fast is express delivery")
     assert turn.actions == []
     assert "Express delivery" in turn.text
+
+
+def test_takes_a_quote_request_over_two_messages(agent):
+    first, second = chat(
+        agent,
+        "we need 40 pairs of Drift Runner, can you quote?",
+        "Kavya Nair, kavya@example.com",
+    )
+    assert "name and an email" in first.text
+    assert "QUO-0001" in second.text
+    assert agent.records.list("quote")[0].data["quantity"] == 40
+
+
+def test_a_bulk_order_is_turned_into_a_quote_request(agent):
+    (turn,) = chat(agent, "I want to buy 30 pairs of Trail Loop size 8, I'm Dev, 5550188")
+    assert turn.actions[0].rule_ids == ("order-size",)
+    assert "quotation request" in turn.text
