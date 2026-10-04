@@ -70,3 +70,21 @@ def test_widget_allows_at_most_four_suggestions():
 
     with pytest.raises(ValidationError):
         WidgetSettings(suggestions=["a", "b", "c", "d", "e"])
+
+
+def test_widget_logo_must_be_an_image_inside_the_pack():
+    from repkit.pack.schema import WidgetSettings
+
+    assert WidgetSettings(logo="brand/logo.svg").logo == "brand/logo.svg"
+    for bad in ("../secrets.png", "/etc/passwd", "brand/logo.exe", "brand/../../x.png", "a b.png"):
+        with pytest.raises(ValidationError):
+            WidgetSettings(logo=bad)
+
+
+def test_widget_look_options_are_validated():
+    from repkit.pack.schema import WidgetSettings
+
+    look = WidgetSettings(theme="dark", position="left", corners="round", font="serif")
+    assert look.header == "plain"
+    with pytest.raises(ValidationError):
+        WidgetSettings(theme="neon")

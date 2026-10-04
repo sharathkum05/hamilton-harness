@@ -175,6 +175,16 @@ class WidgetSettings(_Strict):
     accent: str = "#0b6e6e"
     # One-tap openers shown before the customer has typed anything.
     suggestions: list[str] = Field(default_factory=list, max_length=4)
+    # Heading of the chat panel. Defaults to the rep's name.
+    title: str = ""
+    # Logo file inside the pack, such as brand/logo.svg. Shown in place of the initial.
+    logo: str = ""
+    theme: Literal["auto", "light", "dark"] = "auto"
+    position: Literal["right", "left"] = "right"
+    corners: Literal["sharp", "soft", "round"] = "soft"
+    font: Literal["system", "serif", "rounded", "mono"] = "system"
+    # "plain" keeps the header neutral; "accent" fills it with the brand colour.
+    header: Literal["plain", "accent"] = "plain"
 
     @field_validator("accent")
     @classmethod
@@ -183,6 +193,18 @@ class WidgetSettings(_Strict):
         if not re.fullmatch(r"#[0-9a-fA-F]{6}", value):
             raise ValueError("accent must be a six-digit hex colour such as #0b6e6e")
         return value.lower()
+
+    @field_validator("logo")
+    @classmethod
+    def _logo_stays_inside_the_pack(cls, value: str) -> str:
+        if not value:
+            return value
+        # The path is joined to the pack directory and served, so it must not climb out.
+        if not re.fullmatch(r"[A-Za-z0-9_-]+(/[A-Za-z0-9_.-]+)*\.(png|jpe?g|webp|svg)", value):
+            raise ValueError("logo must be a png, jpg, webp or svg path inside the pack")
+        if ".." in value:
+            raise ValueError("logo must be a path inside the pack")
+        return value
 
 
 class Pack(_Strict):
