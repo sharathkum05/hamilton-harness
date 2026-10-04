@@ -5,7 +5,8 @@
     GET  /api/conversations/{id}            transcript, to redraw after a reload
     POST /api/conversations/{id}/messages   send a customer message, get the reply
     GET  /api/conversations/{id}/trace      every step of every turn (debug only)
-    GET  /                                  demo page with the widget
+    GET  /                                  the product page (the demo, if the app is not built)
+    GET  /demo                              demo page with the widget and an inspector
     GET  /widget.js                         the embed script: a launcher and an iframe
     GET  /chat                              the chat panel (React, built from web/)
     GET  /admin                             the dashboard, when an admin token is set
@@ -255,9 +256,16 @@ def create_app(
             raise HTTPException(status_code=404, detail="not found")
         return {"turns": session_or_404(session_id).turns}
 
-    @app.get("/", include_in_schema=False)
+    @app.get("/demo", include_in_schema=False)
     def demo_page() -> FileResponse:
         return FileResponse(STATIC_DIR / "index.html")
+
+    @app.get("/", include_in_schema=False)
+    def home_page() -> FileResponse:
+        # Without a build there is no product page, so the demo stands in for it.
+        if not (app_dir / "index.html").is_file():
+            return demo_page()
+        return app_page()
 
     @app.get("/widget.js", include_in_schema=False)
     def widget_script() -> FileResponse:
