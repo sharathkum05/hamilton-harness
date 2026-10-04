@@ -1,4 +1,4 @@
-// A small client for a repkit server's dashboard API.
+// A small client for a Hamilton server's dashboard API.
 
 export class ApiError extends Error {
   constructor(status, message) {

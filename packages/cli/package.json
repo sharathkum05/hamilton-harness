@@ -1,11 +1,11 @@
 {
-  "name": "repkit-cli",
+  "name": "hamilton-harness",
   "version": "0.1.0",
-  "description": "Connect Claude to a repkit server: sign in once, then manage your AI rep's knowledge, rules, orders and tests over MCP.",
+  "description": "Connect Claude to a Hamilton server: sign in once, then manage your AI rep's knowledge, rules, orders and tests over MCP.",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "repkit": "bin/repkit.js"
+    "hamilton-harness": "bin/hamilton-harness.js"
   },
   "files": [
     "bin",

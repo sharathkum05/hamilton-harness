@@ -14,10 +14,10 @@ import { client } from '../src/api.js'
 import { buildServer } from '../src/mcp.js'
 
 const run = promisify(execFile)
-const BIN = new URL('../bin/repkit.js', import.meta.url).pathname
+const BIN = new URL('../bin/hamilton-harness.js', import.meta.url).pathname
 const TOKEN = 'test-token'
 
-// A stand-in for a repkit server's dashboard API, with just enough behaviour to test against.
+// A stand-in for a Hamilton server's dashboard API, with just enough behaviour to test against.
 const state = {
   pack: {
     persona: { name: 'Maya', company: 'Loop Sneakers', role: 'customer support' },
@@ -148,9 +148,9 @@ test('a wrong token is explained', async () => {
 })
 
 test('login checks the token, saves it privately, and status reads it', async () => {
-  const env = { ...process.env, REPKIT_CONFIG_DIR: mkdtempSync(join(tmpdir(), 'repkit-')) }
-  delete env.REPKIT_URL
-  delete env.REPKIT_ADMIN_TOKEN
+  const env = { ...process.env, HAMILTON_CONFIG_DIR: mkdtempSync(join(tmpdir(), 'hamilton-')) }
+  delete env.HAMILTON_URL
+  delete env.HAMILTON_ADMIN_TOKEN
 
   await assert.rejects(run('node', [BIN, 'status'], { env }), /not signed in/)
   await assert.rejects(run('node', [BIN, 'login', '--url', url, '--token', 'wrong'], { env }), /not accepted/)
@@ -158,7 +158,7 @@ test('login checks the token, saves it privately, and status reads it', async ()
   const login = await run('node', [BIN, 'login', '--url', `${url}/`, '--token', TOKEN], { env })
   assert.match(login.stdout, /Maya at Loop Sneakers/)
   assert.ok(!login.stdout.includes(TOKEN))
-  const saved = statSync(join(env.REPKIT_CONFIG_DIR, 'credentials.json'))
+  const saved = statSync(join(env.HAMILTON_CONFIG_DIR, 'credentials.json'))
   assert.equal(saved.mode & 0o077, 0)
 
   const status = await run('node', [BIN, 'status'], { env })

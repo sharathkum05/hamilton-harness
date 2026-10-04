@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-// repkit: connect Claude to a repkit server.
+// hamilton-harness: connect Claude to a Hamilton server.
 //
-//   repkit login --url https://chat.example.com    sign in with the server's admin token
-//   repkit status                                   show which rep you are connected to
-//   repkit mcp                                      run the MCP server (Claude starts this)
-//   repkit logout                                   forget the saved sign-in
+//   hamilton-harness login --url https://chat.example.com    sign in with the server's admin token
+//   hamilton-harness status                                   show which rep you are connected to
+//   hamilton-harness mcp                                      run the MCP server (Claude starts this)
+//   hamilton-harness logout                                   forget the saved sign-in
 
 import { createInterface } from 'node:readline'
 import { parseArgs } from 'node:util'
@@ -12,19 +12,19 @@ import { parseArgs } from 'node:util'
 import { ApiError, client } from '../src/api.js'
 import { clearCredentials, loadCredentials, saveCredentials } from '../src/config.js'
 
-const HELP = `repkit: connect Claude to a repkit server
+const HELP = `hamilton-harness: connect Claude to a Hamilton server
 
-  repkit login --url <server address> [--token <admin token>]
-  repkit status
-  repkit mcp
-  repkit logout
+  hamilton-harness login --url <server address> [--token <admin token>]
+  hamilton-harness status
+  hamilton-harness mcp
+  hamilton-harness logout
 
 Sign in once, then add it to Claude:
 
-  claude mcp add repkit -- npx -y repkit-cli mcp
+  claude mcp add hamilton -- npx -y hamilton-harness mcp
 
 The admin token is printed by the server when it starts with --admin. It can also
-be given as REPKIT_ADMIN_TOKEN, with the address as REPKIT_URL.`
+be given as HAMILTON_ADMIN_TOKEN, with the address as HAMILTON_URL.`
 
 /** Ask for the token without echoing it to the terminal. */
 function askHidden(question) {
@@ -44,7 +44,7 @@ function askHidden(question) {
 function signedIn() {
   const credentials = loadCredentials()
   if (!credentials) {
-    throw new ApiError(0, 'not signed in. Run: repkit login --url <server address>')
+    throw new ApiError(0, 'not signed in. Run: hamilton-harness login --url <server address>')
   }
   return client(credentials)
 }
@@ -53,14 +53,14 @@ async function login(args) {
   const { values } = parseArgs({ args, options: { url: { type: 'string' }, token: { type: 'string' } } })
   if (!values.url) throw new ApiError(0, 'login needs --url, for example --url http://localhost:8000')
   const url = values.url.replace(/\/$/, '')
-  const token = values.token || process.env.REPKIT_ADMIN_TOKEN || (await askHidden('Admin token: '))
+  const token = values.token || process.env.HAMILTON_ADMIN_TOKEN || (await askHidden('Admin token: '))
   if (!token) throw new ApiError(0, 'no token given')
 
   // Prove the address and token work before saving them.
   const pack = await client({ url, token }).pack()
   saveCredentials(url, token)
   console.log(`Signed in to ${url} as the admin of ${pack.persona.name} at ${pack.persona.company}.`)
-  console.log('Add it to Claude with: claude mcp add repkit -- npx -y repkit-cli mcp')
+  console.log('Add it to Claude with: claude mcp add hamilton -- npx -y hamilton-harness mcp')
 }
 
 async function status() {
@@ -94,12 +94,12 @@ async function main() {
     case '-h':
       return console.log(HELP)
     default:
-      throw new ApiError(0, `unknown command "${command}". Run: repkit help`)
+      throw new ApiError(0, `unknown command "${command}". Run: hamilton-harness help`)
   }
 }
 
 main().catch((error) => {
   // stderr, so nothing here corrupts the MCP stream on stdout.
-  console.error(`repkit: ${error.message}`)
+  console.error(`hamilton-harness: ${error.message}`)
   process.exit(1)
 })

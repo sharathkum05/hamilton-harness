@@ -5,15 +5,15 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 export function configDir() {
-  return process.env.REPKIT_CONFIG_DIR || join(homedir(), '.config', 'repkit')
+  return process.env.HAMILTON_CONFIG_DIR || join(homedir(), '.config', 'hamilton')
 }
 
 const file = () => join(configDir(), 'credentials.json')
 
 /** The saved sign-in, or null. Environment variables win, for CI and containers. */
 export function loadCredentials() {
-  if (process.env.REPKIT_URL && process.env.REPKIT_ADMIN_TOKEN) {
-    return { url: process.env.REPKIT_URL.replace(/\/$/, ''), token: process.env.REPKIT_ADMIN_TOKEN }
+  if (process.env.HAMILTON_URL && process.env.HAMILTON_ADMIN_TOKEN) {
+    return { url: process.env.HAMILTON_URL.replace(/\/$/, ''), token: process.env.HAMILTON_ADMIN_TOKEN }
   }
   if (!existsSync(file())) return null
   try {

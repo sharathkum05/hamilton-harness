@@ -1,29 +1,29 @@
-# repkit-cli
+# hamilton-harness
 
-Connect Claude to a repkit server. Sign in once, then ask Claude to manage your
+Connect Claude to a Hamilton server. Sign in once, then ask Claude to manage your
 AI rep: add knowledge, tighten its scope, change a rule, work through the
 orders and quotes it has taken, or rerun the tests.
 
 ## Use
 
-Start your repkit server with the dashboard switched on. It prints an admin
+Start your Hamilton server with the dashboard switched on. It prints an admin
 token.
 
 ```bash
-repkit serve packs/your-company --admin
+hamilton-harness serve packs/your-company --admin
 ```
 
 Sign in from the machine where Claude runs. The token is asked for without
 being shown, checked against the server, and saved in a file only you can read.
 
 ```bash
-npx repkit-cli login --url https://chat.example.com
+npx hamilton-harness login --url https://chat.example.com
 ```
 
 Add it to Claude Code:
 
 ```bash
-claude mcp add repkit -- npx -y repkit-cli mcp
+claude mcp add hamilton -- npx -y hamilton-harness mcp
 ```
 
 Or to Claude Desktop, in its MCP settings:
@@ -31,7 +31,7 @@ Or to Claude Desktop, in its MCP settings:
 ```json
 {
   "mcpServers": {
-    "repkit": { "command": "npx", "args": ["-y", "repkit-cli", "mcp"] }
+    "hamilton": { "command": "npx", "args": ["-y", "hamilton-harness", "mcp"] }
   }
 }
 ```
@@ -44,12 +44,12 @@ first one confirmed", "rerun the fake customers".
 
 | Command | What it does |
 |---|---|
-| `repkit login --url <address>` | Check the address and token, then save them |
-| `repkit status` | Show which rep you are connected to and what is waiting |
-| `repkit mcp` | Run the MCP server. Claude starts this itself |
-| `repkit logout` | Forget the saved sign-in |
+| `hamilton-harness login --url <address>` | Check the address and token, then save them |
+| `hamilton-harness status` | Show which rep you are connected to and what is waiting |
+| `hamilton-harness mcp` | Run the MCP server. Claude starts this itself |
+| `hamilton-harness logout` | Forget the saved sign-in |
 
-In CI or a container, set `REPKIT_URL` and `REPKIT_ADMIN_TOKEN` instead of
+In CI or a container, set `HAMILTON_URL` and `HAMILTON_ADMIN_TOKEN` instead of
 signing in.
 
 ## What Claude can do

@@ -1,4 +1,4 @@
-// The MCP server Claude talks to. Every tool is a call to the repkit server's
+// The MCP server Claude talks to. Every tool is a call to the Hamilton server's
 // dashboard API, so Claude edits through the same validated editor as the
 // dashboard: a change that would break the rep is refused, with the reason.
 
@@ -6,7 +6,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
 
-const INSTRUCTIONS = `This server manages one company's AI rep on a repkit server: who the rep
+const INSTRUCTIONS = `This server manages one company's AI rep on a Hamilton server: who the rep
 is, what it knows, what it may promise, the orders and quotes it has taken, and when a human
 takes over.
 
@@ -20,7 +20,7 @@ const SECTIONS = ['persona', 'scope', 'widget', 'handoff']
 const STATUSES = ['new', 'confirmed', 'done', 'cancelled']
 
 export function buildServer(api) {
-  const server = new McpServer({ name: 'repkit', version: '0.1.0' }, { instructions: INSTRUCTIONS })
+  const server = new McpServer({ name: 'hamilton-harness', version: '0.1.0' }, { instructions: INSTRUCTIONS })
 
   /** Run a call and hand Claude either the result or a message it can act on. */
   const tool = (name, description, inputSchema, work) =>
