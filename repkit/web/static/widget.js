@@ -213,7 +213,7 @@
       addNote("That didn't send.", { label: "Try again", run: () => send(text) });
     } finally {
       setBusy(false);
-      if (state.open) ui.input.focus();
+      if (state.open) ui.input.focus({ preventScroll: true });
     }
   }
 
@@ -225,7 +225,8 @@
     ui.panel.hidden = false;
     ui.launcher.setAttribute("aria-expanded", "true");
     ensureStarted().then(scrollToEnd);
-    ui.input.focus();
+    // preventScroll: focusing the composer must not move the host page.
+    ui.input.focus({ preventScroll: true });
   }
 
   function close() {
@@ -235,7 +236,7 @@
     ui.panel.hidden = true;
     ui.launcher.hidden = false;
     ui.launcher.setAttribute("aria-expanded", "false");
-    ui.launcher.focus();
+    ui.launcher.focus({ preventScroll: true });
   }
 
   async function reset() {
