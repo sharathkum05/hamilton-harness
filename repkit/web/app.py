@@ -6,7 +6,8 @@
     POST /api/conversations/{id}/messages   send a customer message, get the reply
     GET  /api/conversations/{id}/trace      every step of every turn (debug only)
     GET  /                                  demo page with the widget
-    GET  /widget.js                         the embeddable widget
+    GET  /widget.js                         the embed script: a launcher and an iframe
+    GET  /chat                              the chat panel (React, built from web/)
 
 The browser only ever sends customer text. Everything that decides what the
 rep may do stays on the server.
@@ -30,6 +31,9 @@ from repkit.web.sessions import Session, SessionStore
 
 MAX_MESSAGE_CHARS = 2000
 STATIC_DIR = Path(__file__).parent / "static"
+# The React app in web/ builds into here. It is not committed, so it may be missing.
+APP_DIR = STATIC_DIR / "app"
+NOT_BUILT = "The web UI has not been built. Run: npm --prefix web ci && npm --prefix web run build"
 
 
 class CustomerMessage(BaseModel):
@@ -106,6 +110,7 @@ def create_app(
     debug: bool = False,
     sessions: SessionStore | None = None,
     allow_origins: Sequence[str] = (),
+    app_dir: Path = APP_DIR,
 ) -> FastAPI:
     """Build the app.
 
@@ -212,5 +217,15 @@ def create_app(
     def widget_script() -> FileResponse:
         return FileResponse(STATIC_DIR / "widget.js", media_type="text/javascript")
 
+    @app.get("/chat", include_in_schema=False)
+    def chat_page() -> FileResponse:
+        page = app_dir / "index.html"
+        if not page.is_file():
+            raise HTTPException(status_code=503, detail=NOT_BUILT)
+        # The page names its scripts by content hash, so it must never be cached itself.
+        return FileResponse(page, headers={"Cache-Control": "no-cache"})
+
+    if app_dir.is_dir():
+        app.mount("/app", StaticFiles(directory=app_dir), name="app")
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     return app

@@ -192,7 +192,24 @@ def test_demo_page_and_widget_assets_are_served(client):
     script = client.get("/widget.js")
     assert script.headers["content-type"].startswith("text/javascript")
     assert "repkit:turn" in script.text
-    assert client.get("/static/widget.css").status_code == 200
+
+
+def test_chat_page_is_served_from_the_built_app(pack, tmp_path):
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "index.html").write_text("<div id=root></div>", encoding="utf-8")
+    (tmp_path / "assets" / "index.js").write_text("console.log(1)", encoding="utf-8")
+    client = make_client(pack, app_dir=tmp_path)
+    page = client.get("/chat")
+    assert page.status_code == 200
+    assert page.headers["cache-control"] == "no-cache"
+    assert client.get("/app/assets/index.js").status_code == 200
+
+
+def test_chat_page_explains_a_missing_build(pack, tmp_path):
+    client = make_client(pack, app_dir=tmp_path / "missing")
+    response = client.get("/chat")
+    assert response.status_code == 503
+    assert "npm --prefix web" in response.json()["detail"]
 
 
 def test_logo_is_served_as_a_sandboxed_image(client):
