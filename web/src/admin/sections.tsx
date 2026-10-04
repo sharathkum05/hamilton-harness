@@ -182,21 +182,38 @@ export function BrandSection({ pack, api, commit }: SectionProps) {
               )}
             </div>
           </Field>
-          <Field label="Brand colour" htmlFor="accent" hint="Used for the launcher and the customer's messages.">
+          <Field
+            label="Brand colour"
+            htmlFor="accent"
+            hint="Used for the launcher and the customer's messages. Black and white follows the theme."
+          >
             <div className="flex items-center gap-2">
-              <input
-                type="color"
-                aria-label="Pick the brand colour"
-                value={w.accent}
-                onChange={(e) => widget.set({ accent: e.target.value })}
-                className="h-9 w-12 cursor-pointer rounded-md border bg-transparent p-1"
-              />
-              <Input
-                id="accent"
-                value={w.accent}
-                onChange={(e) => widget.set({ accent: e.target.value })}
-                className="font-mono"
-              />
+              <Button
+                type="button"
+                size="sm"
+                variant={w.accent === 'auto' ? 'default' : 'outline'}
+                aria-pressed={w.accent === 'auto'}
+                onClick={() => widget.set({ accent: w.accent === 'auto' ? '#2563eb' : 'auto' })}
+              >
+                Black and white
+              </Button>
+              {w.accent !== 'auto' && (
+                <>
+                  <input
+                    type="color"
+                    aria-label="Pick the brand colour"
+                    value={w.accent}
+                    onChange={(e) => widget.set({ accent: e.target.value })}
+                    className="h-9 w-12 cursor-pointer rounded-md border bg-transparent p-1"
+                  />
+                  <Input
+                    id="accent"
+                    value={w.accent}
+                    onChange={(e) => widget.set({ accent: e.target.value })}
+                    className="font-mono"
+                  />
+                </>
+              )}
             </div>
           </Field>
           <Field label="Theme" htmlFor="theme">
