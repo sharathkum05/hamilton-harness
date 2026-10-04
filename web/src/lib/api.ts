@@ -91,8 +91,11 @@ export async function request<T>(
 
 export const getConfig = () => request<Config>('/api/config')
 
-export const startConversation = () =>
-  request<ConversationState>('/api/conversations', { body: {} })
+/** Proof of who the customer is, signed by the company's own server. */
+export type Identity = { customer_id: string; signature: string }
+
+export const startConversation = (identity?: Identity | null) =>
+  request<ConversationState>('/api/conversations', { body: identity ?? {} })
 
 export const getConversation = (id: string) =>
   request<ConversationState>(`/api/conversations/${encodeURIComponent(id)}`)

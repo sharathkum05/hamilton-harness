@@ -11,6 +11,8 @@
      data-repkit-server="https://chat.example.com"   server origin, if not the script's own
      data-repkit-open="true"                          open the panel on load
      data-repkit-pacing="off"                         show replies without typing delays
+     data-repkit-customer="id"                        a signed-in customer's id, with
+     data-repkit-signature="hmac"                     its HMAC-SHA256 made on your server
 
    The page can drive it through window.repkit: open(), close(), send(text), reset().
    It fires "repkit:ready", "repkit:turn" and "repkit:reset" events on window. */
@@ -90,7 +92,16 @@
     const frame = document.createElement("iframe");
     frame.className = "frame";
     frame.title = ui.label;
-    frame.src = `${server}/chat${options.repkitPacing === "off" ? "?nopacing" : ""}`;
+    let source = `${server}/chat${options.repkitPacing === "off" ? "?nopacing" : ""}`;
+    if (options.repkitCustomer && options.repkitSignature) {
+      // In the fragment, so the id never appears in a request line or a server log.
+      const who = new URLSearchParams({
+        customer: options.repkitCustomer,
+        signature: options.repkitSignature,
+      });
+      source += `#${who}`;
+    }
+    frame.src = source;
     ui.frame = frame;
     ui.root.append(frame);
   }

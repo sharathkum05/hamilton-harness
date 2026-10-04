@@ -7,7 +7,7 @@ import { ChatPanel } from '@/chat/ChatPanel'
 import type { PanelStatus } from '@/chat/ChatPanel'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ApiError, getConfig, getConversation, sendMessage, startConversation } from '@/lib/api'
-import type { Config, ConversationState, TranscriptLine } from '@/lib/api'
+import type { Config, ConversationState, Identity, TranscriptLine } from '@/lib/api'
 import { applyBrand } from '@/lib/brand'
 
 const STORAGE_KEY = 'repkit:conversation'
@@ -30,6 +30,16 @@ function remember(id: string | null) {
     /* a private window may refuse storage; the chat still works for this view */
   }
 }
+
+/** The embed script passes a signed-in customer in the URL fragment, which is never sent to a server. */
+function identityFromHash(): Identity | null {
+  const params = new URLSearchParams(window.location.hash.slice(1))
+  const customer_id = params.get('customer')
+  const signature = params.get('signature')
+  return customer_id && signature ? { customer_id, signature } : null
+}
+
+const identity = identityFromHash()
 
 function tellPage(type: string, detail?: unknown) {
   if (embedded) window.parent.postMessage({ source: 'repkit', type, detail }, '*')
@@ -55,7 +65,7 @@ export function ChatApp() {
   }, [])
 
   const begin = useCallback(async () => {
-    const created = await startConversation()
+    const created = await startConversation(identity)
     adopt(created)
     return created
   }, [adopt])
