@@ -4,6 +4,9 @@
     POST /api/conversations                 start a conversation
     GET  /api/conversations/{id}            transcript, to redraw after a reload
     POST /api/conversations/{id}/messages   send a customer message, get the reply
+    GET  /api/conversations/{id}/trace      every step of every turn (debug only)
+    GET  /                                  demo page with the widget
+    GET  /widget.js                         the embeddable widget
 
 The browser only ever sends customer text. Everything that decides what the
 rep may do stays on the server.
@@ -11,15 +14,21 @@ rep may do stays on the server.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
 from repkit.runtime import Agent, TurnResult
 from repkit.web.sessions import Session, SessionStore
 
 MAX_MESSAGE_CHARS = 2000
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 class CustomerMessage(BaseModel):
@@ -74,11 +83,24 @@ def create_app(
     *,
     debug: bool = False,
     sessions: SessionStore | None = None,
+    allow_origins: Sequence[str] = (),
 ) -> FastAPI:
+    """Build the app.
+
+    `allow_origins` lists the sites allowed to embed the widget. Leave it empty
+    when the widget is served from this same server.
+    """
     pack = agent.pack
     store = sessions or SessionStore()
     app = FastAPI(title=f"{pack.persona.company} chat", docs_url=None, redoc_url=None)
     app.state.sessions = store
+    if allow_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=list(allow_origins),
+            allow_methods=["GET", "POST"],
+            allow_headers=["content-type"],
+        )
 
     def session_or_404(session_id: str) -> Session:
         session = store.get(session_id)
@@ -134,4 +156,20 @@ def create_app(
             body["debug"] = _debug_view(result)
         return body
 
+    @app.get("/api/conversations/{session_id}/trace")
+    def get_trace(session_id: str) -> dict[str, Any]:
+        if not debug:
+            # Traces hold tool results and rule ids, so they stay off unless asked for.
+            raise HTTPException(status_code=404, detail="not found")
+        return {"turns": session_or_404(session_id).turns}
+
+    @app.get("/", include_in_schema=False)
+    def demo_page() -> FileResponse:
+        return FileResponse(STATIC_DIR / "index.html")
+
+    @app.get("/widget.js", include_in_schema=False)
+    def widget_script() -> FileResponse:
+        return FileResponse(STATIC_DIR / "widget.js", media_type="text/javascript")
+
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     return app

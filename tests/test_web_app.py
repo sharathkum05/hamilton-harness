@@ -142,3 +142,41 @@ def test_debug_mode_explains_the_turn(pack):
     assert debug["actions"][0]["rules"] == ["refund-limit"]
     assert debug["handoff"]["reason"] == "guard"
     assert debug["model_calls"] == 1
+
+
+def test_trace_is_hidden_unless_debug_is_on(pack):
+    client = make_client(pack, ["Hello!"])
+    session_id = start(client)
+    send(client, session_id, "hi")
+    assert client.get(f"/api/conversations/{session_id}/trace").status_code == 404
+
+
+def test_trace_lists_every_turn_in_debug_mode(pack):
+    client = make_client(pack, [LOOKUP, "Due Thursday.", "Anytime!"], debug=True)
+    session_id = start(client)
+    send(client, session_id, "where is LS-4471")
+    send(client, session_id, "thanks")
+    turns = client.get(f"/api/conversations/{session_id}/trace").json()["turns"]
+    assert len(turns) == 2
+    assert [e["kind"] for e in turns[0]] == [
+        "customer",
+        "context",
+        "model",
+        "action",
+        "model",
+        "shaped",
+        "turn_end",
+    ]
+
+
+def test_cross_origin_requests_are_refused_by_default(client):
+    response = client.get("/api/config", headers={"Origin": "https://shop.example"})
+    assert "access-control-allow-origin" not in response.headers
+
+
+def test_listed_origins_may_embed_the_widget(pack):
+    client = make_client(pack, allow_origins=["https://shop.example"])
+    allowed = client.get("/api/config", headers={"Origin": "https://shop.example"})
+    assert allowed.headers["access-control-allow-origin"] == "https://shop.example"
+    other = client.get("/api/config", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-origin" not in other.headers
