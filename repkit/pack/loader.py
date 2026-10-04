@@ -10,6 +10,7 @@ Layout:
     handoff.yaml     when a human takes over
     model.yaml       optional model settings
     widget.yaml      optional web chat widget settings
+    scope.yaml       optional limits on what the rep will talk about
 """
 
 from __future__ import annotations
@@ -113,7 +114,7 @@ def load_pack(path: str | Path) -> Pack:
         "tools": tools,
         "root": str(root),
     }
-    for optional in ("handoff", "model", "widget"):
+    for optional in ("handoff", "model", "widget", "scope"):
         loaded = _read_yaml(root / f"{optional}.yaml")
         if loaded is not None:
             data[optional] = loaded

@@ -132,6 +132,40 @@ class ModelSettings(_Strict):
     max_tokens: int = Field(default=16000, ge=256)
 
 
+OffTopic = Literal["math", "coding", "writing", "trivia"]
+
+
+class ScopeSettings(_Strict):
+    """What the rep is for, and what it does when asked for anything else."""
+
+    # Shown to the model: the subjects this rep helps with.
+    covers: str = ""
+    off_topic_reply: str = "That's outside what I can help with here. Anything else I can do?"
+    # Sent instead of a reply that states a figure found in no source.
+    unsure_reply: str = (
+        "I don't have that to hand and I'd rather not guess. "
+        "Want me to get someone who can confirm?"
+    )
+    # Kinds of request refused in code before the model is called.
+    refuse: list[OffTopic] = Field(default_factory=lambda: ["math", "coding", "writing", "trivia"])
+    # Extra patterns that mark a message as off topic for this company.
+    also_refuse: list[str] = Field(default_factory=list)
+    # Refuse any message that touches nothing in the pack, not only the kinds above.
+    strict: bool = False
+    # Replace replies that state a number found in no rule, note, tool result or message.
+    ground_numbers: bool = True
+
+    @field_validator("also_refuse")
+    @classmethod
+    def _patterns_compile(cls, patterns: list[str]) -> list[str]:
+        for pattern in patterns:
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                raise ValueError(f"also_refuse pattern {pattern!r} is not valid: {exc}") from exc
+        return patterns
+
+
 class WidgetSettings(_Strict):
     """How the web chat widget looks and opens for this company."""
 
@@ -160,6 +194,7 @@ class Pack(_Strict):
     handoff: HandoffRules = Field(default_factory=HandoffRules)
     model: ModelSettings = Field(default_factory=ModelSettings)
     widget: WidgetSettings = Field(default_factory=WidgetSettings)
+    scope: ScopeSettings = Field(default_factory=ScopeSettings)
     root: str = ""
 
     @model_validator(mode="after")
