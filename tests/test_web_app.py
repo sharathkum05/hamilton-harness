@@ -59,3 +59,86 @@ def test_unknown_conversation_is_404(client):
 
 def test_api_docs_are_not_served(client):
     assert client.get("/docs").status_code == 404
+
+
+LOOKUP = {"tool": "lookup_order", "args": {"order_id": "LS-4471"}}
+
+
+def send(client, session_id, text):
+    return client.post(f"/api/conversations/{session_id}/messages", json={"text": text})
+
+
+def test_message_returns_paced_bubbles(pack):
+    client = make_client(pack, [LOOKUP, "Found it, Priya. It's due Thursday 8 October."])
+    session_id = start(client)
+    body = send(client, session_id, "where is LS-4471").json()
+    assert body["bubbles"][0]["text"].startswith("Found it, Priya.")
+    assert body["bubbles"][0]["delay"] > 0
+    assert body["handed_off"] is False
+    assert "debug" not in body
+
+
+def test_transcript_records_both_sides(pack):
+    client = make_client(pack, ["Hi! What's the order number?"])
+    session_id = start(client)
+    send(client, session_id, "  hello  ")
+    transcript = client.get(f"/api/conversations/{session_id}").json()["transcript"]
+    assert [m["from"] for m in transcript] == ["rep", "customer", "rep"]
+    assert transcript[1]["text"] == "hello"
+
+
+def test_handoff_is_reported(pack):
+    client = make_client(pack)
+    session_id = start(client)
+    body = send(client, session_id, "get me a real person").json()
+    assert body["handed_off"] is True
+    assert body["bubbles"][0]["text"] == pack.handoff.message
+    assert client.get(f"/api/conversations/{session_id}").json()["handed_off"] is True
+
+
+@pytest.mark.parametrize("payload", [{"text": ""}, {"text": "   "}, {"text": "x" * 2001}, {}])
+def test_bad_messages_are_rejected(client, payload):
+    session_id = start(client)
+    response = client.post(f"/api/conversations/{session_id}/messages", json=payload)
+    assert response.status_code == 422
+
+
+def test_message_to_unknown_conversation_is_404(client):
+    assert send(client, "nope", "hi").status_code == 404
+
+
+def test_a_second_message_mid_turn_is_refused(pack):
+    client = make_client(pack, ["Hello!"])
+    session_id = start(client)
+    session = client.app.state.sessions.get(session_id)
+    with session.lock:
+        assert send(client, session_id, "hi").status_code == 409
+    assert send(client, session_id, "hi").status_code == 200
+
+
+def test_the_lock_is_released_when_a_turn_crashes(pack):
+    def explode(messages):
+        raise RuntimeError("bug")
+
+    client = TestClient(
+        create_app(Agent(pack, ScriptedModel([explode, "Hello!"]), retry_wait=0)),
+        raise_server_exceptions=False,
+    )
+    session_id = start(client)
+    assert send(client, session_id, "hi").status_code == 500
+    assert send(client, session_id, "hi again").status_code == 200
+
+
+def test_debug_mode_explains_the_turn(pack):
+    refund = {
+        "tool": "issue_refund",
+        "args": {"order_id": "LS-6033", "amount_inr": 4199, "reason": "damaged"},
+    }
+    client = make_client(pack, [refund], debug=True)
+    session_id = start(client)
+    debug = send(client, session_id, "refund my damaged trail loops LS-6033").json()["debug"]
+    assert debug["context"]["rules"] == ["refund-limit", "refund-reasons"]
+    assert debug["actions"][0]["outcome"] == "blocked"
+    assert debug["actions"][0]["rules"] == ["refund-limit"]
+    assert debug["handoff"]["reason"] == "guard"
+    assert debug["model_calls"] == 1
