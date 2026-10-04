@@ -183,6 +183,7 @@ export function AdminApp() {
   const [token, setToken] = useState(loadToken)
   const [pack, setPack] = useState<Pack | null>(null)
   const [rejected, setRejected] = useState(false)
+  const [switchedOff, setSwitchedOff] = useState(false)
   const [section, setSection] = useState(() => window.location.hash.slice(1) || 'overview')
   const [previewKey, setPreviewKey] = useState(0)
   const [formKey, setFormKey] = useState(0)
@@ -202,6 +203,9 @@ export function AdminApp() {
         storeToken('')
         setToken('')
         setRejected(true)
+      } else if (error instanceof ApiError && error.status === 404) {
+        // This server was started without the dashboard, as the hosted demo is.
+        setSwitchedOff(true)
       } else {
         toast.error('Could not load the pack.')
       }
@@ -250,6 +254,22 @@ export function AdminApp() {
   // Remounting the section throws its edits away and starts again from the saved pack.
   const discard = useCallback(() => setFormKey((key) => key + 1), [])
 
+  if (switchedOff) {
+    return (
+      <div className="flex h-full items-center justify-center p-6">
+        <div className="bg-card flex w-full max-w-md flex-col gap-4 rounded-2xl border p-6">
+          <h1 className="text-2xl">The dashboard is off on this server</h1>
+          <p className="text-muted-foreground text-sm">
+            The hosted demo cannot save changes, so its dashboard is switched off. Run the server
+            yourself with <code>--admin</code> to use it.
+          </p>
+          <Button asChild variant="outline" className="self-start">
+            <a href="/demo">Back to the demo</a>
+          </Button>
+        </div>
+      </div>
+    )
+  }
   if (!token) {
     return (
       <TokenGate

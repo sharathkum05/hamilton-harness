@@ -38,7 +38,6 @@ def test_admin_routes_need_the_token(client):
 def test_admin_is_absent_without_a_token(pack):
     plain = TestClient(create_app(Agent(pack, ScriptedModel([]), retry_wait=0)))
     assert plain.get("/api/admin/pack", headers=AUTH).status_code == 404
-    assert plain.get("/admin").status_code == 404
 
 
 def test_pack_is_returned_for_editing(client):

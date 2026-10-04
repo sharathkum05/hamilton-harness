@@ -290,9 +290,10 @@ def create_app(
 
         install_admin(app, holder, admin_token)
 
-        @app.get("/admin", include_in_schema=False)
-        def admin_page() -> FileResponse:
-            return app_page()
+    @app.get("/admin", include_in_schema=False)
+    def admin_page() -> FileResponse:
+        # Served even when the dashboard is off, so the page can say so instead of a bare 404.
+        return app_page()
 
     if app_dir.is_dir():
         app.mount("/app", StaticFiles(directory=app_dir), name="app")
