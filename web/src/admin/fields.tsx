@@ -10,7 +10,37 @@ import { Textarea } from '@/components/ui/textarea'
 /** Throws away unsaved edits in the open section. Provided by the dashboard shell. */
 export const DiscardContext = createContext<() => void>(() => {})
 
+/** Class for a card body whose settings sit one per row, with a hairline between them. */
+export const ROWS = 'flex flex-col divide-y'
+
+/**
+ * One setting as a row: what it is and why on the left, the control on the
+ * right. On a narrow screen the control drops below.
+ */
 export function Field({
+  label,
+  hint,
+  htmlFor,
+  children,
+}: {
+  label: string
+  hint?: string
+  htmlFor?: string
+  children: ReactNode
+}) {
+  return (
+    <div className="grid gap-x-10 gap-y-2.5 py-5 first:pt-0 last:pb-0 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      <div className="flex flex-col gap-1">
+        <Label htmlFor={htmlFor}>{label}</Label>
+        {hint && <p className="text-muted-foreground text-sm leading-snug text-pretty">{hint}</p>}
+      </div>
+      <div className="min-w-0">{children}</div>
+    </div>
+  )
+}
+
+/** A setting with its label above the control, for tight spaces. */
+export function StackField({
   label,
   hint,
   htmlFor,
@@ -66,6 +96,7 @@ export function Lines({
   )
 }
 
+/** An on-off setting as a row: the label and what it does, with the switch at the end. */
 export function Toggle({
   id,
   label,
@@ -80,12 +111,12 @@ export function Toggle({
   onChange: (next: boolean) => void
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
-      <div className="flex flex-col gap-0.5">
+    <div className="flex items-start justify-between gap-8 py-5 first:pt-0 last:pb-0">
+      <div className="flex flex-col gap-1">
         <Label htmlFor={id}>{label}</Label>
-        {hint && <p className="text-muted-foreground text-xs">{hint}</p>}
+        {hint && <p className="text-muted-foreground max-w-[60ch] text-sm leading-snug text-pretty">{hint}</p>}
       </div>
-      <Switch id={id} checked={checked} onCheckedChange={onChange} />
+      <Switch id={id} checked={checked} onCheckedChange={onChange} className="mt-0.5 shrink-0" />
     </div>
   )
 }
@@ -103,10 +134,10 @@ export function Section({
 }) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl">{title}</h1>
-          <p className="text-muted-foreground max-w-[62ch] text-sm">{description}</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-3xl">{title}</h1>
+          <p className="text-muted-foreground max-w-[62ch] text-sm leading-relaxed text-pretty">{description}</p>
         </div>
         {actions}
       </div>
