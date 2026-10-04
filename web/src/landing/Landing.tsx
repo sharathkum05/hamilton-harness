@@ -253,21 +253,22 @@ export function Landing() {
   return (
     <div className="bg-background text-foreground relative min-h-full">
       <div className="grain" aria-hidden="true" />
-      {/* A floating bar: it stays out of the way and reads as part of the page. */}
+      {/* A floating glass bar over the page, with the content fading out beneath it. */}
+      <div className="scroll-edge" aria-hidden="true" />
       <header className="sticky top-3 z-40 px-3">
-        <div className="bg-background/70 mx-auto flex h-12 max-w-3xl items-center justify-between gap-4 rounded-full border px-2 pl-4 shadow-sm backdrop-blur-md">
+        <div className="glass mx-auto flex h-13 max-w-3xl items-center justify-between gap-4 rounded-full px-2 pl-5">
           <a href="/" className="font-heading flex items-center gap-2 text-lg">
             <span className="ring-border size-6 overflow-hidden rounded-full ring-1">
               <Orb className="size-full" colors={GREY_ORB} />
             </span>
             repkit
           </a>
-          <nav aria-label="Page sections" className="text-muted-foreground hidden items-center gap-5 text-sm md:flex">
-            <a className="hover:text-foreground transition-colors" href="#roles">What it runs</a>
-            <a className="hover:text-foreground transition-colors" href="#integrations">Integrations</a>
-            <a className="hover:text-foreground transition-colors" href="#guardrails">Guardrails</a>
-            <a className="hover:text-foreground transition-colors" href="#dashboard">Dashboard</a>
-            <a className="hover:text-foreground transition-colors" href="#install">Install</a>
+          <nav aria-label="Page sections" className="text-foreground/75 hidden items-center gap-0.5 text-sm md:flex">
+            <a className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors" href="#roles">What it runs</a>
+            <a className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors" href="#integrations">Integrations</a>
+            <a className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors" href="#guardrails">Guardrails</a>
+            <a className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors" href="#dashboard">Dashboard</a>
+            <a className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors" href="#install">Install</a>
           </nav>
           <Button asChild size="sm" className="rounded-full">
             <a href="/demo">
