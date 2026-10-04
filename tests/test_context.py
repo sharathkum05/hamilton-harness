@@ -88,3 +88,16 @@ def test_context_rides_in_the_user_turn_otherwise():
 
 def test_neutralise_handles_closing_and_spaced_tags():
     assert "<" not in neutralise_context_tags("</context>< Context>")
+
+
+def test_system_prompt_states_the_scope_and_the_figures_rule(pack):
+    prompt = build_system_prompt(pack)
+    assert "What you're here for" in prompt
+    assert "Loop Sneakers orders, deliveries" in prompt
+    assert pack.scope.off_topic_reply in prompt
+    assert "Only state a price, date, time" in prompt
+
+
+def test_system_prompt_omits_scope_when_the_pack_sets_none():
+    bare = Pack(persona=Persona(name="M", company="C"))
+    assert "What you're here for" not in build_system_prompt(bare)
