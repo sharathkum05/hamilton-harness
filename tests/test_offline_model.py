@@ -73,3 +73,9 @@ def test_is_honest_about_being_an_ai(agent):
 def test_pack_without_an_offline_model(tmp_path):
     with pytest.raises(ModelError, match="no offline model"):
         load_offline_model(str(tmp_path))
+
+
+def test_general_delivery_questions_are_answered_from_the_notes(agent):
+    (turn,) = chat(agent, "how fast is express delivery")
+    assert turn.actions == []
+    assert "Express delivery" in turn.text
