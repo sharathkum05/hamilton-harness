@@ -132,6 +132,37 @@ class ModelSettings(_Strict):
     max_tokens: int = Field(default=16000, ge=256)
 
 
+class RecordField(_Strict):
+    """One thing the rep must collect, such as a quantity or a delivery address."""
+
+    name: str = Field(pattern=r"^[a-z][a-z0-9_]*$")
+    label: str = ""
+    type: Literal["text", "number", "choice"] = "text"
+    required: bool = True
+    choices: list[str] = Field(default_factory=list)
+    description: str = ""
+
+    @model_validator(mode="after")
+    def _choices_go_with_choice(self) -> RecordField:
+        if self.type == "choice" and not self.choices:
+            raise ValueError(f"field '{self.name}' is a choice but lists no choices")
+        return self
+
+
+class RecordType(_Strict):
+    """Something the rep can take down for the business: an order, a quote request, a lead."""
+
+    name: str = Field(pattern=r"^[a-z][a-z0-9_]*$")
+    label: str
+    # When the rep should take one. Shown to the model.
+    description: str
+    fields: list[RecordField] = Field(min_length=1)
+
+    @property
+    def tool_name(self) -> str:
+        return f"create_{self.name}"
+
+
 OffTopic = Literal["math", "coding", "writing", "trivia"]
 
 
@@ -220,11 +251,16 @@ class Pack(_Strict):
     model: ModelSettings = Field(default_factory=ModelSettings)
     widget: WidgetSettings = Field(default_factory=WidgetSettings)
     scope: ScopeSettings = Field(default_factory=ScopeSettings)
+    records: list[RecordType] = Field(default_factory=list)
     root: str = ""
 
     @model_validator(mode="after")
     def _rules_point_at_real_tools(self) -> Pack:
         names = {t.name for t in self.tools}
+        for record in self.records:
+            if record.tool_name in names:
+                raise ValueError(f"record '{record.name}' clashes with tool '{record.tool_name}'")
+            names.add(record.tool_name)
         for rule in self.policies:
             if rule.tool and rule.tool not in names:
                 raise ValueError(f"rule '{rule.id}' refers to unknown tool '{rule.tool}'")

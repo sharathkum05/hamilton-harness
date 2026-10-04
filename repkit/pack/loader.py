@@ -11,6 +11,7 @@ Layout:
     model.yaml       optional model settings
     widget.yaml      optional web chat widget settings
     scope.yaml       optional limits on what the rep will talk about
+    records.yaml     optional things the rep takes down: orders, quotes, leads
 """
 
 from __future__ import annotations
@@ -105,6 +106,7 @@ def load_pack(path: str | Path) -> Pack:
     persona = _read_yaml(root / "persona.yaml", required=True)
     policies = _listing(_read_yaml(root / "policies.yaml"), "policies", "policies.yaml")
     tools = _listing(_read_yaml(root / "tools.yaml"), "tools", "tools.yaml")
+    records = _listing(_read_yaml(root / "records.yaml"), "records", "records.yaml")
 
     data: dict[str, Any] = {
         "persona": persona,
@@ -112,6 +114,7 @@ def load_pack(path: str | Path) -> Pack:
         "knowledge": _load_knowledge(root),
         "policies": policies,
         "tools": tools,
+        "records": records,
         "root": str(root),
     }
     for optional in ("handoff", "model", "widget", "scope"):
