@@ -1,14 +1,14 @@
 # Putting the chat on a website
 
 The chat is one script tag. It adds a launcher button and, when opened, loads
-the chat panel in an iframe served by your repkit server. The iframe keeps the
+the chat panel in an iframe served by your Hamilton server. The iframe keeps the
 panel's styles and scripts apart from the site, so it works the same on a
 hand-written page, a PHP site, WordPress, Shopify or a React app.
 
 ## 1. Run the server somewhere the site can reach
 
 ```bash
-repkit serve packs/your-company --host 0.0.0.0 --port 8000 --admin
+hamilton-harness serve packs/your-company --host 0.0.0.0 --port 8000 --admin
 ```
 
 Put it behind HTTPS (a reverse proxy such as Caddy or nginx). The examples
@@ -34,7 +34,7 @@ below call it `https://chat.example.com`.
 ```php
 // functions.php
 add_action('wp_enqueue_scripts', function () {
-    wp_enqueue_script('repkit', 'https://chat.example.com/widget.js', [], null, [
+    wp_enqueue_script('hamilton', 'https://chat.example.com/widget.js', [], null, [
         'strategy'  => 'defer',
         'in_footer' => true,
     ]);
@@ -59,7 +59,7 @@ server signs it with a secret that the chat server also holds.
 On the chat server:
 
 ```bash
-export REPKIT_IDENTITY_SECRET="a long random string"
+export HAMILTON_IDENTITY_SECRET="a long random string"
 ```
 
 On your site (PHP shown; any language with HMAC-SHA256 works):
@@ -67,12 +67,12 @@ On your site (PHP shown; any language with HMAC-SHA256 works):
 ```php
 <?php
 $userId = $_SESSION['user_id'] ?? null;
-$secret = getenv('REPKIT_IDENTITY_SECRET');
+$secret = getenv('HAMILTON_IDENTITY_SECRET');
 ?>
 <script src="https://chat.example.com/widget.js" defer
 <?php if ($userId): ?>
-  data-repkit-customer="<?= htmlspecialchars($userId, ENT_QUOTES) ?>"
-  data-repkit-signature="<?= hash_hmac('sha256', $userId, $secret) ?>"
+  data-hamilton-customer="<?= htmlspecialchars($userId, ENT_QUOTES) ?>"
+  data-hamilton-signature="<?= hash_hmac('sha256', $userId, $secret) ?>"
 <?php endif; ?>
 ></script>
 ```
@@ -84,19 +84,19 @@ is ignored and the conversation is treated as anonymous.
 
 | Attribute | Effect |
 |---|---|
-| `data-repkit-server` | Server address, if the script is not loaded from it |
-| `data-repkit-open="true"` | Open the chat when the page loads |
-| `data-repkit-pacing="off"` | Show replies at once, without typing delays |
-| `data-repkit-customer`, `data-repkit-signature` | A signed-in customer, as above |
+| `data-hamilton-server` | Server address, if the script is not loaded from it |
+| `data-hamilton-open="true"` | Open the chat when the page loads |
+| `data-hamilton-pacing="off"` | Show replies at once, without typing delays |
+| `data-hamilton-customer`, `data-hamilton-signature` | A signed-in customer, as above |
 
 ## Driving it from your own code
 
 ```js
-window.repkit.open()
-window.repkit.close()
-window.repkit.send("Where is my order?")
+window.hamilton.open()
+window.hamilton.close()
+window.hamilton.send("Where is my order?")
 
-window.addEventListener("repkit:turn", (event) => {
+window.addEventListener("hamilton:turn", (event) => {
   // event.detail.text is what the customer sent
   // event.detail.response.bubbles is what the rep replied
 })
@@ -108,5 +108,5 @@ The iframe talks to the chat server directly, so the script tag needs no extra
 setup. If your own pages call the API with `fetch`, allow their origin:
 
 ```bash
-repkit serve packs/your-company --allow-origin https://www.example.com
+hamilton-harness serve packs/your-company --allow-origin https://www.example.com
 ```

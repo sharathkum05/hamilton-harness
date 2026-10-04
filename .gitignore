@@ -9,8 +9,8 @@ build/
 .env
 .DS_Store
 traces/
-.repkit/
+.hamilton/
 .claude/
 web/node_modules/
-repkit/web/static/app/
+hamilton_harness/web/static/app/
 skills-lock.json

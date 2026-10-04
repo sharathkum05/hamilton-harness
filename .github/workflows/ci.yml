@@ -27,8 +27,8 @@ jobs:
       - name: Fake customers (replay)
         # The gate: a change that lets a blocked action through fails the build.
         run: |
-          repkit sim packs/loop-sneakers
-          repkit sim packs/brightside-dental
+          hamilton-harness sim packs/loop-sneakers
+          hamilton-harness sim packs/brightside-dental
 
   web:
     runs-on: ubuntu-latest

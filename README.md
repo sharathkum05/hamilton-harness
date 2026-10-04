@@ -1,6 +1,6 @@
-# repkit
+# Hamilton Harness
 
-[![CI](https://github.com/sharathkum05/repkit/actions/workflows/ci.yml/badge.svg)](https://github.com/sharathkum05/repkit/actions/workflows/ci.yml)
+[![CI](https://github.com/sharathkum05/hamilton-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/sharathkum05/hamilton-harness/actions/workflows/ci.yml)
 
 **The AI harness for your business.** It turns one LLM into your company's own
 rep: customer support, an order desk, quotation requests or a front desk.
@@ -46,11 +46,11 @@ pip install -e ".[dev]"
 ```
 
 ```bash
-repkit validate packs/loop-sneakers
+hamilton-harness validate packs/loop-sneakers
 ```
 
 ```bash
-repkit sim packs/loop-sneakers
+hamilton-harness sim packs/loop-sneakers
 ```
 
 `sim` runs the pack's fake customers in replay mode, which needs no API key.
@@ -64,12 +64,12 @@ npm --prefix web ci && npm --prefix web run build
 ```
 
 ```bash
-repkit serve packs/loop-sneakers --offline --debug --admin
+hamilton-harness serve packs/loop-sneakers --offline --debug --admin
 ```
 
 The server prints two addresses: the site, and the dashboard link with its
 token. To use the real model instead, set `ANTHROPIC_API_KEY` and drop
-`--offline`. `repkit chat packs/loop-sneakers --debug` does the same in the
+`--offline`. `hamilton-harness chat packs/loop-sneakers --debug` does the same in the
 terminal.
 
 ## What is in the box
@@ -130,13 +130,13 @@ wrong statement with no number in it is not caught by the grounding check.
 
 ## Let Claude manage the pack
 
-`repkit mcp PACK` is an MCP server. Connect Claude to it and ask in plain words
+`hamilton-harness mcp PACK` is an MCP server. Connect Claude to it and ask in plain words
 to add knowledge, tighten the scope, change a rule or rerun the tests.
 
 ```json
 {
   "mcpServers": {
-    "repkit": { "command": "repkit", "args": ["mcp", "packs/your-company"] }
+    "hamilton": { "command": "hamilton-harness", "args": ["mcp", "packs/your-company"] }
   }
 }
 ```
@@ -206,7 +206,7 @@ person.
 
 ## The scorecard
 
-Output of `repkit sim packs/loop-sneakers` in replay mode:
+Output of `hamilton-harness sim packs/loop-sneakers` in replay mode:
 
 ```
 16/16 scenarios passed, 57/57 checks
@@ -225,7 +225,7 @@ obeys a prompt injection, promises a 40% discount, refunds above the limit,
 claims to be a real person, diagnoses a cavity and invents a price. The
 scenarios pass because the harness stops each one.
 
-Replay mode proves the harness. It does not measure the model. `repkit sim
+Replay mode proves the harness. It does not measure the model. `hamilton-harness sim
 PACK --live` runs the same customers against the real model and adds latency,
 token and cost figures; those numbers are not published here yet.
 
@@ -233,23 +233,23 @@ token and cost figures; those numbers are not published here yet.
 
 | Module | Job |
 |---|---|
-| `repkit/pack` | Pack schema and loader |
-| `repkit/knowledge.py` | Markdown chunking and BM25 lookup |
-| `repkit/context.py` | System prompt and per-turn context |
-| `repkit/tools.py` | Tool registry, argument validation, execution |
-| `repkit/guard.py` | Policy guard for actions and replies |
-| `repkit/handoff.py` | When a human takes over |
-| `repkit/memory.py` | Conversation state and customer facts |
-| `repkit/shaper.py` | Turns a draft into chat bubbles |
-| `repkit/llm.py` | Claude adapter and a scripted model for tests |
-| `repkit/runtime.py` | The turn loop |
-| `repkit/trace.py` | Step-by-step trace of every turn |
-| `repkit/sim.py` | Fake customers and the scorecard |
-| `repkit/scope.py` | Scope gate and the number grounding check |
-| `repkit/records.py` | Orders, quotes and other records the rep takes down |
-| `repkit/editor.py` | Validated, rolled-back edits to a pack |
-| `repkit/mcp_server.py` | MCP server for managing a pack from Claude |
-| `repkit/web/` | HTTP API, dashboard API, embed script, demo page |
+| `hamilton_harness/pack` | Pack schema and loader |
+| `hamilton_harness/knowledge.py` | Markdown chunking and BM25 lookup |
+| `hamilton_harness/context.py` | System prompt and per-turn context |
+| `hamilton_harness/tools.py` | Tool registry, argument validation, execution |
+| `hamilton_harness/guard.py` | Policy guard for actions and replies |
+| `hamilton_harness/handoff.py` | When a human takes over |
+| `hamilton_harness/memory.py` | Conversation state and customer facts |
+| `hamilton_harness/shaper.py` | Turns a draft into chat bubbles |
+| `hamilton_harness/llm.py` | Claude adapter and a scripted model for tests |
+| `hamilton_harness/runtime.py` | The turn loop |
+| `hamilton_harness/trace.py` | Step-by-step trace of every turn |
+| `hamilton_harness/sim.py` | Fake customers and the scorecard |
+| `hamilton_harness/scope.py` | Scope gate and the number grounding check |
+| `hamilton_harness/records.py` | Orders, quotes and other records the rep takes down |
+| `hamilton_harness/editor.py` | Validated, rolled-back edits to a pack |
+| `hamilton_harness/mcp_server.py` | MCP server for managing a pack from Claude |
+| `hamilton_harness/web/` | HTTP API, dashboard API, embed script, demo page |
 | `web/` | React app: chat panel, dashboard, product page |
 
 ## Status
