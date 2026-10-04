@@ -60,6 +60,8 @@ def test_widget_accent_must_be_a_hex_colour():
     from repkit.pack.schema import WidgetSettings
 
     assert WidgetSettings(accent="#FF5A1F").accent == "#ff5a1f"
+    assert WidgetSettings().accent == "auto"
+    assert WidgetSettings(accent="AUTO").accent == "auto"
     for bad in ("red", "#fff", "#12345g", "#0b6e6e; background: url(x)"):
         with pytest.raises(ValidationError, match="hex colour"):
             WidgetSettings(accent=bad)

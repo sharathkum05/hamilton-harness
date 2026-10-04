@@ -59,7 +59,7 @@ def test_a_bad_edit_comes_back_as_a_message_not_a_crash(root):
     )
     assert result["ok"] is False
     assert "hex colour" in result["error"]
-    assert load_pack(root).widget.accent == "#c2410c"
+    assert load_pack(root).widget.accent == "auto"
 
 
 def test_claude_can_run_the_fake_customers(root):

@@ -172,7 +172,8 @@ class WidgetSettings(_Strict):
     greeting: str = "Hi! How can I help?"
     launcher_label: str = "Chat with us"
     # Brand colour for the launcher, header and the customer's bubbles.
-    accent: str = "#0b6e6e"
+    # "auto" is black on a light theme and white on a dark one. Or a hex colour.
+    accent: str = "auto"
     # One-tap openers shown before the customer has typed anything.
     suggestions: list[str] = Field(default_factory=list, max_length=4)
     # Heading of the chat panel. Defaults to the rep's name.
@@ -190,8 +191,10 @@ class WidgetSettings(_Strict):
     @classmethod
     def _accent_is_a_hex_colour(cls, value: str) -> str:
         # The value is written into a stylesheet, so nothing but a colour may pass.
+        if value.lower() == "auto":
+            return "auto"
         if not re.fullmatch(r"#[0-9a-fA-F]{6}", value):
-            raise ValueError("accent must be a six-digit hex colour such as #0b6e6e")
+            raise ValueError("accent must be 'auto' or a six-digit hex colour such as #0b6e6e")
         return value.lower()
 
     @field_validator("logo")
