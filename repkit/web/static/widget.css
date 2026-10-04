@@ -1,19 +1,26 @@
 /* Styles for the chat widget. Loaded inside a shadow root, so nothing here
    leaks into the host page and nothing on the host page leaks in.
-   --rk-accent and --rk-on-accent are set by widget.js from the pack. */
+
+   The pack drives the look through attributes widget.js sets on the host:
+   data-theme (auto | light | dark), data-position (right | left),
+   data-corners (sharp | soft | round), data-font, data-header (plain | accent),
+   plus --rk-accent and --rk-on-accent. */
 
 :host {
   --rk-accent: #0b6e6e;
   --rk-on-accent: #ffffff;
   --rk-bg: #ffffff;
-  --rk-surface: #f1f3f5;
-  --rk-ink: #14181d;
-  --rk-muted: #5c6773;
-  --rk-line: #dde2e7;
+  --rk-surface: #f4f4f5;
+  --rk-ink: #18181b;
+  --rk-muted: #6b6b76;
+  --rk-line: #e4e4e7;
   --rk-warn-bg: #fff4d6;
   --rk-warn-ink: #6b4a00;
-  --rk-shadow: 0 18px 48px rgba(15, 23, 32, 0.22);
+  --rk-shadow: 0 16px 44px rgba(15, 15, 20, 0.18), 0 2px 6px rgba(15, 15, 20, 0.06);
   --rk-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --rk-r-panel: 16px;
+  --rk-r-bubble: 16px;
+  --rk-r-control: 10px;
 
   all: initial;
   position: fixed;
@@ -21,22 +28,62 @@
   bottom: max(16px, env(safe-area-inset-bottom, 0px));
   z-index: 2147483000;
   font-family: var(--rk-font);
-  font-size: 15px;
-  line-height: 1.4;
+  font-size: 14.5px;
+  line-height: 1.45;
   color: var(--rk-ink);
 }
 
 @media (prefers-color-scheme: dark) {
-  :host {
-    --rk-bg: #161b21;
-    --rk-surface: #222a33;
-    --rk-ink: #e9edf1;
-    --rk-muted: #9aa7b4;
-    --rk-line: #313b46;
+  :host([data-theme="auto"]) {
+    --rk-bg: #111113;
+    --rk-surface: #1e1e22;
+    --rk-ink: #ededf0;
+    --rk-muted: #9c9ca8;
+    --rk-line: #2a2a30;
     --rk-warn-bg: #3d3110;
     --rk-warn-ink: #f4d27a;
-    --rk-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
+    --rk-shadow: 0 16px 44px rgba(0, 0, 0, 0.6);
   }
+}
+
+:host([data-theme="dark"]) {
+  --rk-bg: #111113;
+  --rk-surface: #1e1e22;
+  --rk-ink: #ededf0;
+  --rk-muted: #9c9ca8;
+  --rk-line: #2a2a30;
+  --rk-warn-bg: #3d3110;
+  --rk-warn-ink: #f4d27a;
+  --rk-shadow: 0 16px 44px rgba(0, 0, 0, 0.6);
+}
+
+:host([data-position="left"]) {
+  right: auto;
+  left: max(16px, env(safe-area-inset-left, 0px));
+}
+
+:host([data-corners="sharp"]) {
+  --rk-r-panel: 4px;
+  --rk-r-bubble: 4px;
+  --rk-r-control: 3px;
+}
+
+:host([data-corners="round"]) {
+  --rk-r-panel: 26px;
+  --rk-r-bubble: 20px;
+  --rk-r-control: 999px;
+}
+
+:host([data-font="serif"]) {
+  --rk-font: Georgia, "Iowan Old Style", "Times New Roman", serif;
+}
+
+:host([data-font="rounded"]) {
+  --rk-font: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, sans-serif;
+}
+
+:host([data-font="mono"]) {
+  --rk-font: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 *,
@@ -56,7 +103,7 @@ textarea {
 }
 
 :focus-visible {
-  outline: 3px solid var(--rk-accent);
+  outline: 2px solid var(--rk-accent);
   outline-offset: 2px;
 }
 
@@ -67,7 +114,7 @@ textarea {
   align-items: center;
   gap: 8px;
   margin-left: auto;
-  padding: 12px 18px;
+  padding: 11px 16px;
   border: 0;
   border-radius: 999px;
   background: var(--rk-accent);
@@ -77,9 +124,17 @@ textarea {
   box-shadow: var(--rk-shadow);
 }
 
+:host([data-position="left"]) .rk-launcher {
+  margin-left: 0;
+}
+
+:host([data-corners="sharp"]) .rk-launcher {
+  border-radius: var(--rk-r-control);
+}
+
 .rk-launcher svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex: none;
 }
 
@@ -88,11 +143,11 @@ textarea {
 .rk-panel {
   display: flex;
   flex-direction: column;
-  width: min(380px, calc(100vw - 32px));
+  width: min(384px, calc(100vw - 32px));
   height: min(600px, calc(100vh - 32px));
   background: var(--rk-bg);
   border: 1px solid var(--rk-line);
-  border-radius: 16px;
+  border-radius: var(--rk-r-panel);
   box-shadow: var(--rk-shadow);
   overflow: hidden;
 }
@@ -100,21 +155,39 @@ textarea {
 .rk-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: 10px;
+  padding: 12px 12px 12px 16px;
+  border-bottom: 1px solid var(--rk-line);
+}
+
+:host([data-header="accent"]) .rk-header {
   background: var(--rk-accent);
   color: var(--rk-on-accent);
+  border-bottom-color: transparent;
 }
 
 .rk-avatar {
   display: grid;
   place-items: center;
   flex: none;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--rk-on-accent) 22%, transparent);
+  background: var(--rk-accent);
+  color: var(--rk-on-accent);
   font-weight: 700;
+  overflow: hidden;
+}
+
+.rk-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+:host([data-header="accent"]) .rk-header .rk-avatar:not(.rk-has-logo) {
+  background: color-mix(in srgb, var(--rk-on-accent) 22%, transparent);
 }
 
 .rk-who {
@@ -125,41 +198,59 @@ textarea {
 }
 
 .rk-name {
-  font-weight: 700;
-}
-
-.rk-sub {
-  font-size: 12.5px;
-  opacity: 0.9;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.rk-sub {
+  font-size: 12px;
+  color: var(--rk-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:host([data-header="accent"]) .rk-sub {
+  color: inherit;
+  opacity: 0.88;
 }
 
 .rk-icon-button {
   display: grid;
   place-items: center;
   flex: none;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: inherit;
+  color: var(--rk-muted);
   cursor: pointer;
 }
 
 .rk-icon-button:hover {
-  background: color-mix(in srgb, var(--rk-on-accent) 18%, transparent);
+  background: var(--rk-surface);
+  color: var(--rk-ink);
 }
 
-.rk-icon-button:focus-visible {
+:host([data-header="accent"]) .rk-icon-button {
+  color: inherit;
+}
+
+:host([data-header="accent"]) .rk-icon-button:hover {
+  background: color-mix(in srgb, var(--rk-on-accent) 18%, transparent);
+  color: inherit;
+}
+
+:host([data-header="accent"]) .rk-icon-button:focus-visible {
   outline-color: var(--rk-on-accent);
 }
 
 .rk-icon-button svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 /* Messages */
@@ -174,10 +265,37 @@ textarea {
   overscroll-behavior: contain;
 }
 
+.rk-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.rk-empty .rk-avatar {
+  width: 52px;
+  height: 52px;
+  font-size: 20px;
+}
+
+.rk-empty-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.rk-empty-text {
+  color: var(--rk-muted);
+  max-width: 30ch;
+}
+
 .rk-msg {
   max-width: 82%;
-  padding: 9px 13px;
-  border-radius: 18px;
+  padding: 8px 12px;
+  border-radius: var(--rk-r-bubble);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
@@ -185,14 +303,12 @@ textarea {
 .rk-msg.rk-rep {
   align-self: flex-start;
   background: var(--rk-surface);
-  border-bottom-left-radius: 6px;
 }
 
 .rk-msg.rk-customer {
   align-self: flex-end;
   background: var(--rk-accent);
   color: var(--rk-on-accent);
-  border-bottom-right-radius: 6px;
 }
 
 /* More air when the speaker changes than between bubbles from one speaker. */
@@ -214,7 +330,7 @@ textarea {
   border: 0;
   padding: 0;
   background: none;
-  color: var(--rk-accent);
+  color: var(--rk-ink);
   font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
@@ -224,15 +340,14 @@ textarea {
   align-self: flex-start;
   display: flex;
   gap: 4px;
-  padding: 13px 14px;
-  border-radius: 18px;
-  border-bottom-left-radius: 6px;
+  padding: 12px 13px;
+  border-radius: var(--rk-r-bubble);
   background: var(--rk-surface);
 }
 
 .rk-typing span {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--rk-muted);
   animation: rk-bounce 1.2s infinite ease-in-out;
@@ -271,35 +386,35 @@ textarea {
 .rk-suggestions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 6px;
-  padding: 0 16px 12px;
+  margin-top: 6px;
 }
 
 .rk-suggestions button {
-  padding: 7px 12px;
+  padding: 6px 11px;
   border: 1px solid var(--rk-line);
-  border-radius: 999px;
+  border-radius: var(--rk-r-control);
   background: var(--rk-bg);
-  font-size: 13.5px;
-  text-align: left;
+  font-size: 13px;
   cursor: pointer;
 }
 
 .rk-suggestions button:hover {
-  border-color: var(--rk-accent);
+  background: var(--rk-surface);
 }
 
 .rk-status {
-  padding: 9px 16px;
+  padding: 8px 16px;
   background: var(--rk-warn-bg);
   color: var(--rk-warn-ink);
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
 .rk-form {
   display: flex;
   align-items: flex-end;
-  gap: 8px;
+  gap: 6px;
   padding: 10px 12px;
   border-top: 1px solid var(--rk-line);
 }
@@ -308,18 +423,21 @@ textarea {
   flex: 1;
   min-width: 0;
   max-height: 110px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--rk-line);
-  border-radius: 18px;
-  background: var(--rk-bg);
+  border-radius: var(--rk-r-control);
+  background: var(--rk-surface);
   resize: none;
   /* 16px stops iOS from zooming the page when the field is focused. */
   font-size: 16px;
   line-height: 1.35;
 }
 
+:host([data-corners="round"]) .rk-input {
+  border-radius: 20px;
+}
+
 .rk-input:focus-visible {
-  outline-width: 2px;
   outline-offset: 0;
   border-color: transparent;
 }
@@ -332,23 +450,24 @@ textarea {
   display: grid;
   place-items: center;
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--rk-r-control);
   background: var(--rk-accent);
   color: var(--rk-on-accent);
   cursor: pointer;
 }
 
 .rk-send:disabled {
-  opacity: 0.45;
+  background: var(--rk-surface);
+  color: var(--rk-muted);
   cursor: default;
 }
 
 .rk-send svg {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
 }
 
 .rk-footnote {
