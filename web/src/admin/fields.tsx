@@ -1,10 +1,14 @@
 // Small form pieces shared by the dashboard's sections.
 
+import { createContext } from 'react'
 import type { ReactNode } from 'react'
 
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+
+/** Throws away unsaved edits in the open section. Provided by the dashboard shell. */
+export const DiscardContext = createContext<() => void>(() => {})
 
 export function Field({
   label,

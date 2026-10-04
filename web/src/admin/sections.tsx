@@ -1,11 +1,12 @@
 // The dashboard's editing screens. Each one edits a copy of part of the pack
 // and saves it through the admin API, which validates it and reloads the rep.
 
-import { useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { PlusIcon, Trash2Icon, UploadIcon } from 'lucide-react'
 
 import type { AdminApi, Handoff, Pack, Persona, Rule, Scope, Widget } from '@/admin/api'
-import { Field, Lines, Section, Toggle } from '@/admin/fields'
+import { DiscardContext, Field, Lines, Section, Toggle } from '@/admin/fields'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,13 +25,37 @@ export type SectionProps = {
   api: AdminApi
   /** Run a save, show the outcome, then refresh the pack and the preview. */
   commit: (label: string, work: () => Promise<unknown>) => Promise<boolean>
+  /** Open another section of the dashboard. */
+  go: (section: string) => void
 }
 
+/**
+ * The unsaved-changes bar. It slides up at the bottom of the page the moment
+ * something is edited, so saving never needs a scroll back to the top.
+ */
 function SaveButton({ dirty, onSave }: { dirty: boolean; onSave: () => void }) {
-  return (
-    <Button onClick={onSave} disabled={!dirty}>
-      {dirty ? 'Save changes' : 'Saved'}
-    </Button>
+  const discard = useContext(DiscardContext)
+  const slot = document.getElementById('save-slot')
+  if (!slot) return null
+  return createPortal(
+    <div
+      role="region"
+      aria-label="Unsaved changes"
+      className={
+        'bg-popover text-popover-foreground flex items-center gap-3 rounded-full border py-1.5 pr-1.5 pl-4 text-sm shadow-lg transition-all duration-200 ' +
+        (dirty ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0')
+      }
+    >
+      <span className="bg-foreground size-1.5 rounded-full" aria-hidden="true" />
+      <span>Unsaved changes</span>
+      <Button variant="ghost" size="sm" className="rounded-full" onClick={discard} tabIndex={dirty ? 0 : -1}>
+        Discard
+      </Button>
+      <Button size="sm" className="rounded-full" onClick={onSave} tabIndex={dirty ? 0 : -1}>
+        Save changes
+      </Button>
+    </div>,
+    slot,
   )
 }
 
