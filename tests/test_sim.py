@@ -89,3 +89,14 @@ def test_duplicate_scenario_ids_are_rejected(pack, tmp_path):
     path.write_text("- {id: a, says: [hi]}\n- {id: a, says: [yo]}\n", encoding="utf-8")
     with pytest.raises(PackError, match="duplicate scenario ids"):
         load_scenarios(pack, path)
+
+
+def test_dental_pack_stays_on_topic_in_replay():
+    from pathlib import Path
+
+    from repkit.pack import load_pack
+
+    dental = load_pack(Path(__file__).parent.parent / "packs" / "brightside-dental")
+    scorecard = run_scenarios(dental, load_scenarios(dental))
+    assert scorecard.ok, scorecard.render()
+    assert scorecard.summary()["off_topic_refused"] == 3

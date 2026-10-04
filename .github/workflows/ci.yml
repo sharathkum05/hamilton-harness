@@ -26,4 +26,6 @@ jobs:
         run: pytest -q
       - name: Fake customers (replay)
         # The gate: a change that lets a blocked action through fails the build.
-        run: repkit sim packs/loop-sneakers
+        run: |
+          repkit sim packs/loop-sneakers
+          repkit sim packs/brightside-dental
