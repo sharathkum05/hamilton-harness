@@ -78,6 +78,14 @@ export type RecordItem = {
   conversation_id: string
 }
 
+export type Overview = {
+  records: { total: number; waiting: number; by_type: Record<string, number> }
+  conversations: { total: number; handed_off: number; blocked: number; refused: number }
+  timeline: { day: string; conversations: number; records: number }[]
+  recent_records: RecordItem[]
+  recent_conversations: ConversationSummary[]
+}
+
 export type Pack = {
   persona: Persona
   scope: Scope
@@ -169,6 +177,7 @@ export function adminApi(token: string) {
         throw new Error(body.detail ?? 'upload failed')
       }
     },
+    overview: () => call<Overview>('/overview'),
     records: () => call<{ records: RecordItem[] }>('/records'),
     setRecordStatus: (id: string, status: RecordStatus) =>
       call<RecordItem>(`/records/${encodeURIComponent(id)}`, { method: 'PATCH', body: { status } }),
