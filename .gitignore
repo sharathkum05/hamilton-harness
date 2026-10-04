@@ -14,3 +14,4 @@ traces/
 web/node_modules/
 hamilton_harness/web/static/app/
 skills-lock.json
+.vercel

@@ -1,0 +1,17 @@
+# The web app is built locally and uploaded as built files, so its sources and
+# everything else the demo does not run stay out of the upload.
+.git
+.venv
+.hamilton
+.claude
+.github
+node_modules
+web/node_modules
+web/src
+web/public
+packages
+tests
+docs
+**/__pycache__
+*.pyc
+skills-lock.json
