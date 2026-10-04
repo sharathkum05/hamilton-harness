@@ -22,9 +22,7 @@ _AMOUNT = re.compile(r"(?:₹|rs\.?\s*|refund\s+)(\d[\d,]{2,})", re.IGNORECASE)
 
 _REFUND = re.compile(r"refund|money back|charged twice|double charge|charged two|reimburse", re.I)
 _EXCHANGE = re.compile(r"\b(swap|exchange|too small|too big|different size)\b", re.I)
-_TRACK = re.compile(
-    r"\b(where|track|tracking|late|arrive|arrived|delivery|status)\b|n't come", re.I
-)
+_TRACK = re.compile(r"\b(where|track|tracking|late|arrived|status)\b|n't come", re.I)
 _DISCOUNT = re.compile(r"discount|% off|percent off|coupon|cheaper|price match|\bdeal\b", re.I)
 _BOT = re.compile(r"\b(bot|robot|ai|human|real person)\b", re.I)
 _YES = re.compile(r"^\s*(yes|yeah|yep|sure|ok|okay|please|pls|yes please|go ahead)\b", re.I)
