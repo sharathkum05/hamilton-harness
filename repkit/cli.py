@@ -4,6 +4,7 @@ repkit validate PACK      check a pack loads and its handlers resolve
 repkit chat PACK          talk to the rep in the terminal
 repkit sim PACK           run the pack's fake customers and print a scorecard
 repkit serve PACK         run the web chat widget and its API
+repkit mcp PACK           let Claude manage the pack over MCP
 """
 
 from __future__ import annotations
@@ -153,6 +154,17 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_mcp(args: argparse.Namespace) -> int:
+    try:
+        from repkit.mcp_server import build_server
+    except ImportError as exc:
+        raise PackError('the MCP server needs an extra package: pip install "repkit[mcp]"') from exc
+
+    load_pack(args.pack)  # fail early, with a clear message, on a pack that does not load
+    build_server(args.pack, trace_dir=Path(args.state) / "traces").run("stdio")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="repkit", description=__doc__.split("\n\n")[0])
     commands = parser.add_subparsers(dest="command", required=True)
@@ -189,6 +201,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--allow-origin", action="append", metavar="URL", help="site allowed to embed the widget"
     )
     serve.set_defaults(run=cmd_serve)
+
+    mcp = commands.add_parser("mcp", help="let Claude manage the pack over MCP")
+    mcp.add_argument("pack")
+    mcp.add_argument("--state", default=".repkit", help="where the server keeps traces")
+    mcp.set_defaults(run=cmd_mcp)
     return parser
 
 
