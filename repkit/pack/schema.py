@@ -110,6 +110,9 @@ class ToolSpec(_Strict):
     input_schema: dict[str, Any]
     # "module:function", resolved relative to the pack directory.
     handler: str
+    # Facts to keep about the customer after a successful call, as
+    # {fact name: field in the tool result}.
+    remember: dict[str, str] = Field(default_factory=dict)
 
 
 class HandoffRules(_Strict):

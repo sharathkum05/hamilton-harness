@@ -5,6 +5,10 @@ tools:
       payment charges, status and the promised delivery date. Call this
       before saying anything about an order.
     handler: handlers:lookup_order
+    remember:
+      name: customer
+      last_order: order_id
+      last_item: item
     input_schema:
       type: object
       properties:
