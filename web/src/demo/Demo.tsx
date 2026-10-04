@@ -189,12 +189,12 @@ export function Demo() {
       </header>
       <main className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-12 sm:px-6 lg:pr-[440px]">
         <div className="flex flex-col gap-3">
-          <p className="text-muted-foreground font-mono text-xs tracking-widest uppercase">
+          <p className="text-muted-foreground font-mono text-sm">
             {config
               ? `${config.rep.company} · ${config.rep.role}${config.debug ? ' · inspector on' : ''}`
               : 'Live demo'}
           </p>
-          <h1 className="text-3xl leading-[1.1] font-semibold tracking-tight text-balance sm:text-4xl">
+          <h1 className="text-4xl leading-[1.05] text-balance sm:text-5xl">
             Talk to the rep, and watch what the harness does
           </h1>
           <p className="text-muted-foreground max-w-[60ch] text-lg leading-relaxed">
