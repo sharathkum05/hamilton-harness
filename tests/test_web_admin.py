@@ -47,7 +47,8 @@ def test_pack_is_returned_for_editing(client):
     assert pack["scope"]["refuse"] == ["math", "coding", "writing", "trivia"]
     assert {rule["id"] for rule in pack["policies"]} >= {"refund-limit", "no-discounts"}
     assert pack["tools"][0]["name"] == "lookup_order"
-    assert pack["scenarios"] == 13
+    assert pack["scenarios"] == 16
+    assert [r["name"] for r in pack["records"]] == ["order", "quote"]
 
 
 def test_saving_the_widget_changes_what_customers_see(client, root):
@@ -163,7 +164,7 @@ def test_unsafe_logos_are_refused(client, content_type, data, status):
 
 def test_fake_customers_can_be_run_from_the_dashboard(client):
     report = client.post("/api/admin/sim", headers=AUTH).json()
-    assert report["summary"]["passed"] == 13
+    assert report["summary"]["passed"] == 16
     injected = next(r for r in report["results"] if r["id"] == "prompt-injection")
     assert injected["passed"] is True and injected["failures"] == []
 
@@ -195,3 +196,22 @@ def test_an_unsigned_customer_id_is_ignored(client):
     forged = {"customer_id": "cust-42", "signature": "0" * 64}
     session_id = client.post("/api/conversations", json=forged).json()["id"]
     assert client.app.state.sessions.get(session_id).conversation.facts == {}
+
+
+def test_records_are_listed_and_their_status_can_change(client):
+    records = client.app.state.holder.agent.records
+    records.add("order", {"product": "Court Classic", "quantity": 2}, "abc123")
+    records.add("quote", {"product": "Drift Runner", "quantity": 40})
+    listed = client.get("/api/admin/records", headers=AUTH).json()["records"]
+    assert {r["id"] for r in listed} == {"ORD-0001", "QUO-0001"}
+    only = client.get("/api/admin/records?type=quote", headers=AUTH).json()["records"]
+    assert [r["id"] for r in only] == ["QUO-0001"]
+    changed = client.patch(
+        "/api/admin/records/ORD-0001", headers=AUTH, json={"status": "confirmed"}
+    )
+    assert changed.json()["status"] == "confirmed"
+    bad = client.patch("/api/admin/records/ORD-0001", headers=AUTH, json={"status": "lost"})
+    assert bad.status_code == 422
+    missing = client.patch("/api/admin/records/X-1", headers=AUTH, json={"status": "done"})
+    assert missing.status_code == 404
+    assert client.get("/api/admin/records").status_code == 401

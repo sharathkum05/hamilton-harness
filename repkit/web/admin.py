@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 import secrets
+from dataclasses import asdict
 from typing import Any
 
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Request
@@ -23,6 +24,7 @@ from repkit.editor import (
     list_conversations,
     read_conversation,
 )
+from repkit.records import Status
 
 MAX_LOGO_BYTES = 512_000
 LOGO_EXTENSIONS = {
@@ -32,6 +34,10 @@ LOGO_EXTENSIONS = {
     "image/svg+xml": "svg",
 }
 _UNSAFE_SVG = re.compile(rb"<script|javascript:|\son\w+\s*=|<foreignObject", re.IGNORECASE)
+
+
+class StatusChange(BaseModel):
+    status: Status
 
 
 class KnowledgeText(BaseModel):
@@ -145,6 +151,18 @@ def install_admin(app: FastAPI, holder: Any, token: str) -> None:
             return editor().run_fake_customers()
         except EditError as error:
             raise _refuse(error) from error
+
+    @router.get("/records")
+    def list_records(type: str | None = None) -> dict[str, Any]:
+        """What the rep has taken down: orders, quotation requests and the like."""
+        return {"records": [asdict(record) for record in holder.agent.records.list(type)]}
+
+    @router.patch("/records/{record_id}")
+    def update_record(record_id: str, change: StatusChange) -> dict[str, Any]:
+        record = holder.agent.records.set_status(record_id, change.status)
+        if record is None:
+            raise HTTPException(status_code=404, detail="no such record")
+        return asdict(record)
 
     @router.get("/conversations")
     def conversations() -> dict[str, Any]:

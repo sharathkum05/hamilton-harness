@@ -105,6 +105,7 @@ class PackEditor:
                 }
                 for t in pack.tools
             ],
+            "records": [record.model_dump(mode="json") for record in pack.records],
             "knowledge": [doc.model_dump() for doc in pack.knowledge],
             "examples": [chat.model_dump() for chat in pack.examples],
             "scenarios": scenarios,
