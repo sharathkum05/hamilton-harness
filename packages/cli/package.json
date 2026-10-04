@@ -1,0 +1,32 @@
+{
+  "name": "repkit-cli",
+  "version": "0.1.0",
+  "description": "Connect Claude to a repkit server: sign in once, then manage your AI rep's knowledge, rules, orders and tests over MCP.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "repkit": "bin/repkit.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "mcp",
+    "claude",
+    "ai-agent",
+    "customer-support",
+    "harness"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.0",
+    "zod": "^3.25.0"
+  }
+}
