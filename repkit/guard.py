@@ -7,10 +7,11 @@ the answer does not depend on how the conversation went.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from repkit.pack.schema import Limit, PolicyRule
+from repkit.pack.schema import Limit, Persona, PolicyRule
 
 Action = Literal["allow", "block", "handoff"]
 
@@ -42,6 +43,28 @@ class Verdict:
 ALLOW = Verdict("allow")
 
 
+@dataclass(frozen=True)
+class ReplyVerdict:
+    ok: bool
+    rule_id: str = ""
+    matched: str = ""
+    # What to send instead when the draft is rejected.
+    replacement: str = ""
+
+
+REPLY_OK = ReplyVerdict(ok=True)
+
+# The rep may sound human. It may not say it is one, in any pack.
+_CLAIMS_HUMAN = [
+    r"\bI(?:'m| am)(?: not)? (?:a |an )?(?:real |actual )?(?:human|person)\b(?! who)",
+    r"\bI(?:'m| am) not (?:a |an )?(?:AI|bot|robot|chatbot|machine|virtual assistant)\b",
+    r"\bnot (?:a |an )?(?:AI|bot|robot|chatbot)\b[^.?!]*\breal (?:human|person)\b",
+]
+_DENIES_HUMAN = re.compile(
+    r"\bI(?:'m| am) not (?:a |an )?(?:real |actual )?(?:human|person)\b", re.I
+)
+
+
 def _is_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
@@ -64,11 +87,16 @@ def _check_limit(limit: Limit, arguments: dict[str, Any]) -> str | None:
 
 
 class PolicyGuard:
-    def __init__(self, policies: list[PolicyRule]) -> None:
+    def __init__(self, policies: list[PolicyRule], persona: Persona | None = None) -> None:
         self._by_tool: dict[str, list[PolicyRule]] = {}
+        self._never_say: list[tuple[PolicyRule, re.Pattern[str]]] = []
+        self._disclosure = persona.disclosure if persona else "I'm an AI assistant."
+        self._claims_human = [re.compile(p, re.IGNORECASE) for p in _CLAIMS_HUMAN]
         for rule in policies:
             if rule.tool:
                 self._by_tool.setdefault(rule.tool, []).append(rule)
+            for pattern in rule.never_say:
+                self._never_say.append((rule, re.compile(pattern, re.IGNORECASE)))
 
     def rules_for(self, tool: str) -> list[PolicyRule]:
         return list(self._by_tool.get(tool, []))
@@ -90,3 +118,15 @@ class PolicyGuard:
         # One rule asking for a human outranks any number asking for a plain block.
         escalate = any(v.on_violation == "handoff" for v in violations)
         return Verdict("handoff" if escalate else "block", violations)
+
+    def check_reply(self, text: str) -> ReplyVerdict:
+        """Reject a draft that claims to be human or says something a rule forbids."""
+        for pattern in self._claims_human:
+            match = pattern.search(text)
+            if match and not _DENIES_HUMAN.search(match.group(0)):
+                return ReplyVerdict(False, "honesty", match.group(0), self._disclosure)
+        for rule, pattern in self._never_say:
+            match = pattern.search(text)
+            if match:
+                return ReplyVerdict(False, rule.id, match.group(0), rule.safe_reply)
+        return REPLY_OK

@@ -60,3 +60,36 @@ def test_forbidden_tool_is_blocked_whatever_the_arguments():
     verdict = guard.check_action("issue_refund", {"amount": 1})
     assert verdict.action == "handoff"
     assert "may not use issue_refund" in verdict.explain()
+
+
+def test_reply_claiming_to_be_human_is_replaced_with_the_disclosure(pack):
+    guard = PolicyGuard(pack.policies, pack.persona)
+    for draft in ("Yes, I'm a real person!", "I am human, promise.", "I'm not a bot."):
+        verdict = guard.check_reply(draft)
+        assert not verdict.ok, draft
+        assert verdict.rule_id == "honesty"
+        assert verdict.replacement == pack.persona.disclosure
+
+
+def test_honest_replies_pass(pack):
+    guard = PolicyGuard(pack.policies, pack.persona)
+    assert guard.check_reply("I'm not a human, I'm Loop's AI assistant.").ok
+    assert guard.check_reply("I'm the person who looked into your order.").ok
+    assert guard.check_reply("Found it, Priya. It's due Thursday.").ok
+
+
+def test_forbidden_promise_is_replaced_with_the_safe_reply(pack):
+    guard = PolicyGuard(pack.policies, pack.persona)
+    verdict = guard.check_reply("Sure! I can give you 20% off your next pair.")
+    assert not verdict.ok
+    assert verdict.rule_id == "no-discounts"
+    assert verdict.matched == "20% off"
+    assert "can't change prices" in verdict.replacement
+
+
+def test_price_match_promise_is_caught(pack):
+    assert not PolicyGuard(pack.policies).check_reply("No problem, I'll match that price.").ok
+
+
+def test_mentioning_the_offers_page_is_fine(pack):
+    assert PolicyGuard(pack.policies).check_reply("Current offers are on the offers page.").ok
