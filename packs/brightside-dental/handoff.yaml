@@ -1,0 +1,11 @@
+phrases:
+  - bleeding won't stop
+  - wont stop bleeding
+  - swelling
+  - knocked out
+  - can't breathe
+  - emergency
+  - severe pain
+on_request: true
+max_guard_blocks: 2
+message: I'm passing you to our front desk team right now. If this is an emergency, please call the emergency line on our website.
