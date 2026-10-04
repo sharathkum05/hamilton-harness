@@ -24,6 +24,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
+from repkit.pack.schema import Pack
 from repkit.runtime import Agent, TurnResult
 from repkit.web.sessions import Session, SessionStore
 
@@ -41,6 +42,26 @@ class CustomerMessage(BaseModel):
         if not value:
             raise ValueError("message is empty")
         return value
+
+
+LOGO_TYPES = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
+}
+
+
+def logo_path(pack: Pack) -> Path | None:
+    """The pack's logo file, if it names one that exists inside the pack."""
+    if not pack.widget.logo or not pack.root:
+        return None
+    root = Path(pack.root).resolve()
+    path = (root / pack.widget.logo).resolve()
+    if root not in path.parents or not path.is_file():
+        return None
+    return path
 
 
 def _debug_view(result: TurnResult) -> dict[str, Any]:
@@ -116,13 +137,32 @@ def create_app(
     @app.get("/api/config")
     def config() -> dict[str, Any]:
         persona, widget = pack.persona, pack.widget
+        logo = logo_path(pack)
+        settings = widget.model_dump(exclude={"logo"})
+        # The version changes when the file does, so browsers pick up a new logo.
+        settings["logo_url"] = f"/brand/logo?v={int(logo.stat().st_mtime)}" if logo else ""
         return {
             "rep": {"name": persona.name, "company": persona.company, "role": persona.role},
             # Shown under the rep's name so nobody has to ask what they are talking to.
             "disclosure": "AI assistant",
-            "widget": widget.model_dump(),
+            "widget": settings,
             "debug": debug,
         }
+
+    @app.get("/brand/logo", include_in_schema=False)
+    def brand_logo() -> FileResponse:
+        logo = logo_path(pack)
+        if logo is None:
+            raise HTTPException(status_code=404, detail="no logo")
+        return FileResponse(
+            logo,
+            media_type=LOGO_TYPES[logo.suffix.lower()],
+            # An SVG can carry script. Sandboxing it makes it an image and nothing more.
+            headers={
+                "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
 
     @app.post("/api/conversations", status_code=201)
     def start_conversation() -> dict[str, Any]:

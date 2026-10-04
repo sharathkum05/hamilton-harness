@@ -31,6 +31,9 @@ def test_config_describes_the_rep_and_widget(client, pack):
     assert config["rep"] == {"name": "Maya", "company": "Loop Sneakers", "role": "customer support"}
     assert config["disclosure"] == "AI assistant"
     assert config["widget"]["accent"] == pack.widget.accent
+    assert config["widget"]["logo_url"].startswith("/brand/logo?v=")
+    assert "logo" not in config["widget"]
+    assert config["widget"]["theme"] == "auto"
     assert len(config["widget"]["suggestions"]) == 4
     assert config["debug"] is False
 
@@ -190,3 +193,18 @@ def test_demo_page_and_widget_assets_are_served(client):
     assert script.headers["content-type"].startswith("text/javascript")
     assert "repkit:turn" in script.text
     assert client.get("/static/widget.css").status_code == 200
+
+
+def test_logo_is_served_as_a_sandboxed_image(client):
+    response = client.get("/brand/logo")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("image/svg+xml")
+    assert "sandbox" in response.headers["content-security-policy"]
+    assert response.headers["x-content-type-options"] == "nosniff"
+
+
+def test_pack_without_a_logo(pack):
+    bare = pack.model_copy(update={"widget": pack.widget.model_copy(update={"logo": ""})})
+    client = TestClient(create_app(Agent(bare, ScriptedModel([]), retry_wait=0)))
+    assert client.get("/api/config").json()["widget"]["logo_url"] == ""
+    assert client.get("/brand/logo").status_code == 404
