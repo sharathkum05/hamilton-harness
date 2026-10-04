@@ -13,7 +13,7 @@ import re
 import uuid
 from typing import Any
 
-from repkit.llm import ModelResponse, ToolCall, Usage
+from hamilton_harness.llm import ModelResponse, ToolCall, Usage
 
 _ORDER = re.compile(r"\bLS-\d{4}\b", re.IGNORECASE)
 _REMEMBERED_ORDER = re.compile(r"last_order: (LS-\d{4})")
