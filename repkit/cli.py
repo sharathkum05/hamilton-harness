@@ -144,11 +144,11 @@ def cmd_serve(args: argparse.Namespace) -> int:
     import uvicorn
 
     mode = "offline stand-in model" if args.offline else "live model"
-    print(f"Serving the chat widget at http://{args.host}:{args.port} ({mode})")
+    print(f"Serving the chat widget at http://{args.host}:{args.port} ({mode})", flush=True)
     if args.admin:
         # The token rides in the URL fragment, which browsers never send to a server.
         token = admin_token(Path(args.state))
-        print(f"Dashboard: http://{args.host}:{args.port}/admin#token={token}")
+        print(f"Dashboard: http://{args.host}:{args.port}/admin#token={token}", flush=True)
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
     return 0
 
