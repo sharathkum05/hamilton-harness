@@ -185,6 +185,19 @@ body,
   html {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+  /* A control should answer the press: a small, quick give, and no more. */
+  button, [role="button"] {
+    transition-property: color, background-color, border-color, opacity, box-shadow, scale;
+    transition-duration: 150ms;
+  }
+  button:not(:disabled):active, [role="button"]:not(:disabled):active {
+    scale: 0.98;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    button:not(:disabled):active, [role="button"]:not(:disabled):active { scale: 1; }
   }
 }
 
