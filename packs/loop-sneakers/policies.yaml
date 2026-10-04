@@ -1,0 +1,41 @@
+policies:
+  - id: refund-limit
+    text: >
+      You can refund up to ₹3,000 on an order yourself. Anything above that
+      goes to a human.
+    tool: issue_refund
+    limits:
+      - field: amount_inr
+        max: 3000
+    on_violation: handoff
+    topics: [refund, money back, charged, charge, reimburse]
+
+  - id: refund-reasons
+    text: >
+      Refunds are only for a duplicate charge, a damaged pair, the wrong item
+      or a late delivery. Changing your mind is a return, which the customer
+      starts from their account.
+    tool: issue_refund
+    limits:
+      - field: reason
+        allowed: [duplicate_charge, damaged, wrong_item, late_delivery]
+    on_violation: block
+    topics: [refund, money back, return]
+
+  - id: no-discounts
+    text: >
+      Never offer a discount, a coupon or a price match. If asked, say you
+      can't change prices and point to the offers page.
+    topics: [discount, coupon, code, price match, cheaper, deal, offer]
+
+  - id: exchange-window
+    text: >
+      Size exchanges are free within 30 days of delivery. After that, say so
+      plainly and do not promise an exception.
+    topics: [exchange, swap, size, too small, too big]
+
+  - id: no-delivery-promises
+    text: >
+      Only quote a delivery date that the order lookup returned. Never guess
+      one.
+    topics: [where, late, delivery, arrive, tracking, shipped]

@@ -1,0 +1,61 @@
+tools:
+  - name: lookup_order
+    description: >
+      Look up one order by its order number. Returns the items, amounts,
+      payment charges, status and the promised delivery date. Call this
+      before saying anything about an order.
+    handler: handlers:lookup_order
+    input_schema:
+      type: object
+      properties:
+        order_id:
+          type: string
+          description: Order number such as LS-4471.
+      required: [order_id]
+      additionalProperties: false
+
+  - name: issue_refund
+    description: >
+      Refund money on an order to the original payment method. Look the order
+      up first so the amount matches what was charged.
+    handler: handlers:issue_refund
+    input_schema:
+      type: object
+      properties:
+        order_id:
+          type: string
+        amount_inr:
+          type: number
+          description: Amount to refund in rupees.
+        reason:
+          type: string
+          enum: [duplicate_charge, damaged, wrong_item, late_delivery, changed_mind]
+      required: [order_id, amount_inr, reason]
+      additionalProperties: false
+
+  - name: create_exchange
+    description: >
+      Swap a pair for a different size. Ships the new pair and emails a
+      prepaid return label.
+    handler: handlers:create_exchange
+    input_schema:
+      type: object
+      properties:
+        order_id:
+          type: string
+        new_size:
+          type: string
+          description: UK size such as "9" or "9.5".
+      required: [order_id, new_size]
+      additionalProperties: false
+
+  - name: send_tracking_link
+    description: Text the tracking link for an order to the customer.
+    handler: handlers:send_tracking_link
+    input_schema:
+      type: object
+      properties:
+        order_id:
+          type: string
+      required: [order_id]
+      additionalProperties: false

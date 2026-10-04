@@ -1,0 +1,9 @@
+phrases:
+  - lawyer
+  - legal action
+  - consumer court
+  - chargeback
+  - fraud
+on_request: true
+max_guard_blocks: 2
+message: I'm getting a teammate to take this from here. They'll have everything we've covered.
