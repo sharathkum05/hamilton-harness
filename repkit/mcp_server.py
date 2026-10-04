@@ -11,12 +11,14 @@ so Claude can correct it.
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Literal
 
 from mcp.server.mcpserver import MCPServer
 
 from repkit.editor import EditError, PackEditor, list_conversations, read_conversation
+from repkit.records import FileRecordStore, Status
 
 INSTRUCTIONS = """\
 This server manages one company's AI rep (a "pack"): who the rep is, what it
@@ -33,9 +35,15 @@ says which field was wrong.
 Section = Literal["persona", "scope", "widget", "handoff"]
 
 
-def build_server(pack_root: str | Path, *, trace_dir: str | Path | None = None) -> MCPServer:
+def build_server(
+    pack_root: str | Path,
+    *,
+    trace_dir: str | Path | None = None,
+    records_path: str | Path | None = None,
+) -> MCPServer:
     editor = PackEditor(pack_root)
     traces = Path(trace_dir) if trace_dir else None
+    records = FileRecordStore(records_path) if records_path else None
     server = MCPServer("repkit", instructions=INSTRUCTIONS)
 
     def guarded(work):
@@ -120,5 +128,21 @@ def build_server(pack_root: str | Path, *, trace_dir: str | Path | None = None) 
     def get_conversation(conversation_id: str) -> dict[str, Any]:
         """Every recorded step of one conversation, to see why the rep answered as it did."""
         return guarded(lambda: {"ok": True, "events": read_conversation(traces, conversation_id)})
+
+    @server.tool()
+    def list_records(type: str | None = None) -> dict[str, Any]:
+        """Orders, quotation requests and other records the rep has taken down for the
+        business, newest first. Pass a type such as "order" or "quote" to filter."""
+        if records is None:
+            return {"records": []}
+        return {"records": [asdict(record) for record in records.list(type)]}
+
+    @server.tool()
+    def set_record_status(record_id: str, status: Status) -> dict[str, Any]:
+        """Mark a record new, confirmed, done or cancelled."""
+        record = records.set_status(record_id, status) if records else None
+        if record is None:
+            return {"ok": False, "error": f"no record {record_id}"}
+        return {"ok": True, "record": asdict(record)}
 
     return server
