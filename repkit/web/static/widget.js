@@ -37,6 +37,12 @@
       z-index: 2147483000;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     }
+    /* With no brand colour set, the launcher is black on light pages and white on dark ones. */
+    :host { --accent: #18181b; --on-accent: #ffffff; }
+    @media (prefers-color-scheme: dark) {
+      :host([data-theme="auto"]) { --accent: #fafafa; --on-accent: #18181b; }
+    }
+    :host([data-theme="dark"]) { --accent: #fafafa; --on-accent: #18181b; }
     :host([data-position="left"]) { right: auto; left: max(16px, env(safe-area-inset-left, 0px)); }
     [hidden] { display: none !important; }
     .launcher {
@@ -146,8 +152,11 @@
     host.id = "repkit-widget";
     host.dataset.position = widget.position;
     host.dataset.corners = widget.corners;
-    host.style.setProperty("--accent", widget.accent);
-    host.style.setProperty("--on-accent", inkFor(widget.accent));
+    host.dataset.theme = widget.theme;
+    if (widget.accent !== "auto") {
+      host.style.setProperty("--accent", widget.accent);
+      host.style.setProperty("--on-accent", inkFor(widget.accent));
+    }
     const root = host.attachShadow({ mode: "open" });
 
     const style = document.createElement("style");
