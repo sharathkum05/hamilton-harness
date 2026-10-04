@@ -21,7 +21,37 @@ const STATS: [string, string][] = [
   ['handoffs', 'Handed to a human'],
 ]
 
+/** The share of test customers that passed, drawn as a ring. */
+function PassRing({ passed, total }: { passed: number; total: number }) {
+  const radius = 34
+  const around = 2 * Math.PI * radius
+  const share = total > 0 ? passed / total : 0
+  return (
+    <div className="relative size-24 shrink-0">
+      <svg viewBox="0 0 80 80" className="size-full -rotate-90" aria-hidden="true">
+        <circle cx="40" cy="40" r={radius} fill="none" strokeWidth="7" className="stroke-muted" />
+        <circle
+          cx="40"
+          cy="40"
+          r={radius}
+          fill="none"
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={around}
+          strokeDashoffset={around * (1 - share)}
+          className={passed === total ? 'stroke-foreground' : 'stroke-destructive'}
+          style={{ transition: 'stroke-dashoffset 600ms ease-out' }}
+        />
+      </svg>
+      <span className="font-heading absolute inset-0 flex items-center justify-center text-xl tabular-nums">
+        {Math.round(share * 100)}%
+      </span>
+    </div>
+  )
+}
+
 export function TestSection({ pack, api }: SectionProps) {
+  const [only, setOnly] = useState<'all' | 'failed'>('all')
   const [report, setReport] = useState<SimReport | null>(null)
   const [running, setRunning] = useState(false)
   const [problem, setProblem] = useState('')
@@ -56,54 +86,83 @@ export function TestSection({ pack, api }: SectionProps) {
       )}
       {report && (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <Card className="col-span-2 sm:col-span-1">
-              <CardContent className="flex flex-col gap-1">
-                <span className="text-2xl font-semibold tabular-nums">
-                  {report.summary.passed}/{report.summary.scenarios}
-                </span>
-                <span className="text-muted-foreground text-xs">Customers passed</span>
-              </CardContent>
-            </Card>
+          <div className="bg-card flex flex-wrap items-center gap-6 rounded-2xl border p-5">
+            <PassRing
+              passed={Number(report.summary.passed)}
+              total={Number(report.summary.scenarios)}
+            />
+            <div className="flex flex-col gap-1">
+              <span className="font-heading text-3xl">
+                {report.summary.passed} of {report.summary.scenarios} passed
+              </span>
+              <span className="text-muted-foreground text-sm">
+                {report.summary.passed === report.summary.scenarios
+                  ? 'Every rule held. The rep is safe to put in front of customers.'
+                  : 'At least one rule gave way. Fix it before the rep goes live.'}
+              </span>
+            </div>
+            <Tabs
+              value={only}
+              onValueChange={(value) => setOnly(value as 'all' | 'failed')}
+              className="ml-auto"
+            >
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="failed">Failed</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {STATS.map(([key, label]) => (
               <Card key={key}>
                 <CardContent className="flex flex-col gap-1">
-                  <span className="text-2xl font-semibold tabular-nums">{report.summary[key] ?? 0}</span>
+                  <span className="text-2xl font-semibold tabular-nums">
+                    {report.summary[key] ?? 0}
+                  </span>
                   <span className="text-muted-foreground text-xs">{label}</span>
                 </CardContent>
               </Card>
             ))}
           </div>
           <div className="flex flex-col gap-2">
-            {report.results.map((result) => (
-              <Card key={result.id}>
-                <CardContent className="flex flex-col gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={result.passed ? 'secondary' : 'destructive'}>
-                      {result.passed ? 'Pass' : 'Fail'}
-                    </Badge>
-                    <code className="text-sm">{result.id}</code>
-                    <span className="text-muted-foreground text-xs">{result.customer}</span>
-                  </div>
-                  <p className="text-sm">
-                    <span className="text-muted-foreground">Customer: </span>
-                    {result.says[0]}
-                  </p>
-                  {result.replies[0] && (
+            {only === 'failed' && report.results.every((result) => result.passed) && (
+              <p className="text-muted-foreground rounded-xl border border-dashed p-6 text-sm">
+                Nothing failed.
+              </p>
+            )}
+            {report.results
+              .filter((result) => only === 'all' || !result.passed)
+              .map((result) => (
+                <Card key={result.id}>
+                  <CardContent className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant={result.passed ? 'secondary' : 'destructive'}>
+                        {result.passed ? 'Pass' : 'Fail'}
+                      </Badge>
+                      <code className="text-sm">{result.id}</code>
+                      <span className="text-muted-foreground text-xs">{result.customer}</span>
+                    </div>
                     <p className="text-sm">
-                      <span className="text-muted-foreground">Rep: </span>
-                      {result.replies[result.replies.length - 1]}
+                      <span className="text-muted-foreground">Customer: </span>
+                      {result.says[0]}
                     </p>
-                  )}
-                  {result.error && <p className="text-destructive text-sm">Crashed: {result.error}</p>}
-                  {result.failures.map((failure) => (
-                    <p key={failure.name} className="text-destructive text-sm">
-                      Failed: {failure.name} {failure.detail && `(${failure.detail})`}
-                    </p>
-                  ))}
-                </CardContent>
-              </Card>
-            ))}
+                    {result.replies[0] && (
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">Rep: </span>
+                        {result.replies[result.replies.length - 1]}
+                      </p>
+                    )}
+                    {result.error && (
+                      <p className="text-destructive text-sm">Crashed: {result.error}</p>
+                    )}
+                    {result.failures.map((failure) => (
+                      <p key={failure.name} className="text-destructive text-sm">
+                        Failed: {failure.name} {failure.detail && `(${failure.detail})`}
+                      </p>
+                    ))}
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         </>
       )}
@@ -229,8 +288,8 @@ hamilton-harness login --url ${origin}
 claude mcp add hamilton -- hamilton-harness mcp`}
           />
           <p className="text-muted-foreground text-sm">
-            Without installing: <code className="text-foreground">npx -y hamilton-harness mcp</code>,
-            with <code className="text-foreground">HAMILTON_URL</code> and{' '}
+            Without installing: <code className="text-foreground">npx -y hamilton-harness mcp</code>
+            , with <code className="text-foreground">HAMILTON_URL</code> and{' '}
             <code className="text-foreground">HAMILTON_ADMIN_TOKEN</code> set.
           </p>
         </CardContent>
