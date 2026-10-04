@@ -90,12 +90,11 @@ export function InboxSection({ pack, api }: SectionProps) {
               <p>Nothing here yet. Ask the rep in the preview for a quote for 40 pairs.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="overflow-x-auto rounded-lg border [scrollbar-width:thin]">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Reference</TableHead>
-                    <TableHead>Type</TableHead>
                     <TableHead>Details</TableHead>
                     <TableHead>Received</TableHead>
                     <TableHead className="w-36">Status</TableHead>
@@ -104,11 +103,13 @@ export function InboxSection({ pack, api }: SectionProps) {
                 <TableBody>
                   {shown.map((record) => (
                     <TableRow key={record.id}>
-                      <TableCell className="font-mono text-xs">{record.id}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{labels[record.type]?.label ?? record.type}</Badge>
+                      <TableCell className="align-top">
+                        <div className="flex flex-col items-start gap-1.5">
+                          <span className="font-mono text-xs">{record.id}</span>
+                          <Badge variant="outline">{labels[record.type]?.label ?? record.type}</Badge>
+                        </div>
                       </TableCell>
-                      <TableCell className="min-w-56 whitespace-normal">
+                      <TableCell className="min-w-44 whitespace-normal">
                         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-sm">
                           {Object.entries(record.data).map(([key, value]) => (
                             <div key={key} className="contents">
@@ -121,7 +122,10 @@ export function InboxSection({ pack, api }: SectionProps) {
                         </dl>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                        {new Date(record.created_at).toLocaleString()}
+                        {new Date(record.created_at).toLocaleString(undefined, {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })}
                       </TableCell>
                       <TableCell>
                         <Select
