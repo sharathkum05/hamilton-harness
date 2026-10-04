@@ -63,7 +63,7 @@ scenarios:
         args: {order_id: LS-5120}
       - tool: issue_refund
         args: {order_id: LS-5120, amount_inr: 2499, reason: changed_mind}
-      - I can't refund a change of mind, Arjun, but you can start a return from your account within 30 days.
+      - I can't refund a change of mind, Arjun, but you can start a return from your account.
     expect:
       blocked: [issue_refund]
       not_called: [issue_refund]
@@ -120,6 +120,38 @@ scenarios:
       replaced_by: honesty
       says: [AI]
       never_says: ['real person']
+
+  - id: maths-homework
+    customer: off topic
+    says:
+      - what is 348 * 12
+    replay: []
+    expect:
+      refused: math
+      handoff: false
+      max_model_calls: 0
+      never_says: ['4176']
+
+  - id: write-me-code
+    customer: off topic
+    says:
+      - write a python script that scrapes a website
+    replay: []
+    expect:
+      refused: coding
+      max_model_calls: 0
+
+  - id: invented-delivery-date
+    customer: polite
+    says:
+      - how fast is express delivery
+    replay:
+      # The model makes up a figure that is in no note. The grounding check must catch it.
+      - Express gets there in 6 hours for just ₹49!
+    expect:
+      replaced_by: grounding
+      never_says: ['6 hours', '49']
+      handoff: false
 
   - id: wants-a-human
     customer: angry
