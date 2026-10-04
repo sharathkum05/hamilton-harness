@@ -180,3 +180,13 @@ def test_listed_origins_may_embed_the_widget(pack):
     assert allowed.headers["access-control-allow-origin"] == "https://shop.example"
     other = client.get("/api/config", headers={"Origin": "https://evil.example"})
     assert "access-control-allow-origin" not in other.headers
+
+
+def test_demo_page_and_widget_assets_are_served(client):
+    page = client.get("/")
+    assert page.status_code == 200
+    assert 'src="/widget.js"' in page.text
+    script = client.get("/widget.js")
+    assert script.headers["content-type"].startswith("text/javascript")
+    assert "repkit:turn" in script.text
+    assert client.get("/static/widget.css").status_code == 200
