@@ -100,7 +100,9 @@ export function ChatApp() {
   }, [load])
 
   useEffect(() => {
-    if (config) return applyBrand(config.widget)
+    if (!config) return
+    document.title = `Chat with ${config.rep.name}`
+    return applyBrand(config.widget)
   }, [config])
 
   const send = useCallback(

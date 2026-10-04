@@ -117,6 +117,10 @@ export function AdminApp() {
     refresh()
   }, [refresh])
 
+  useEffect(() => {
+    document.title = pack ? `${pack.persona.company} dashboard` : 'Dashboard'
+  }, [pack])
+
   const commit = useCallback(
     async (label: string, work: () => Promise<unknown>) => {
       try {
@@ -171,7 +175,10 @@ export function AdminApp() {
               </span>
             </div>
           </div>
-          <nav aria-label="Dashboard sections" className="flex gap-1 overflow-x-auto md:flex-col">
+          <nav
+            aria-label="Dashboard sections"
+            className="flex gap-1 overflow-x-auto [scrollbar-width:none] md:flex-col"
+          >
             {SECTIONS.map(([key, label, Icon]) => (
               <button
                 key={key}
