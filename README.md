@@ -1,40 +1,179 @@
+<div align="center">
+
+<img src="docs/assets/logo.svg" width="76" alt="Hamilton Harness logo: H squared" />
+
 # Hamilton Harness
 
+**The AI harness for your business.**
+
+One language model, set up as your company's own rep.<br />
+On your brand. Inside your rules. On your topic.
+
 [![CI](https://github.com/sharathkum05/hamilton-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/sharathkum05/hamilton-harness/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/hamilton-harness)](https://www.npmjs.com/package/hamilton-harness)
+[![npm](https://img.shields.io/npm/v/hamilton-harness?color=18181b&label=npm)](https://www.npmjs.com/package/hamilton-harness)
+[![Python](https://img.shields.io/badge/python-3.11%2B-18181b)](pyproject.toml)
+[![MCP](https://img.shields.io/badge/MCP-server-18181b)](packages/cli)
+[![Licence](https://img.shields.io/badge/licence-MIT-18181b)](LICENSE)
 
-**The AI harness for your business.** It turns one language model into your
-company's own rep: customer support, an order desk, quotation requests or a
-front desk. On your brand, inside your rules, on your topic.
+[**Live demo**](https://hamilton-harness.vercel.app) ·
+[Quick start](#quick-start) ·
+[Connect Claude](#connect-claude) ·
+[Put it on your site](#put-it-on-your-site) ·
+[How it works](#how-it-works)
 
-**Live demo: https://hamilton-harness.vercel.app**
+<br />
+
+<a href="https://hamilton-harness.vercel.app">
+  <img src="docs/assets/landing.png" alt="The Hamilton Harness product page, with a live chat running in it" width="900" />
+</a>
+
+</div>
+
+<br />
+
+## What is it?
+
+Hamilton Harness turns a language model into a rep for one particular
+business: customer support, an order desk, quotation requests or a front desk.
 
 A company describes its rep in a folder called a **pack**: who the rep is, what
 it knows, what it may promise and do, and when a human takes over. The harness
 reads the pack and runs the conversation. Changing companies means changing the
 folder. Nothing is retrained.
 
-The design rests on one idea: **a prompt asks, code enforces.** The model is
-told the rules, and a separate guard checks every action and every reply
-against them, so a rule holds even when the model is talked out of it.
+> **A prompt asks. Code enforces.**
+> The model is told the rules, and a separate guard checks every action and
+> every reply against them, so a rule holds even when the model is talked out
+> of it.
 
-## What it does
+## Features
 
-- **Stays on its subject.** Maths, code, poems and trivia get the pack's
-  off-topic line, and the model is never called.
-- **Never invents a figure.** A price, date or quantity that is in no rule,
-  knowledge file or tool result is caught and the reply is replaced.
-- **Holds its limits.** Every action is checked against the pack's limits in
-  code. A prompt injection that fools the model still gets nowhere.
-- **Takes orders and quotes.** The rep collects the fields you define, gives
-  the customer a reference, and puts the record in your inbox.
-- **Hands over at the right time.** Trigger phrases, a request for a person or
-  repeated blocked actions pass the chat to your team.
-- **Is honest about what it is.** It may sound human. It never says it is one.
-- **Is tested like software.** Fake customers, some hostile, run on every
-  change, and a scorecard decides whether it ships.
+| | |
+|---|---|
+| **Stays on its subject** | Maths, code, poems and trivia get your off-topic line. The model is never called, so there is nothing to talk it into. |
+| **Never invents a figure** | A price, date or quantity that is in no rule, knowledge file or tool result is caught, and the reply is replaced before anyone sees it. |
+| **Holds its limits** | Every action is checked against your limits in code. A prompt injection that fools the model still gets nowhere. |
+| **Takes orders and quotes** | The rep collects the fields you define, gives the customer a reference, and puts the record in your inbox. |
+| **Hands over at the right time** | Trigger phrases, a request for a person, or repeated blocked actions pass the chat to your team with the notes. |
+| **Honest about what it is** | It may sound like one of your people. Asked if it is a person, it always says it is an AI. |
+| **Yours to brand** | Logo, colour, theme, typeface, greeting and voice, edited from a dashboard. Black and white by default. |
+| **Tested like software** | Fake customers, some of them hostile, run on every change. A scorecard decides whether it ships. |
+| **Managed by Claude** | Connect Claude over MCP and ask it to update knowledge, tighten the scope or work through today's orders. |
 
-## How one message is handled
+<div align="center">
+  <img src="docs/assets/dashboard.png" alt="The dashboard: what is waiting, recent conversations, and a live preview of the chat" width="900" />
+  <br />
+  <sub>The dashboard: what is waiting for you, what the rep has been doing, and a live preview of the chat.</sub>
+</div>
+
+## Quick start
+
+Install it and run the demo pack's fake customers. Neither step needs an API
+key.
+
+```bash
+pip install -e ".[dev]"
+```
+
+```bash
+hamilton-harness sim packs/loop-sneakers
+```
+
+```
+16/16 scenarios passed, 57/57 checks
+actions run 8, blocked by guard 4, replies replaced 3, off topic refused 2, handoffs 4
+```
+
+To run the site, the chat and the dashboard, build the web app once and start
+the server. `--offline` uses the demo pack's stand-in model.
+
+```bash
+npm --prefix web ci && npm --prefix web run build
+```
+
+```bash
+hamilton-harness serve packs/loop-sneakers --offline --debug --admin
+```
+
+The server prints two addresses: the site, and the dashboard link with its
+token. To use the real model, set `ANTHROPIC_API_KEY` and drop `--offline`.
+
+| Address | What it is |
+|---|---|
+| `/` | Product page, with the real chat panel running in it |
+| `/demo` | The chat plus an inspector that shows each turn from the inside |
+| `/admin` | Dashboard: overview, orders and quotes, conversations, brand, voice, scope, knowledge, rules, handoff, tests, install |
+| `/chat` | The chat panel on its own, which the embed script loads in a frame |
+| `/widget.js` | The embed script: one tag puts the chat on any site |
+
+## Connect Claude
+
+The [`hamilton-harness`](https://www.npmjs.com/package/hamilton-harness) npm
+package is an MCP server. It connects Claude to a running Hamilton server, so
+you can manage the rep in plain words.
+
+```bash
+npm install -g hamilton-harness
+```
+
+```bash
+hamilton-harness login --url http://localhost:8000
+```
+
+```bash
+claude mcp add hamilton -- hamilton-harness mcp
+```
+
+For Claude Desktop, or any MCP client that takes a JSON entry:
+
+```json
+{
+  "mcpServers": {
+    "hamilton": { "command": "npx", "args": ["-y", "hamilton-harness", "mcp"] }
+  }
+}
+```
+
+Then ask:
+
+- "Add our new returns policy to the knowledge."
+- "Stop it discussing competitors."
+- "Show me today's quotation requests and mark the first one confirmed."
+- "Rerun the fake customers and tell me if anything broke."
+
+Claude edits through the same validated editor as the dashboard. A change that
+would leave the rep unable to load is rolled back and refused, and Claude is
+told which field was wrong. More in [packages/cli](packages/cli).
+
+<details>
+<summary>The eleven tools Claude gets</summary>
+
+<br />
+
+| Tool | What it does |
+|---|---|
+| `get_overview` | The rep's persona, scope, look, rules, actions, record types and recent activity |
+| `update_settings` | Change fields in the persona, scope, widget or handoff rules |
+| `read_knowledge`, `write_knowledge`, `delete_knowledge` | Manage the facts the rep answers from |
+| `save_rules` | Replace the list of policy rules |
+| `run_fake_customers` | Run the test customers and return the scorecard |
+| `list_records`, `set_record_status` | Work through orders and quotation requests |
+| `recent_conversations`, `get_conversation` | Read what happened and why |
+
+</details>
+
+## Put it on your site
+
+```html
+<script src="https://chat.example.com/widget.js" defer></script>
+```
+
+One script tag adds a launcher and loads the chat in its own frame, so it
+cannot clash with the site's styles. It works on a hand-written page, a PHP
+site, WordPress or a React app, and your server can tell the rep which customer
+is signed in. See [docs/integrate.md](docs/integrate.md).
+
+## How it works
 
 ```mermaid
 flowchart TD
@@ -59,95 +198,63 @@ flowchart TD
 
 Every step is written to a trace, so any reply can be explained afterwards.
 
-## Quick start
+Each file in a pack is used in one of four ways, and only the first is left to
+the model.
 
-Install it and run the demo pack's fake customers. Neither step needs an API
-key.
+| Mechanism | Files | What it does |
+|---|---|---|
+| **Told once** (system prompt) | `persona.yaml`, `examples/` | Sets identity, voice and rhythm. Cached, because it never changes during a conversation. |
+| **Looked up per message** (context) | `knowledge/`, `policies.yaml` topics, customer memory | Only the rules and facts this message needs, ranked with BM25. |
+| **Enforced by code** (guard) | `policies.yaml` limits and `never_say`, `tools.yaml`, `scope.yaml`, `handoff.yaml` | Blocks actions and replies that break a rule, whatever the model wrote. |
+| **Checked before launch** (simulator) | `tests/scenarios.yaml` | Fake customers with expected outcomes, run in CI. |
 
-```bash
-pip install -e ".[dev]"
+## A pack
+
+```
+packs/loop-sneakers/
+  persona.yaml     who the rep is and how they talk
+  examples/        real chats from the company's best reps
+  knowledge/       products, prices, delivery, FAQs
+  policies.yaml    what the rep may promise, with limits
+  tools.yaml       what the rep may do
+  handlers.py      the code behind those tools
+  records.yaml     orders, quotes and anything else it takes down
+  handoff.yaml     when a human takes over
+  scope.yaml       what it is for and what it turns away
+  widget.yaml      logo, colour, theme, greeting
+  tests/           fake customers and what must happen
 ```
 
-```bash
-hamilton-harness sim packs/loop-sneakers
+Two demo packs ship: **Loop Sneakers** (support, orders and quotes for a shoe
+shop) and **Brightside Dental** (a front desk with a strict scope and a
+no-medical-advice rule). Both companies are made up.
+
+<details>
+<summary>A rule, enforced in code</summary>
+
+<br />
+
+```yaml
+- id: refund-limit
+  text: You can refund up to ₹3,000 on an order yourself. Anything above that goes to a human.
+  tool: issue_refund
+  limits:
+    - field: amount_inr
+      max: 3000
+  on_violation: handoff
+  topics: [refund, money back, charged]
 ```
 
-To run the site, the chat and the dashboard, build the web app once and start
-the server. `--offline` uses the demo pack's stand-in model.
+`text` is shown to the model. `limits` is checked in code before the refund
+runs. `on_violation` decides whether a broken rule is refused or goes to a
+person.
 
-```bash
-npm --prefix web ci && npm --prefix web run build
-```
+</details>
 
-```bash
-hamilton-harness serve packs/loop-sneakers --offline --debug --admin
-```
+<details>
+<summary>A record type: orders, quotes, leads</summary>
 
-The server prints two addresses: the site, and the dashboard link with its
-token. To use the real model, set `ANTHROPIC_API_KEY` and drop `--offline`.
-`hamilton-harness chat packs/loop-sneakers --debug` does the same in the
-terminal.
-
-| Address | What it is |
-|---|---|
-| `/` | Product page, with the real chat panel running in it |
-| `/demo` | The chat plus an inspector that shows each turn from the inside |
-| `/admin` | Dashboard: overview, orders and quotes, conversations, brand, voice, scope, knowledge, rules, handoff, tests, install snippets |
-| `/chat` | The chat panel on its own, which the embed script loads in a frame |
-| `/widget.js` | The embed script: one tag puts the chat on any site |
-
-## Connect Claude
-
-The [`hamilton-harness`](https://www.npmjs.com/package/hamilton-harness) npm
-package connects Claude to a running server. Sign in once with the server's
-admin token:
-
-```bash
-npx hamilton-harness login --url http://localhost:8000
-```
-
-Then add it to Claude Code:
-
-```bash
-claude mcp add hamilton -- npx -y hamilton-harness mcp
-```
-
-Or to Claude Desktop, in its MCP settings:
-
-```json
-{
-  "mcpServers": {
-    "hamilton": { "command": "npx", "args": ["-y", "hamilton-harness", "mcp"] }
-  }
-}
-```
-
-Now ask in plain words: "add our new returns policy to the knowledge", "stop it
-discussing competitors", "show me today's quotation requests and mark the first
-one confirmed", "rerun the fake customers".
-
-Claude edits through the same validated editor as the dashboard. A change that
-would leave the rep unable to load is rolled back and refused, and Claude is
-told which field was wrong. The package's own notes are in
-[packages/cli](packages/cli).
-
-For a pack on the same machine, with no server running, the Python command has
-an MCP server too: `hamilton-harness mcp packs/your-company`.
-
-## Put it on a website
-
-```html
-<script src="https://chat.example.com/widget.js" defer></script>
-```
-
-One script tag adds a launcher and loads the chat in its own frame, so it
-cannot clash with the site's styles. It works on a hand-written page, a PHP
-site, WordPress or a React app, and a site can tell the rep which customer is
-signed in. See [docs/integrate.md](docs/integrate.md).
-
-## Orders, quotes and other records
-
-A pack can list things the rep takes down for the business in `records.yaml`:
+<br />
 
 ```yaml
 records:
@@ -167,118 +274,62 @@ like any other action, and the customer is given a reference such as
 `QUO-0001`. The business sees every record in the dashboard's inbox and marks
 it confirmed, done or cancelled. The rep does not take payment.
 
-## Keeping it on topic and honest
+</details>
 
-Two checks exist for this, both in code.
+<details>
+<summary>Why it does not read like a chatbot</summary>
 
-- **Scope gate.** Before the model is called, maths, coding, writing and trivia
-  requests are answered with the pack's off-topic line. In strict mode, so is
-  any message that touches nothing in the pack. Sums about the company's own
-  prices are allowed.
-- **Grounding check.** After the model replies, every number in the reply must
-  appear in a rule, a knowledge note, a tool result or the customer's own
-  words. A number from nowhere is treated as an invented fact and the reply is
-  replaced.
-
-These remove two common failures cheaply. They do not prove a reply is true: a
-wrong statement with no number in it is not caught by the grounding check.
-
-## What a pack contains
-
-```
-packs/loop-sneakers/
-  persona.yaml     who the rep is and how they talk
-  examples/        real chats from the company's best reps
-  knowledge/       products, prices, delivery, FAQs
-  policies.yaml    what the rep may promise, with limits
-  tools.yaml       what the rep may do
-  handlers.py      the code behind those tools
-  records.yaml     orders, quotes and anything else it takes down
-  handoff.yaml     when a human takes over
-  scope.yaml       what it is for and what it turns away
-  widget.yaml      logo, colour, theme, greeting
-  tests/           fake customers and what must happen
-```
-
-Two demo packs ship: Loop Sneakers (customer support, orders and quotes for a
-shoe shop) and Brightside Dental (a front desk with a strict scope and a
-no-medical-advice rule).
-
-Each file is used in one of four ways.
-
-| Mechanism | Files | What it does |
-|---|---|---|
-| Told once (system prompt) | `persona.yaml`, `examples/` | Sets identity, voice and rhythm. Cached, because it never changes during a conversation. |
-| Looked up per message (context) | `knowledge/`, `policies.yaml` topics, customer memory | Only the rules and facts this message needs, ranked with BM25. |
-| Enforced by code (guard) | `policies.yaml` limits and `never_say`, `tools.yaml`, `scope.yaml`, `handoff.yaml` | Blocks actions and replies that break a rule, whatever the model wrote. |
-| Checked before launch (simulator) | `tests/scenarios.yaml` | Fake customers with expected outcomes, run in CI. |
-
-A rule looks like this:
-
-```yaml
-- id: refund-limit
-  text: You can refund up to ₹3,000 on an order yourself. Anything above that goes to a human.
-  tool: issue_refund
-  limits:
-    - field: amount_inr
-      max: 3000
-  on_violation: handoff
-  topics: [refund, money back, charged]
-```
-
-`text` is shown to the model. `limits` is checked in code before the refund
-runs. `on_violation` decides whether a broken rule is refused or goes to a
-person.
-
-## Why it does not read like a chatbot
+<br />
 
 - **Real examples.** The system prompt carries transcripts from the company's
   own reps, and the model matches their tone.
-- **Act first.** The rep is told to look an order up before answering, so it
-  reports what it found instead of listing what might be wrong.
-- **Memory.** Tools name the facts worth keeping (`remember:` in `tools.yaml`),
-  and they are stored per customer between conversations.
+- **Act first.** The rep looks an order up before answering, so it reports what
+  it found instead of listing what might be wrong.
+- **Memory.** Tools name the facts worth keeping, and they are stored per
+  customer between conversations.
 - **Reply shaper.** Code strips Markdown, removes the persona's banned phrases,
   splits the reply into short bubbles and gives each a typing delay.
 - **Honesty.** A draft that claims to be a person is replaced with the
   persona's disclosure line, in every pack.
 
-## The scorecard
+</details>
 
-Output of `hamilton-harness sim packs/loop-sneakers` in replay mode:
+## What the guardrails do and do not promise
 
-```
-16/16 scenarios passed, 57/57 checks
-actions run 8, blocked by guard 4, replies replaced 3, off topic refused 2, handoffs 4
-```
+Two checks keep the rep on topic and honest, both in code.
 
-And for `packs/brightside-dental`:
+- **Scope gate.** Before the model is called, maths, coding, writing and trivia
+  requests are answered with the pack's off-topic line. In strict mode, so is
+  any message that touches nothing in the pack.
+- **Grounding check.** After the model replies, every number in the reply must
+  appear in a rule, a knowledge note, a tool result or the customer's own
+  words. A number from nowhere is treated as an invented fact.
 
-```
-10/10 scenarios passed, 30/30 checks
-actions run 2, blocked by guard 1, replies replaced 2, off topic refused 3, handoffs 1
-```
+These remove two common failures cheaply. They do not prove a reply is true: a
+wrong statement with no number in it is not caught. That is why every
+conversation is recorded and the fake customers run on each change.
 
-In several of these the recorded model does the wrong thing on purpose: it
-obeys a prompt injection, promises a 40% discount, refunds above the limit,
-claims to be a real person, diagnoses a cavity and invents a price. The
-scenarios pass because the harness stops each one.
-
-Replay mode proves the harness. It does not measure the model.
-`hamilton-harness sim PACK --live` runs the same customers against the real
-model and adds latency, token and cost figures; those numbers are not published
-here yet.
+In the test suites the recorded model does the wrong thing on purpose: it obeys
+a prompt injection, promises a 40% discount, refunds above the limit, claims to
+be a real person, diagnoses a cavity and invents a price. The scenarios pass
+because the harness stops each one.
 
 ## The hosted demo
 
-https://hamilton-harness.vercel.app runs the Loop Sneakers pack on the stand-in
-model, with the inspector on. It redeploys on every push to `main`.
+[hamilton-harness.vercel.app](https://hamilton-harness.vercel.app) runs the
+Loop Sneakers pack on the stand-in model, with the inspector on. It redeploys
+on every push to `main`.
 
 Vercel's functions keep nothing between restarts, so conversations and orders
 there are temporary and the dashboard is switched off. For real use, run the
 server on a host with a disk that persists.
 
-## Layout
+## Project layout
+
+<details>
+<summary>Where everything lives</summary>
+
+<br />
 
 | Path | Job |
 |---|---|
@@ -290,7 +341,7 @@ server on a host with a disk that persists.
 | `hamilton_harness/scope.py` | Scope gate and the number grounding check |
 | `hamilton_harness/handoff.py` | When a human takes over |
 | `hamilton_harness/memory.py` | Conversation state and customer facts |
-| `hamilton_harness/records.py` | Orders, quotes and other records the rep takes down |
+| `hamilton_harness/records.py` | Orders, quotes and other records |
 | `hamilton_harness/shaper.py` | Turns a draft into chat bubbles |
 | `hamilton_harness/llm.py` | Claude adapter and a scripted model for tests |
 | `hamilton_harness/runtime.py` | The turn loop |
@@ -301,32 +352,35 @@ server on a host with a disk that persists.
 | `hamilton_harness/mcp_server.py` | MCP server for a pack on this machine |
 | `hamilton_harness/web/` | HTTP API, dashboard API, embed script |
 | `web/` | React app: chat panel, dashboard, demo, product page |
-| `packages/cli/` | The `hamilton-harness` npm package: sign-in and an MCP server for a remote server |
+| `packages/cli/` | The `hamilton-harness` npm package |
 | `api/` | Entry point for the hosted demo |
 
-The chat panel is built from the official [ElevenLabs UI](https://ui.elevenlabs.io)
-components. The dashboard uses shadcn/ui and the product page adds Magic UI.
-Sources and licences are in `web/THIRD_PARTY.md`.
+</details>
 
 ## Status
 
-Working and tested: the turn loop, the guard, scope and grounding, handoff,
-memory, shaping, tracing, records, the simulator in replay mode, the web chat,
-the dashboard, both MCP servers, the hosted demo and CI.
+- [x] The turn loop, policy guard, scope gate and grounding check
+- [x] Handoff, customer memory, reply shaping and tracing
+- [x] Orders, quotes and other records
+- [x] Fake customers and the scorecard, run in CI
+- [x] Web chat, embed script, dashboard and product page
+- [x] MCP servers, and the `hamilton-harness` package on npm
+- [x] A hosted demo
+- [ ] A run against the real model. Everything so far is tested with scripted and stand-in models
+- [ ] Live scorecard numbers: latency, tokens and cost per conversation
+- [ ] Fake customers played by a model, with a goal and a temperament
+- [ ] A voice channel
+- [ ] The rep calling MCP connectors as tools. Today its actions are Python functions in the pack
+- [ ] Drafting a pack automatically from a company's website
 
-Not done yet:
+## Built with
 
-- A run against the real model. Everything so far is tested with scripted and
-  stand-in models.
-- Live scorecard numbers (latency, tokens, cost per conversation).
-- Fake customers played by a model, with a goal and a temperament.
-- A voice channel.
-- The rep calling MCP connectors as tools. Today its actions are Python
-  functions in the pack.
-- Drafting a pack automatically from a company's website.
-
-Loop Sneakers and Brightside Dental are made-up companies.
+The chat panel is built from the official [ElevenLabs UI](https://ui.elevenlabs.io)
+components. The dashboard uses [shadcn/ui](https://ui.shadcn.com), the product
+page adds [Magic UI](https://magicui.design), and headings are set in
+[Cal Sans](https://github.com/calcom/font). Sources and licences are in
+[web/THIRD_PARTY.md](web/THIRD_PARTY.md).
 
 ## Licence
 
-MIT
+[MIT](LICENSE)
