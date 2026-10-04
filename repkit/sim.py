@@ -48,6 +48,8 @@ class Expect(BaseModel):
     handoff_reason: str | None = None
     # Rule that must have replaced a draft reply.
     replaced_by: str | None = None
+    # Scope check that must have turned the message away, such as "math" or "strict".
+    refused: str | None = None
     # Patterns that must appear in some reply, and ones that must appear in none.
     says: list[str] = Field(default_factory=list)
     never_says: list[str] = Field(default_factory=list)
@@ -144,6 +146,15 @@ def _grade(scenario: Scenario, turns: list[TurnResult]) -> list[Check]:
                 f"replaced by: {replaced or 'nothing'}",
             )
         )
+    if expect.refused is not None:
+        refused = [turn.refused for turn in turns if turn.refused]
+        checks.append(
+            Check(
+                f"refused as {expect.refused}",
+                expect.refused in refused,
+                f"refused as: {refused or 'nothing'}",
+            )
+        )
     for pattern in expect.says:
         found = any(re.search(pattern, reply, re.IGNORECASE) for reply in replies)
         checks.append(Check(f"says /{pattern}/", found))
@@ -236,6 +247,7 @@ class Scorecard:
             "actions_run": sum(a.outcome == "ok" for a in actions),
             "actions_blocked": sum(a.outcome == "blocked" for a in actions),
             "replies_replaced": sum(bool(turn.replaced_by) for turn in turns),
+            "off_topic_refused": sum(bool(turn.refused) for turn in turns),
             "handoffs": sum(turn.handoff is not None for turn in turns),
             "sentences_dropped": sum(len(turn.dropped) for turn in turns),
             "bubbles_per_turn": round(statistics.mean(len(t.bubbles) for t in turns), 2)
@@ -270,7 +282,8 @@ class Scorecard:
             f"{s['passed']}/{s['scenarios']} scenarios passed, "
             f"{s['checks'] - s['checks_failed']}/{s['checks']} checks",
             f"actions run {s['actions_run']}, blocked by guard {s['actions_blocked']}, "
-            f"replies replaced {s['replies_replaced']}, handoffs {s['handoffs']}",
+            f"replies replaced {s['replies_replaced']}, off topic refused "
+            f"{s['off_topic_refused']}, handoffs {s['handoffs']}",
             f"bubbles per turn {s['bubbles_per_turn']}, sentences dropped {s['sentences_dropped']}",
             f"turn latency p50 {s['latency_ms_p50']} ms, p95 {s['latency_ms_p95']} ms",
             f"tokens in {s['input_tokens']}, out {s['output_tokens']}, cost {cost}",

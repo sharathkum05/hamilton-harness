@@ -10,7 +10,7 @@ def test_validate_describes_the_pack(capsys):
     out = capsys.readouterr().out
     assert "Maya at Loop Sneakers" in out
     assert "rules      5 (3 enforced in code)" in out
-    assert "scenarios  10" in out
+    assert "scenarios  13" in out
 
 
 def test_validate_reports_a_broken_pack(tmp_path, capsys):
@@ -22,7 +22,7 @@ def test_sim_replay_passes_and_exits_zero(capsys):
     assert main(["sim", str(DEMO_PACK)]) == 0
     out = capsys.readouterr().out
     assert "mode: replay" in out
-    assert "10/10 scenarios passed" in out
+    assert "13/13 scenarios passed" in out
 
 
 def test_sim_json_output(capsys):
