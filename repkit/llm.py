@@ -131,6 +131,13 @@ class AnthropicModel:
             ) from exc
         except anthropic.APIConnectionError as exc:
             raise ModelError("could not reach the model", retryable=True) from exc
+        except anthropic.AnthropicError as exc:
+            raise ModelError(f"model call failed: {exc}") from exc
+        except TypeError as exc:
+            # The SDK raises a bare TypeError when it finds no credential to send.
+            if "authentication" not in str(exc):
+                raise
+            raise ModelError("no model credentials found; set ANTHROPIC_API_KEY") from exc
         latency_ms = (time.perf_counter() - started) * 1000
 
         text = "".join(b.text for b in response.content if b.type == "text")

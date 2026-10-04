@@ -124,3 +124,15 @@ def test_api_errors_become_model_errors(error, retryable):
     with pytest.raises(ModelError) as caught:
         AnthropicModel(client=client).complete(system="s", messages=[], tools=[])
     assert caught.value.retryable is retryable
+
+
+def test_missing_credentials_become_a_model_error():
+    client, _, _ = fake_client(error=TypeError("Could not resolve authentication method."))
+    with pytest.raises(ModelError, match="no model credentials"):
+        AnthropicModel(client=client).complete(system="s", messages=[], tools=[])
+
+
+def test_unrelated_type_errors_are_not_swallowed():
+    client, _, _ = fake_client(error=TypeError("unexpected keyword argument"))
+    with pytest.raises(TypeError):
+        AnthropicModel(client=client).complete(system="s", messages=[], tools=[])
