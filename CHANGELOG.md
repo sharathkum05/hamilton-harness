@@ -10,6 +10,10 @@ and is not published separately yet.
 
 - `hamilton-harness init DIR --company NAME` writes a starter pack that
   validates and passes its own fake customers.
+- `hamilton-harness validate` lists warnings about a pack that loads but works
+  against itself: a fixed line or example chat that breaks one of the pack's
+  own rules, a line the shaper will cut or truncate, and a code-enforced rule
+  that no fake customer tests. `--strict` turns warnings into a failure.
 - A third demo pack, **Kestrel Lettings**: application intake for a lettings
   agency. It takes rental applications and viewing requests, and has rules
   against deciding an application, giving legal advice and asking about
