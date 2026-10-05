@@ -381,6 +381,7 @@ server on a host with a disk that persists.
 | `hamilton_harness/sim.py` | Fake customers and the scorecard |
 | `hamilton_harness/editor.py` | Validated, rolled-back edits to a pack |
 | `hamilton_harness/scaffold.py` | The starter pack that `init` writes |
+| `hamilton_harness/lint.py` | Warnings about a pack that loads but works against itself |
 | `hamilton_harness/stats.py` | Numbers for the dashboard's overview |
 | `hamilton_harness/mcp_server.py` | MCP server for a pack on this machine |
 | `hamilton_harness/web/` | HTTP API, dashboard API, embed script |
@@ -400,6 +401,7 @@ server on a host with a disk that persists.
 - [x] MCP servers, and the `hamilton-harness` package on npm
 - [x] A hosted demo
 - [x] `init`, which scaffolds a starter pack for a new company
+- [x] Pack warnings: lines that break the pack's own rules, and rules no fake customer tests
 - [ ] A run against the real model. Everything so far is tested with scripted and stand-in models
 - [ ] Live scorecard numbers: latency, tokens and cost per conversation
 - [ ] Fake customers played by a model, with a goal and a temperament
