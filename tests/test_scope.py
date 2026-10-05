@@ -200,6 +200,27 @@ def test_strict_mode_lets_a_customer_ask_what_they_are_talking_to(message):
     assert ScopeGate(ScopeSettings(strict=True)).check(message, EMPTY).in_scope
 
 
+@pytest.mark.parametrize(
+    "message",
+    [
+        "can I get a check-up tomorrow morning",
+        "are you open on saturday afternoon",
+        "whitening this weekend?",
+    ],
+)
+def test_saying_when_does_not_make_a_question_off_topic(message):
+    gate, builder = _strict_dental()
+    assert gate.check(message, builder.for_turn(message, {})).in_scope
+
+
+@pytest.mark.parametrize(
+    "message", ["any good films on tomorrow evening", "is it going to rain on saturday"]
+)
+def test_saying_when_is_not_a_subject_either(message):
+    gate, builder = _strict_dental()
+    assert gate.check(message, builder.for_turn(message, {})).reason == "strict"
+
+
 def test_filler_words_alone_are_not_a_subject():
     gate = ScopeGate(ScopeSettings(strict=True))
     assert gate.check("tell me something else then", EMPTY).reason == "strict"

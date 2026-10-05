@@ -74,6 +74,12 @@ _FILLER = frozenset(
     "pls really say see should some something still sure tell than thank thanks then "
     "thing think too want would yet".split()
 )
+# Words that say when, which is never the subject. "Can I see the studio tomorrow
+# morning" is about the studio. Written the way the tokenizer leaves them.
+_WHEN = frozenset(
+    "today tomorrow tonight morning afternoon evening weekend weekday week soon later "
+    "monday tuesday wednesday thursday friday saturday sunday".split()
+)
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
 
 
@@ -94,7 +100,11 @@ def _shared_words(message: str, context: TurnContext) -> tuple[int, int]:
     Numbers are left out: "348 * 12" must not count as on topic because the
     size chart happens to mention a 12.
     """
-    words = {word for word in tokenize(message) if word.isalpha() and word not in _FILLER}
+    words = {
+        word
+        for word in tokenize(message)
+        if word.isalpha() and word not in _FILLER and word not in _WHEN
+    }
     known: set[str] = set()
     for chunk in context.notes:
         known.update(tokenize(f"{chunk.heading} {chunk.text}"))
