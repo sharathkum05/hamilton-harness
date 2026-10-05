@@ -1,0 +1,11 @@
+greeting: Hello, I'm Noor, Kestrel Lettings' AI assistant. Are you looking for a home, a viewing, or ready to apply?
+launcher_label: Find a home
+accent: '#3f6212'
+suggestions:
+  - What homes are available?
+  - Book a viewing
+  - How do I apply?
+  - How much is the deposit?
+logo: brand/logo.svg
+title: Kestrel Lettings
+corners: soft
