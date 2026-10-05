@@ -80,7 +80,15 @@ function Eyebrow({ children }: { children: ReactNode }) {
   )
 }
 
-function SectionHeader({ eyebrow, title, children }: { eyebrow: string; title: string; children: ReactNode }) {
+function SectionHeader({
+  eyebrow,
+  title,
+  children,
+}: {
+  eyebrow: string
+  title: string
+  children: ReactNode
+}) {
   return (
     <div className="mx-auto grid max-w-6xl items-end gap-x-12 gap-y-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-4">
@@ -101,7 +109,9 @@ function Exchange({ customer, rep, note }: { customer: string; rep: string; note
       <p className="bg-primary text-primary-foreground ml-auto max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2 text-sm">
         {customer}
       </p>
-      <p className="bg-secondary max-w-[85%] rounded-2xl rounded-bl-md px-3.5 py-2 text-sm">{rep}</p>
+      <p className="bg-secondary max-w-[85%] rounded-2xl rounded-bl-md px-3.5 py-2 text-sm">
+        {rep}
+      </p>
       <p className="text-muted-foreground font-mono text-xs">{note}</p>
     </div>
   )
@@ -183,7 +193,9 @@ function ProductWindow({ strong }: { strong: string }) {
         <span className="bg-muted-foreground/30 size-2.5 rounded-full" />
         <span className="bg-muted-foreground/30 size-2.5 rounded-full" />
         <span className="bg-muted-foreground/30 size-2.5 rounded-full" />
-        <span className="text-muted-foreground mx-auto font-mono text-xs">loop-sneakers · live</span>
+        <span className="text-muted-foreground mx-auto font-mono text-xs">
+          loop-sneakers · live
+        </span>
       </div>
       <div className="grid lg:grid-cols-[400px_minmax(0,1fr)]">
         <iframe
@@ -198,7 +210,10 @@ function ProductWindow({ strong }: { strong: string }) {
           </div>
           <AnimatedList delay={1800} className="items-stretch gap-2.5">
             {EVENTS.map(([Icon, title, detail]) => (
-              <div key={title} className="bg-background flex items-center gap-3 rounded-xl border p-3">
+              <div
+                key={title}
+                className="bg-background flex items-center gap-3 rounded-xl border p-3"
+              >
                 <span className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-lg">
                   <Icon className="size-4" />
                 </span>
@@ -228,7 +243,15 @@ function SaidChip({ said, outcome }: { said: string; outcome: string }) {
   )
 }
 
-function SystemCard({ Icon, name, kind }: { Icon: ComponentType<{ className?: string }>; name: string; kind: string }) {
+function SystemCard({
+  Icon,
+  name,
+  kind,
+}: {
+  Icon: ComponentType<{ className?: string }>
+  name: string
+  kind: string
+}) {
   return (
     <div className="bg-card flex h-36 w-52 shrink-0 flex-col justify-between rounded-lg border p-5">
       <Icon className="size-6" />
@@ -260,12 +283,40 @@ export function Landing() {
             <BrandMark />
             Hamilton
           </a>
-          <nav aria-label="Page sections" className="text-foreground/75 hidden items-center gap-0.5 text-sm md:flex">
-            <a className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors" href="#roles">What it runs</a>
-            <a className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors" href="#integrations">Integrations</a>
-            <a className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors" href="#guardrails">Guardrails</a>
-            <a className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors" href="#dashboard">Dashboard</a>
-            <a className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors" href="#install">Install</a>
+          <nav
+            aria-label="Page sections"
+            className="text-foreground/75 hidden items-center gap-0.5 text-sm md:flex"
+          >
+            <a
+              className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors"
+              href="#roles"
+            >
+              What it runs
+            </a>
+            <a
+              className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors"
+              href="#integrations"
+            >
+              Integrations
+            </a>
+            <a
+              className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors"
+              href="#guardrails"
+            >
+              Guardrails
+            </a>
+            <a
+              className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors"
+              href="#dashboard"
+            >
+              Dashboard
+            </a>
+            <a
+              className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors"
+              href="#install"
+            >
+              Install
+            </a>
           </nav>
           <Button asChild size="sm" className="rounded-full">
             <a href="/demo">
@@ -293,7 +344,8 @@ export function Landing() {
                 className="bg-background/80 hover:bg-muted rounded-full border px-3.5 py-1 text-sm backdrop-blur transition-colors"
               >
                 <AnimatedShinyText className="inline-flex items-center gap-1.5">
-                  On your brand. Inside your rules. On your topic. <ArrowRightIcon className="size-3.5" />
+                  On your brand. Inside your rules. On your topic.{' '}
+                  <ArrowRightIcon className="size-3.5" />
                 </AnimatedShinyText>
               </a>
               <h1 className={cn('max-w-4xl text-5xl sm:text-6xl lg:text-7xl', HEADING, FADE)}>
@@ -471,7 +523,9 @@ export function Landing() {
                 </AnimatedSpan>
               ))}
               <AnimatedSpan>16/16 scenarios passed, 57/57 checks</AnimatedSpan>
-              <AnimatedSpan>blocked by guard 4, replies replaced 3, off topic refused 2</AnimatedSpan>
+              <AnimatedSpan>
+                blocked by guard 4, replies replaced 3, off topic refused 2
+              </AnimatedSpan>
             </Terminal>
           </div>
         </section>
@@ -523,7 +577,10 @@ export function Landing() {
         </section>
 
         {/* Install */}
-        <section id="install" className="bg-muted/40 scroll-mt-20 border-y px-4 py-20 sm:px-6 lg:py-32">
+        <section
+          id="install"
+          className="bg-muted/40 scroll-mt-20 border-y px-4 py-20 sm:px-6 lg:py-32"
+        >
           <SectionHeader eyebrow="Install" title="One script tag.">
             It works on a hand-written page, a PHP site, WordPress or a React app. The chat loads in
             its own frame, so it cannot clash with your styles. One npm package connects Claude.

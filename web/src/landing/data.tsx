@@ -39,10 +39,26 @@ import {
 type Icon = ComponentType<{ className?: string }>
 
 export const ROLES: [Icon, string, string][] = [
-  [HeadsetIcon, 'Customer support', 'Looks up orders, fixes what it is allowed to fix, and passes the rest to your team with the notes.'],
-  [ClipboardListIcon, 'Orders', 'Collects what you need for an order, gives the customer a reference, and puts it in your inbox.'],
-  [FileTextIcon, 'Quotations and sales', 'Takes a quotation request in full and hands it to sales. It never makes up a price.'],
-  [BuildingIcon, 'Front desk and intake', 'Books, reschedules and gathers details. You define the fields; it asks for each one.'],
+  [
+    HeadsetIcon,
+    'Customer support',
+    'Looks up orders, fixes what it is allowed to fix, and passes the rest to your team with the notes.',
+  ],
+  [
+    ClipboardListIcon,
+    'Orders',
+    'Collects what you need for an order, gives the customer a reference, and puts it in your inbox.',
+  ],
+  [
+    FileTextIcon,
+    'Quotations and sales',
+    'Takes a quotation request in full and hands it to sales. It never makes up a price.',
+  ],
+  [
+    BuildingIcon,
+    'Front desk and intake',
+    'Books, reschedules and gathers details. You define the fields; it asks for each one.',
+  ],
 ]
 
 export type Guard = {
@@ -109,11 +125,27 @@ export const GUARDS: Guard[] = [
 ]
 
 export const DASHBOARD: [Icon, string, string][] = [
-  [InboxIcon, 'Inbox', 'Orders and quotation requests the rep has taken, with a status you update.'],
-  [PaletteIcon, 'Brand', 'Logo, colour, theme, corners, typeface, greeting and where the launcher sits.'],
+  [
+    InboxIcon,
+    'Inbox',
+    'Orders and quotation requests the rep has taken, with a status you update.',
+  ],
+  [
+    PaletteIcon,
+    'Brand',
+    'Logo, colour, theme, corners, typeface, greeting and where the launcher sits.',
+  ],
   [TargetIcon, 'Scope', 'What it is for, what it turns away, and what it says when it does.'],
-  [BookOpenIcon, 'Knowledge', 'Plain Markdown files. A fact that is not there is one it will not state.'],
-  [ShieldCheckIcon, 'Rules', 'Limits on actions and phrases it may never say, each with a safe reply.'],
+  [
+    BookOpenIcon,
+    'Knowledge',
+    'Plain Markdown files. A fact that is not there is one it will not state.',
+  ],
+  [
+    ShieldCheckIcon,
+    'Rules',
+    'Limits on actions and phrases it may never say, each with a safe reply.',
+  ],
   [FlaskConicalIcon, 'Tests', 'Run the fake customers from the dashboard after every change.'],
 ]
 
