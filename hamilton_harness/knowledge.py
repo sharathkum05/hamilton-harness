@@ -22,6 +22,12 @@ _STOPWORDS = frozenset(
     "so that the their there they this to was we what when where which who will with you "
     "your".split()
 )
+_NUMBER_WORDS = {
+    word: str(number)
+    for number, word in enumerate(
+        "one two three four five six seven eight nine ten eleven twelve".split(), start=1
+    )
+}
 
 
 @dataclass(frozen=True)
@@ -34,8 +40,27 @@ class Chunk:
         return f"[{self.source} > {self.heading}]\n{self.text}"
 
 
+def _fold(word: str) -> str:
+    """Fold plurals and spelled-out numbers, so "two bedrooms" finds "2 bedroom".
+
+    This is deliberately not a full stemmer. It only has to make a customer's
+    wording meet the wording in the notes, and it must do the same thing to both.
+    """
+    if word in _NUMBER_WORDS:
+        return _NUMBER_WORDS[word]
+    if len(word) <= 3 or not word.isalpha():
+        return word
+    if word.endswith("ies"):
+        return word[:-3] + "y"
+    if word.endswith(("sses", "xes", "ches", "shes")):
+        return word[:-2]
+    if word.endswith("s") and not word.endswith(("ss", "us", "is")):
+        return word[:-1]
+    return word
+
+
 def tokenize(text: str) -> list[str]:
-    return [w for w in _WORD.findall(text.lower()) if w not in _STOPWORDS]
+    return [_fold(w) for w in _WORD.findall(text.lower()) if w not in _STOPWORDS]
 
 
 def split_markdown(doc: KnowledgeDoc) -> list[Chunk]:
