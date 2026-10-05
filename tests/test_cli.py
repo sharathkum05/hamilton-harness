@@ -40,6 +40,47 @@ def test_init_needs_a_company_name(tmp_path, capsys):
     assert "company name" in capsys.readouterr().err
 
 
+def test_validate_is_quiet_about_a_pack_with_nothing_to_report(capsys):
+    assert main(["validate", str(DEMO_PACK), "--strict"]) == 0
+    assert "second look" not in capsys.readouterr().out
+
+
+def _pack_with_a_banned_phrase_in_its_greeting(tmp_path):
+    target = tmp_path / "acme"
+    assert main(["init", str(target), "--company", "Acme Tools"]) == 0
+    widget = target / "widget.yaml"
+    text = widget.read_text(encoding="utf-8")
+    text = text.replace("How can I help?", "As an AI, how can I help?")
+    widget.write_text(text, encoding="utf-8")
+    return target
+
+
+def test_validate_lists_warnings_without_failing(tmp_path, capsys):
+    target = _pack_with_a_banned_phrase_in_its_greeting(tmp_path)
+    capsys.readouterr()
+    assert main(["validate", str(target)]) == 0
+    out = capsys.readouterr().out
+    assert "Pack is valid." in out
+    assert "1 thing worth a second look:" in out
+    assert 'widget.yaml: greeting: contains the banned phrase "As an AI"' in out
+
+
+def test_validate_strict_fails_on_a_warning(tmp_path, capsys):
+    target = _pack_with_a_banned_phrase_in_its_greeting(tmp_path)
+    assert main(["validate", str(target), "--strict"]) == 1
+
+
+def test_validate_warns_when_a_pack_has_no_fake_customers(tmp_path, capsys):
+    target = tmp_path / "acme"
+    assert main(["init", str(target), "--company", "Acme Tools"]) == 0
+    (target / "tests" / "scenarios.yaml").unlink()
+    capsys.readouterr()
+    assert main(["validate", str(target)]) == 0
+    out = capsys.readouterr().out
+    assert "scenarios  none" in out
+    assert "tests/scenarios.yaml: is missing" in out
+
+
 def test_validate_reports_a_broken_pack(tmp_path, capsys):
     assert main(["validate", str(tmp_path)]) == 2
     assert "persona.yaml is missing" in capsys.readouterr().err
