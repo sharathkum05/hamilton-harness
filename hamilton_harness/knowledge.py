@@ -41,13 +41,16 @@ def tokenize(text: str) -> list[str]:
 def split_markdown(doc: KnowledgeDoc) -> list[Chunk]:
     """One chunk per heading, carrying its parent headings as a trail."""
     chunks: list[Chunk] = []
-    trail: list[str] = []
+    # (depth, title) of each open heading. Depths are kept, not assumed, because a
+    # file may start at "##" or skip a level.
+    trail: list[tuple[int, str]] = []
     body: list[str] = []
 
     def flush() -> None:
         text = "\n".join(body).strip()
         if text:
-            chunks.append(Chunk(doc.source, " > ".join(trail) or doc.source, text))
+            heading = " > ".join(title for _, title in trail)
+            chunks.append(Chunk(doc.source, heading or doc.source, text))
         body.clear()
 
     for line in doc.text.splitlines():
@@ -55,8 +58,9 @@ def split_markdown(doc: KnowledgeDoc) -> list[Chunk]:
         if match:
             flush()
             depth = len(match.group(1))
-            del trail[depth - 1 :]
-            trail.append(match.group(2).strip())
+            while trail and trail[-1][0] >= depth:
+                trail.pop()
+            trail.append((depth, match.group(2).strip()))
         else:
             body.append(line)
     flush()

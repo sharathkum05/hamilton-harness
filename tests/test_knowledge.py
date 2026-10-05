@@ -14,6 +14,18 @@ def test_split_keeps_the_heading_trail():
     assert chunks[0].text == "Three days."
 
 
+def test_sibling_headings_are_not_nested_when_a_file_has_no_title():
+    text = "## Times\nThree days.\n\n## Cost\nFree.\n\n### Abroad\nNot free.\n\n## Returns\nYes.\n"
+    chunks = split_markdown(KnowledgeDoc(source="s.md", text=text))
+    assert [c.heading for c in chunks] == ["Times", "Cost", "Cost > Abroad", "Returns"]
+
+
+def test_a_skipped_heading_level_does_not_confuse_the_trail():
+    text = "# Shop\n\n### Hours\nNine to five.\n\n## Parking\nFree.\n"
+    chunks = split_markdown(KnowledgeDoc(source="s.md", text=text))
+    assert [c.heading for c in chunks] == ["Shop > Hours", "Shop > Parking"]
+
+
 def test_text_before_any_heading_uses_the_file_name():
     chunks = split_markdown(KnowledgeDoc(source="notes.md", text="Open nine to five."))
     assert chunks[0].heading == "notes.md"
