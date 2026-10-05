@@ -1,0 +1,13 @@
+# What the rep is for, and what it does when asked for anything else.
+
+covers: >
+  __COMPANY_PLAIN__ only: what we offer, opening hours, how to reach us and
+  taking enquiries for the team.
+off_topic_reply: __OFF_TOPIC__
+unsure_reply: I don't have that to hand and I'd rather not guess. Want me to pass it to the team?
+# Kinds of request turned away in code, before the model is called.
+refuse: [math, coding, writing, trivia]
+# Set to true to turn away anything your notes do not cover at all.
+strict: false
+# Replace any reply that states a number found in no note, rule or tool result.
+ground_numbers: true
