@@ -16,6 +16,7 @@ On your brand. Inside your rules. On your topic.
 [![Licence](https://img.shields.io/badge/licence-MIT-18181b)](LICENSE)
 
 [**Live demo**](https://hamilton-harness.vercel.app) ·
+[Install](#install) ·
 [Quick start](#quick-start) ·
 [Connect Claude](#connect-claude) ·
 [Put it on your site](#put-it-on-your-site) ·
@@ -45,6 +46,38 @@ folder. Nothing is retrained.
 > The model is told the rules, and a separate guard checks every action and
 > every reply against them, so a rule holds even when the model is talked out
 > of it.
+
+## Install
+
+There are two parts, and they install separately.
+
+**The Claude connector**, from npm. This is what lets Claude manage a rep:
+
+```bash
+npm install -g hamilton-harness
+```
+
+Or run it with no install at all:
+
+```bash
+npx -y hamilton-harness --help
+```
+
+**The harness itself**, from this repository. This is the server that runs the
+rep, the chat and the dashboard. It needs Python 3.11 or newer:
+
+```bash
+git clone https://github.com/sharathkum05/hamilton-harness.git
+```
+
+```bash
+cd hamilton-harness && pip install -e .
+```
+
+Both parts install a command named `hamilton-harness`. The Python one runs the
+server (`serve`, `sim`, `init`, `validate`); the npm one connects Claude to it
+(`login`, `status`, `mcp`). If you have both, call the npm one through `npx`,
+as the commands below do, so the right one always runs.
 
 ## Features
 
@@ -121,16 +154,17 @@ you can manage the rep in plain words. It is listed in the official
 [MCP Registry](https://registry.modelcontextprotocol.io) as
 `io.github.sharathkum05/hamilton-harness`.
 
-```bash
-npm install -g hamilton-harness
-```
+Sign in once. It asks for the admin token the server printed when it started
+with `--admin`:
 
 ```bash
-hamilton-harness login --url http://localhost:8000
+npx -y hamilton-harness login --url http://localhost:8000
 ```
 
+Then add it to Claude Code:
+
 ```bash
-claude mcp add hamilton -- hamilton-harness mcp
+claude mcp add hamilton -- npx -y hamilton-harness mcp
 ```
 
 For Claude Desktop, or any MCP client that takes a JSON entry:
