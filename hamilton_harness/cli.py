@@ -1,5 +1,6 @@
 """Command line entry point.
 
+hamilton-harness init DIR           write a starter pack for a new company
 hamilton-harness validate PACK      check a pack loads and its handlers resolve
 hamilton-harness chat PACK          talk to the rep in the terminal
 hamilton-harness sim PACK           run the pack's fake customers and print a scorecard
@@ -23,12 +24,27 @@ from hamilton_harness.pack import PackError, load_pack
 from hamilton_harness.pack.schema import Pack
 from hamilton_harness.records import FileRecordStore
 from hamilton_harness.runtime import Agent, TurnResult
+from hamilton_harness.scaffold import write_starter_pack
 from hamilton_harness.sim import load_scenarios, replay_model, run_scenarios
 from hamilton_harness.tools import ToolError, ToolRegistry
 
 
 def _live_model(pack: Pack) -> Model:
     return AnthropicModel(pack.model)
+
+
+def cmd_init(args: argparse.Namespace) -> int:
+    root = Path(args.dir)
+    written = write_starter_pack(root, company=args.company, rep=args.rep)
+    load_pack(root)  # a starter that does not load is a bug here, not the user's problem
+    print(f"Wrote a starter pack for {args.company.strip()} to {root}")
+    for path in written:
+        print(f"  {path.relative_to(root)}")
+    print("\nNext, run its fake customers. No API key is needed:")
+    print(f"  hamilton-harness sim {root}")
+    print("Then, with ANTHROPIC_API_KEY set, open the chat widget and the dashboard:")
+    print(f"  hamilton-harness serve {root} --admin")
+    return 0
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
@@ -177,6 +193,12 @@ def cmd_mcp(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="hamilton-harness", description=__doc__.split("\n\n")[0])
     commands = parser.add_subparsers(dest="command", required=True)
+
+    init = commands.add_parser("init", help="write a starter pack")
+    init.add_argument("dir", help="folder to create the pack in")
+    init.add_argument("--company", required=True, help="the company the rep works for")
+    init.add_argument("--rep", default="Sam", help="the rep's first name")
+    init.set_defaults(run=cmd_init)
 
     validate = commands.add_parser("validate", help="check a pack")
     validate.add_argument("pack")
