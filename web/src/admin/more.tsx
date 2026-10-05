@@ -1,11 +1,12 @@
 // The dashboard's test runner and install snippets.
 
 import { useState } from 'react'
-import { CheckIcon, CopyIcon, PlayIcon } from 'lucide-react'
+import { CheckIcon, CopyIcon, PlayIcon, TriangleAlertIcon } from 'lucide-react'
 
 import type { SimReport } from '@/admin/api'
 import { Section } from '@/admin/fields'
 import type { SectionProps } from '@/admin/sections'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,6 +21,30 @@ const STATS: [string, string][] = [
   ['off_topic_refused', 'Off topic refused'],
   ['handoffs', 'Handed to a human'],
 ]
+
+/** What a passing run does not show: lines and rules in the pack that work against it. */
+function Warnings({ warnings }: { warnings: SimReport['warnings'] }) {
+  if (warnings.length === 0) return null
+  return (
+    <Alert>
+      <TriangleAlertIcon />
+      <AlertTitle>
+        {warnings.length === 1
+          ? '1 thing worth a second look'
+          : `${warnings.length} things worth a second look`}
+      </AlertTitle>
+      <AlertDescription>
+        <ul className="mt-1 flex flex-col gap-1.5">
+          {warnings.map((warning) => (
+            <li key={`${warning.where}:${warning.message}`}>
+              <code className="text-foreground text-xs">{warning.where}</code> {warning.message}
+            </li>
+          ))}
+        </ul>
+      </AlertDescription>
+    </Alert>
+  )
+}
 
 /** The share of test customers that passed, drawn as a ring. */
 function PassRing({ passed, total }: { passed: number; total: number }) {
@@ -97,7 +122,7 @@ export function TestSection({ pack, api }: SectionProps) {
               </span>
               <span className="text-muted-foreground text-sm">
                 {report.summary.passed === report.summary.scenarios
-                  ? 'Every rule held. The rep is safe to put in front of customers.'
+                  ? 'Every rule held against the recorded customers.'
                   : 'At least one rule gave way. Fix it before the rep goes live.'}
               </span>
             </div>
@@ -112,6 +137,7 @@ export function TestSection({ pack, api }: SectionProps) {
               </TabsList>
             </Tabs>
           </div>
+          <Warnings warnings={report.warnings ?? []} />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {STATS.map(([key, label]) => (
               <Card key={key}>
