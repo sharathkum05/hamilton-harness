@@ -68,7 +68,8 @@ pack has nothing to say about. A message counts as covered when it matches a
 rule's topics, or shares enough words with the notes looked up for it: every
 word of a one- or two-word question, at least two of a longer one. Words that
 ask without naming a subject ("tell", "about", "offer", "still") are not
-counted.
+counted, and neither are words that only say when ("tomorrow", "saturday",
+"morning").
 
 Three kinds of message always pass strict mode: greetings and thanks, questions
 about the rep itself ("am I talking to a bot?"), and a short answer to a
