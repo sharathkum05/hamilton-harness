@@ -18,6 +18,7 @@ import sys
 import time
 from pathlib import Path
 
+from hamilton_harness.lint import lint_pack
 from hamilton_harness.llm import AnthropicModel, Model, ModelError, load_offline_model
 from hamilton_harness.memory import FileStore
 from hamilton_harness.pack import PackError, load_pack
@@ -57,11 +58,18 @@ def cmd_validate(args: argparse.Namespace) -> int:
     print(f"  tools      {', '.join(registry.names()) or 'none'}")
     print(f"  rules      {len(pack.policies)} ({len(enforced)} enforced in code)")
     try:
-        print(f"  scenarios  {len(load_scenarios(pack))}")
+        scenarios = load_scenarios(pack)
     except PackError:
-        print("  scenarios  none")
+        scenarios = None
+    print(f"  scenarios  {len(scenarios) if scenarios is not None else 'none'}")
     print("Pack is valid.")
-    return 0
+
+    findings = lint_pack(pack, scenarios)
+    if findings:
+        print(f"\n{len(findings)} thing{'s' if len(findings) != 1 else ''} worth a second look:")
+        for finding in findings:
+            print(f"  {finding.render()}")
+    return 1 if findings and args.strict else 0
 
 
 def _print_turn(result: TurnResult, name: str, *, pacing: bool, debug: bool) -> None:
@@ -202,6 +210,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate = commands.add_parser("validate", help="check a pack")
     validate.add_argument("pack")
+    validate.add_argument("--strict", action="store_true", help="fail if there are warnings")
     validate.set_defaults(run=cmd_validate)
 
     chat = commands.add_parser("chat", help="talk to the rep")
