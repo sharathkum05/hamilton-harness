@@ -70,15 +70,32 @@ def test_a_banned_phrase_in_a_fixed_line_is_reported(pack):
         ("line-has-banned-phrase", "scope.yaml: off_topic_reply")
     ]
     assert "As an AI" in findings[0].message
+    assert "cut before sending" in findings[0].message
 
 
 def test_a_fixed_line_too_long_to_send_is_reported(pack):
     assert pack.persona.max_sentences == 2
     long = " ".join(f"Sentence number {n} goes here." for n in range(1, 9))
-    widget = pack.widget.model_copy(update={"greeting": long})
-    findings = lint_pack(pack.model_copy(update={"widget": widget}), load_scenarios(pack))
-    assert [(f.code, f.where) for f in findings] == [("line-too-long", "widget.yaml: greeting")]
+    handoff = pack.handoff.model_copy(update={"message": long})
+    findings = lint_pack(pack.model_copy(update={"handoff": handoff}), load_scenarios(pack))
+    assert [(f.code, f.where) for f in findings] == [("line-too-long", "handoff.yaml: message")]
     assert "Sentence number 7" in findings[0].message
+
+
+def test_a_long_greeting_is_fine_because_it_is_shown_as_written(pack):
+    long = " ".join(f"Sentence number {n} goes here." for n in range(1, 9))
+    widget = pack.widget.model_copy(update={"greeting": long})
+    assert lint_pack(pack.model_copy(update={"widget": widget}), load_scenarios(pack)) == []
+
+
+def test_a_banned_phrase_in_the_greeting_is_reported_without_claiming_it_is_cut(pack):
+    widget = pack.widget.model_copy(update={"greeting": "Kindly ask me anything about Loop."})
+    findings = lint_pack(pack.model_copy(update={"widget": widget}), load_scenarios(pack))
+    assert [(f.code, f.where) for f in findings] == [
+        ("line-has-banned-phrase", "widget.yaml: greeting")
+    ]
+    assert "told never to say" in findings[0].message
+    assert "cut before sending" not in findings[0].message
 
 
 def test_an_example_that_teaches_a_forbidden_reply_is_reported(pack):

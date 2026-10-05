@@ -46,11 +46,17 @@ def fixed_lines(pack: Pack) -> list[tuple[str, str]]:
     return lines
 
 
+# The greeting is shown by the chat panel exactly as written. Every other fixed
+# line is sent as a reply, so it goes through the shaper like one.
+_SHOWN_AS_WRITTEN = {"widget.yaml: greeting"}
+
+
 def _check_lines(pack: Pack) -> list[Finding]:
     guard = PolicyGuard(pack.policies, pack.persona)
     shaper = ReplyShaper(pack.persona)
     findings = []
     for where, line in fixed_lines(pack):
+        as_written = where in _SHOWN_AS_WRITTEN
         verdict = guard.check_reply(line)
         if not verdict.ok:
             findings.append(
@@ -63,14 +69,19 @@ def _check_lines(pack: Pack) -> list[Finding]:
             )
         shaped = shaper.shape(line)
         for phrase in shaped.removed_phrases:
+            consequence = (
+                "which the rep itself is told never to say"
+                if as_written
+                else "which is cut before sending"
+            )
             findings.append(
                 Finding(
                     "line-has-banned-phrase",
                     where,
-                    f'contains the banned phrase "{phrase}", which is cut before sending',
+                    f'contains the banned phrase "{phrase}", {consequence}',
                 )
             )
-        if shaped.dropped:
+        if shaped.dropped and not as_written:
             findings.append(
                 Finding(
                     "line-too-long",
