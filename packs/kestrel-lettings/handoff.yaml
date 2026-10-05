@@ -1,0 +1,12 @@
+phrases:
+  - eviction
+  - evicted
+  - homeless
+  - nowhere to stay
+  - harassment
+  - discriminated
+  - unsafe
+  - emergency
+on_request: true
+max_guard_blocks: 2
+message: I'm passing you to the lettings team now. They'll have everything you've told me.
