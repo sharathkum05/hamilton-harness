@@ -43,6 +43,7 @@ import {
   VoiceSection,
 } from '@/admin/sections'
 import type { SectionProps } from '@/admin/sections'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -120,7 +121,10 @@ const GROUPS: [string, Entry[]][] = [
 const ENTRIES = GROUPS.flatMap(([group, entries]) => entries.map((entry) => ({ group, entry })))
 const NAVIGATION = GROUPS.map(
   ([group, entries]) =>
-    [group, entries.map(([key, label, icon]) => [key, label, icon])] as [string, [string, string, Icon][]],
+    [group, entries.map(([key, label, icon]) => [key, label, icon])] as [
+      string,
+      [string, string, Icon][],
+    ],
 )
 const THEME_ICON: Record<Theme, Icon> = { system: MonitorIcon, light: SunIcon, dark: MoonIcon }
 
@@ -302,12 +306,24 @@ export function AdminApp() {
           <SidebarHeader>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton size="lg" onClick={() => go('overview')} tooltip={pack.persona.company}>
-                  <span className="bg-muted ring-border flex aspect-square size-8 shrink-0 overflow-hidden rounded-lg ring-1">
+                <SidebarMenuButton
+                  size="lg"
+                  onClick={() => go('overview')}
+                  tooltip={pack.persona.company}
+                >
+                  {/* A company with no logo, or one that fails to load, gets its initial. */}
+                  <Avatar className="rounded-lg after:rounded-lg">
                     {pack.widget.logo && (
-                      <img src={`/brand/logo?k=${previewKey}`} alt="" className="size-full object-cover" />
+                      <AvatarImage
+                        src={`/brand/logo?k=${previewKey}`}
+                        alt=""
+                        className="rounded-lg"
+                      />
                     )}
-                  </span>
+                    <AvatarFallback className="text-foreground rounded-lg font-medium">
+                      {pack.persona.company.trim().charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{pack.persona.company}</span>
                     <span className="text-muted-foreground truncate text-xs">
@@ -393,7 +409,12 @@ export function AdminApp() {
                 </span>
                 <kbd className="bg-muted rounded px-1.5 font-mono text-[11px]">⌘K</kbd>
               </Button>
-              <Button variant="ghost" size="icon" className="size-8 md:hidden" onClick={() => setMenuOpen(true)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 md:hidden"
+                onClick={() => setMenuOpen(true)}
+              >
                 <SearchIcon />
                 <span className="sr-only">Open the command menu</span>
               </Button>
@@ -405,7 +426,10 @@ export function AdminApp() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as Theme)}>
+                  <DropdownMenuRadioGroup
+                    value={theme}
+                    onValueChange={(value) => setTheme(value as Theme)}
+                  >
                     <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="system">Follow this device</DropdownMenuRadioItem>
@@ -424,7 +448,11 @@ export function AdminApp() {
             </div>
           </header>
           <div className="flex min-h-0 flex-1">
-            <main id="content" tabIndex={-1} className="relative min-w-0 flex-1 overflow-y-auto outline-none">
+            <main
+              id="content"
+              tabIndex={-1}
+              className="relative min-w-0 flex-1 overflow-y-auto outline-none"
+            >
               <div className="mx-auto max-w-5xl px-5 pt-8 pb-28 sm:px-8">
                 <DiscardContext.Provider value={discard}>
                   {/* Keyed on the section, so each one eases in as it opens. */}
@@ -437,10 +465,16 @@ export function AdminApp() {
                 </DiscardContext.Provider>
               </div>
               {/* The open section's unsaved-changes bar is drawn here. */}
-              <div id="save-slot" className="pointer-events-none sticky bottom-5 z-20 flex justify-center px-4 *:pointer-events-auto" />
+              <div
+                id="save-slot"
+                className="pointer-events-none sticky bottom-5 z-20 flex justify-center px-4 *:pointer-events-auto"
+              />
             </main>
             <aside
-              className={cn('w-[380px] shrink-0 flex-col border-l', showPreview ? 'hidden xl:flex' : 'hidden')}
+              className={cn(
+                'w-[380px] shrink-0 flex-col border-l',
+                showPreview ? 'hidden xl:flex' : 'hidden',
+              )}
             >
               <div className="flex h-11 items-center justify-between border-b px-4">
                 <span className="text-sm font-medium">Live preview</span>
@@ -457,7 +491,13 @@ export function AdminApp() {
             </aside>
           </div>
         </SidebarInset>
-        <CommandMenu open={menuOpen} setOpen={setMenuOpen} groups={NAVIGATION} go={go} setTheme={setTheme} />
+        <CommandMenu
+          open={menuOpen}
+          setOpen={setMenuOpen}
+          groups={NAVIGATION}
+          go={go}
+          setTheme={setTheme}
+        />
         <Toaster position="top-center" theme={dark ? 'dark' : 'light'} />
       </SidebarProvider>
     </TooltipProvider>
