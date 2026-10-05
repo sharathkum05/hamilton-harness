@@ -98,6 +98,13 @@ hamilton-harness serve packs/loop-sneakers --offline --debug --admin
 The server prints two addresses: the site, and the dashboard link with its
 token. To use the real model, set `ANTHROPIC_API_KEY` and drop `--offline`.
 
+The intake rep runs the same way, with its applications and viewing requests
+landing in the dashboard inbox:
+
+```bash
+hamilton-harness serve packs/kestrel-lettings --offline --debug --admin
+```
+
 | Address | What it is |
 |---|---|
 | `/` | Product page, with the real chat panel running in it |
