@@ -1,0 +1,13 @@
+# How the web chat looks and opens on your site.
+
+greeting: __GREETING__
+launcher_label: Chat with us
+# "auto" is black on a light page and white on a dark one. Or a hex colour such as '#0b6e6e'.
+accent: auto
+# Up to four one-tap openers shown before the customer types.
+suggestions:
+  - What are your opening hours?
+  - Can someone contact me?
+theme: auto
+position: right
+corners: soft
