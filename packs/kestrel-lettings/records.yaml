@@ -1,0 +1,50 @@
+# What Noor takes down for the lettings team. Each type becomes an action
+# (create_application, create_viewing) and lands in the dashboard inbox.
+
+records:
+  - name: application
+    label: Rental application
+    description: >
+      Take a rental application when someone wants to apply for a home. The
+      lettings team emails a secure link for documents and decides within 2
+      working days. Never ask for documents or payment in the chat.
+    fields:
+      - name: home
+        label: Home
+        type: choice
+        choices: [Marlowe Court 4, Orchard Row 12, Canal Wharf 7]
+      - name: move_in_date
+        label: Move-in date
+      - name: occupants
+        label: People living there
+        type: number
+      - name: applicant_name
+        label: Name
+      - name: email
+        label: Email
+      - name: phone
+        label: Phone
+      - name: employment
+        label: Work situation
+        type: choice
+        choices: [employed, self-employed, student, retired, other]
+      - name: notes
+        label: Notes
+        required: false
+
+  - name: viewing
+    label: Viewing request
+    description: >
+      Take a viewing request when someone wants to see a home. The lettings
+      team calls back to confirm the time.
+    fields:
+      - name: home
+        label: Home
+        type: choice
+        choices: [Marlowe Court 4, Orchard Row 12, Canal Wharf 7]
+      - name: preferred_time
+        label: Preferred day and time
+      - name: visitor_name
+        label: Name
+      - name: phone
+        label: Phone
