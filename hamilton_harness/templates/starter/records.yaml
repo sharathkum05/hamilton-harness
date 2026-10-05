@@ -1,0 +1,16 @@
+# What the rep can take down for the business. Each type becomes an action
+# (here, create_enquiry) and shows up in the dashboard inbox.
+
+records:
+  - name: enquiry
+    label: Enquiry
+    description: >
+      Take an enquiry when a customer asks for something you cannot answer
+      from your notes, or asks to be contacted by the team.
+    fields:
+      - name: customer_name
+        label: Name
+      - name: email
+        label: Email
+      - name: message
+        label: What they need
