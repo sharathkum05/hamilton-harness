@@ -50,6 +50,8 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      - name: Formatting
+        run: npm run format:check
       - name: Type-check and build
         run: npm run build
 
