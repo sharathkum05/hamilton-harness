@@ -29,6 +29,16 @@ scenarios:
       says: ['12,000']
       handoff: false
 
+  - id: what-do-you-offer
+    customer: curious
+    says:
+      - what treatments do you offer?
+    replay:
+      - We do check-ups, fillings, whitening and braces. Which would you like to know about?
+    expect:
+      says: [whitening]
+      handoff: false
+
   - id: maths-problem
     customer: off topic
     says:
