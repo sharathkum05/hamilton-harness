@@ -51,7 +51,10 @@ export function InboxSection({ pack, api, go }: SectionProps) {
   const [openId, setOpenId] = useState<string | null>(null)
 
   const load = useCallback(() => {
-    api.records().then((body) => setRecords(body.records)).catch(() => setRecords([]))
+    api
+      .records()
+      .then((body) => setRecords(body.records))
+      .catch(() => setRecords([]))
   }, [api])
 
   useEffect(load, [load])
@@ -61,7 +64,8 @@ export function InboxSection({ pack, api, go }: SectionProps) {
   const shown = (records ?? []).filter(
     (record) =>
       (filter === 'all' || record.type === filter) &&
-      (!needle || `${record.id} ${Object.values(record.data).join(' ')}`.toLowerCase().includes(needle)),
+      (!needle ||
+        `${record.id} ${Object.values(record.data).join(' ')}`.toLowerCase().includes(needle)),
   )
   const opened = (records ?? []).find((record) => record.id === openId) ?? null
   const label = (record: RecordItem, key: string) =>
@@ -155,20 +159,24 @@ export function InboxSection({ pack, api, go }: SectionProps) {
                             {/* A filled dot marks what nobody has looked at yet. */}
                             <span
                               aria-hidden="true"
-                              className={record.status === 'new' ? 'bg-foreground size-1.5 rounded-full' : 'size-1.5'}
+                              className={
+                                record.status === 'new'
+                                  ? 'bg-foreground size-1.5 rounded-full'
+                                  : 'size-1.5'
+                              }
                             />
                             {record.id}
                           </span>
-                          <Badge variant="outline">{labels[record.type]?.label ?? record.type}</Badge>
+                          <Badge variant="outline">
+                            {labels[record.type]?.label ?? record.type}
+                          </Badge>
                         </div>
                       </TableCell>
                       <TableCell className="min-w-44 whitespace-normal">
                         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-sm">
                           {Object.entries(record.data).map(([key, value]) => (
                             <div key={key} className="contents">
-                              <dt className="text-muted-foreground">
-                                {label(record, key)}
-                              </dt>
+                              <dt className="text-muted-foreground">{label(record, key)}</dt>
                               <dd className="[overflow-wrap:anywhere]">{String(value)}</dd>
                             </div>
                           ))}
@@ -225,7 +233,9 @@ export function InboxSection({ pack, api, go }: SectionProps) {
                 {Object.entries(opened.data).map(([key, value]) => (
                   <div key={key} className="flex items-baseline justify-between gap-6 py-3">
                     <dt className="text-muted-foreground text-sm">{label(opened, key)}</dt>
-                    <dd className="text-right text-sm font-medium [overflow-wrap:anywhere]">{String(value)}</dd>
+                    <dd className="text-right text-sm font-medium [overflow-wrap:anywhere]">
+                      {String(value)}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -245,7 +255,11 @@ export function InboxSection({ pack, api, go }: SectionProps) {
                 </div>
               </div>
               {opened.conversation_id && (
-                <Button variant="ghost" className="mx-4 justify-between" onClick={() => openConversation(opened)}>
+                <Button
+                  variant="ghost"
+                  className="mx-4 justify-between"
+                  onClick={() => openConversation(opened)}
+                >
                   Read the conversation it came from <ArrowRightIcon />
                 </Button>
               )}

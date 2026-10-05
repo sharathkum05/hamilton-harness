@@ -2,7 +2,14 @@
 // replied, and between the two, what the harness did and decided.
 
 import { useCallback, useEffect, useState } from 'react'
-import { BanIcon, CheckIcon, FileSearchIcon, ShieldAlertIcon, UserRoundCheckIcon, XIcon } from 'lucide-react'
+import {
+  BanIcon,
+  CheckIcon,
+  FileSearchIcon,
+  ShieldAlertIcon,
+  UserRoundCheckIcon,
+  XIcon,
+} from 'lucide-react'
 import type { ComponentType } from 'react'
 
 import type { ConversationSummary, TraceEvent } from '@/admin/api'
@@ -14,7 +21,11 @@ import { Message, MessageContent } from '@/components/ui/message'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
-type Note = { Icon: ComponentType<{ className?: string }>; tone: 'plain' | 'good' | 'stop' | 'warn'; text: string }
+type Note = {
+  Icon: ComponentType<{ className?: string }>
+  tone: 'plain' | 'good' | 'stop' | 'warn'
+  text: string
+}
 
 const TONES = {
   plain: 'text-muted-foreground',
@@ -38,7 +49,11 @@ function note(event: TraceEvent): Note | null {
     }
     case 'action':
       if (data.outcome === 'ok') {
-        return { Icon: CheckIcon, tone: 'good', text: `${data.tool}(${JSON.stringify(data.arguments)})` }
+        return {
+          Icon: CheckIcon,
+          tone: 'good',
+          text: `${data.tool}(${JSON.stringify(data.arguments)})`,
+        }
       }
       return {
         Icon: data.outcome === 'blocked' ? ShieldAlertIcon : XIcon,
@@ -46,11 +61,23 @@ function note(event: TraceEvent): Note | null {
         text: `${data.tool} ${data.outcome}: ${data.detail}`,
       }
     case 'scope_refused':
-      return { Icon: BanIcon, tone: 'warn', text: `Off topic (${data.reason}). The model was not called.` }
+      return {
+        Icon: BanIcon,
+        tone: 'warn',
+        text: `Off topic (${data.reason}). The model was not called.`,
+      }
     case 'reply_blocked':
-      return { Icon: ShieldAlertIcon, tone: 'stop', text: `Draft replaced by "${data.rule}". It said: ${data.draft}` }
+      return {
+        Icon: ShieldAlertIcon,
+        tone: 'stop',
+        text: `Draft replaced by "${data.rule}". It said: ${data.draft}`,
+      }
     case 'handoff':
-      return { Icon: UserRoundCheckIcon, tone: 'warn', text: `Handed to a human (${data.reason}: ${data.detail})` }
+      return {
+        Icon: UserRoundCheckIcon,
+        tone: 'warn',
+        text: `Handed to a human (${data.reason}: ${data.detail})`,
+      }
     case 'model_error':
       return { Icon: XIcon, tone: 'stop', text: `Model error: ${data.error}` }
     default:
@@ -65,8 +92,10 @@ function Transcript({ events }: { events: TraceEvent[] }) {
   return (
     <div className="flex flex-col gap-5">
       {[...turns.entries()].map(([turn, steps]) => {
-        const said = steps.find((step) => step.kind === 'customer') as Record<string, any> | undefined
-        const end = steps.find((step) => step.kind === 'turn_end') as Record<string, any> | undefined
+        const said = steps.find((step) => step.kind === 'customer') as
+          Record<string, any> | undefined
+        const end = steps.find((step) => step.kind === 'turn_end') as
+          Record<string, any> | undefined
         const notes = steps.map(note).filter((item): item is Note => item !== null)
         return (
           <div key={turn} className="flex flex-col gap-1.5">
@@ -80,7 +109,10 @@ function Transcript({ events }: { events: TraceEvent[] }) {
             {notes.length > 0 && (
               <ul className="my-1 flex flex-col gap-1 border-l pl-3">
                 {notes.map((item, index) => (
-                  <li key={index} className={cn('flex items-start gap-2 font-mono text-xs', TONES[item.tone])}>
+                  <li
+                    key={index}
+                    className={cn('flex items-start gap-2 font-mono text-xs', TONES[item.tone])}
+                  >
                     <item.Icon className="mt-0.5 size-3.5 shrink-0" />
                     <span className="[overflow-wrap:anywhere]">{item.text}</span>
                   </li>
@@ -107,7 +139,10 @@ export function ConversationsSection({ api }: SectionProps) {
 
   const show = useCallback(
     (id: string) => {
-      api.conversation(id).then(setOpen).catch(() => setOpen(null))
+      api
+        .conversation(id)
+        .then(setOpen)
+        .catch(() => setOpen(null))
     },
     [api],
   )
@@ -164,9 +199,21 @@ export function ConversationsSection({ api }: SectionProps) {
                     timeStyle: 'short',
                   })}
                 </span>
-                {item.blocked && <Badge variant="destructive" className="rounded-md">guard</Badge>}
-                {item.refused && <Badge variant="outline" className="rounded-md">off topic</Badge>}
-                {item.handed_off && <Badge variant="secondary" className="rounded-md">handed off</Badge>}
+                {item.blocked && (
+                  <Badge variant="destructive" className="rounded-md">
+                    guard
+                  </Badge>
+                )}
+                {item.refused && (
+                  <Badge variant="outline" className="rounded-md">
+                    off topic
+                  </Badge>
+                )}
+                {item.handed_off && (
+                  <Badge variant="secondary" className="rounded-md">
+                    handed off
+                  </Badge>
+                )}
               </span>
             </button>
           ))}
@@ -176,7 +223,9 @@ export function ConversationsSection({ api }: SectionProps) {
             <Transcript events={open.events} />
           ) : (
             <p className="text-muted-foreground text-sm">
-              {list?.length ? 'Choose a conversation to read it.' : 'A conversation you open is shown here.'}
+              {list?.length
+                ? 'Choose a conversation to read it.'
+                : 'A conversation you open is shown here.'}
             </p>
           )}
         </div>

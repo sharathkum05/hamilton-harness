@@ -114,7 +114,11 @@ export function Toggle({
     <div className="flex items-start justify-between gap-8 py-5 first:pt-0 last:pb-0">
       <div className="flex flex-col gap-1">
         <Label htmlFor={id}>{label}</Label>
-        {hint && <p className="text-muted-foreground max-w-[60ch] text-sm leading-snug text-pretty">{hint}</p>}
+        {hint && (
+          <p className="text-muted-foreground max-w-[60ch] text-sm leading-snug text-pretty">
+            {hint}
+          </p>
+        )}
       </div>
       <Switch id={id} checked={checked} onCheckedChange={onChange} className="mt-0.5 shrink-0" />
     </div>
@@ -137,7 +141,9 @@ export function Section({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1.5">
           <h1 className="text-3xl">{title}</h1>
-          <p className="text-muted-foreground max-w-[62ch] text-sm leading-relaxed text-pretty">{description}</p>
+          <p className="text-muted-foreground max-w-[62ch] text-sm leading-relaxed text-pretty">
+            {description}
+          </p>
         </div>
         {actions}
       </div>
