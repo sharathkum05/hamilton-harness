@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security problem
+    url: https://github.com/sharathkum05/hamilton-harness/security/policy
+    about: Please report vulnerabilities privately, not in a public issue.
+  - name: How do I write a pack?
+    url: https://github.com/sharathkum05/hamilton-harness/blob/main/docs/packs.md
+    about: Every file and field in a pack, with examples.
