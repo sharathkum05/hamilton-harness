@@ -2,7 +2,12 @@
 
 import { request } from '@/lib/api'
 
-export type Limit = { field: string; max: number | null; min: number | null; allowed: unknown[] | null }
+export type Limit = {
+  field: string
+  max: number | null
+  min: number | null
+  allowed: unknown[] | null
+}
 
 export type Rule = {
   id: string
@@ -110,6 +115,8 @@ export type SimReport = {
     failures: { name: string; detail: string }[]
     error: string
   }[]
+  // Things in the pack that work against it, which a passing run does not show.
+  warnings: { code: string; where: string; message: string }[]
 }
 
 export type ConversationSummary = {
@@ -183,7 +190,8 @@ export function adminApi(token: string) {
       call<RecordItem>(`/records/${encodeURIComponent(id)}`, { method: 'PATCH', body: { status } }),
     sim: () => call<SimReport>('/sim', { method: 'POST', body: {} }),
     conversations: () => call<{ conversations: ConversationSummary[] }>('/conversations'),
-    conversation: (id: string) => call<{ id: string; events: TraceEvent[] }>(`/conversations/${id}`),
+    conversation: (id: string) =>
+      call<{ id: string; events: TraceEvent[] }>(`/conversations/${id}`),
   }
 }
 
