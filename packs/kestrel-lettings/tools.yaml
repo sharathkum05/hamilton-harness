@@ -1,0 +1,17 @@
+tools:
+  - name: find_homes
+    description: >
+      List the homes available to rent right now, optionally only those with
+      at least a number of bedrooms or at or under a monthly rent. Call this
+      before describing what is available, and offer only homes it returns.
+    handler: handlers:find_homes
+    input_schema:
+      type: object
+      properties:
+        min_bedrooms:
+          type: integer
+          minimum: 0
+        max_rent_inr:
+          type: number
+          minimum: 0
+      additionalProperties: false
