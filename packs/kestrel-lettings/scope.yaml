@@ -1,0 +1,10 @@
+covers: >
+  Kestrel Lettings only: the homes available to rent, booking a viewing,
+  taking a rental application, the documents an application needs, deposits
+  and what happens after you apply.
+off_topic_reply: I can only help with renting through Kestrel Lettings, like homes, viewings and applications. What do you need?
+unsure_reply: I don't have that in front of me and I don't want to guess. Shall I ask the lettings team to confirm?
+refuse: [math, coding, writing, trivia]
+# An intake desk has no reason to discuss anything its own notes do not cover.
+strict: true
+ground_numbers: true
