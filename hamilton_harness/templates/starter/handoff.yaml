@@ -1,0 +1,11 @@
+# When a human takes over. These run in code on the customer's own words.
+
+# Phrases that hand the conversation over at once, before the model is called.
+phrases:
+  - complaint
+  - legal action
+# Hand over when the customer asks for a person.
+on_request: true
+# Hand over once this many actions have been blocked in one conversation.
+max_guard_blocks: 2
+message: I'm passing this to a colleague who can help. They'll have the full notes.
