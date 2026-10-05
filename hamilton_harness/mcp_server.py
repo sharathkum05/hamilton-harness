@@ -115,7 +115,10 @@ def build_server(
     @server.tool()
     def run_fake_customers() -> dict[str, Any]:
         """Run the pack's test customers against the current configuration and
-        return the scorecard. Run this after any change to rules, scope or knowledge."""
+        return the scorecard. Run this after any change to rules, scope or knowledge.
+        The result also lists `warnings`: lines that break the pack's own rules, and
+        rules no test customer covers. Report those too; a clean scorecard does not
+        show a rule nobody tested."""
         return guarded(editor.run_fake_customers)
 
     @server.tool()

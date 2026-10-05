@@ -65,3 +65,21 @@ def test_a_bad_edit_comes_back_as_a_message_not_a_crash(root):
 def test_claude_can_run_the_fake_customers(root):
     report = call(build_server(root), "run_fake_customers")
     assert report["summary"]["passed"] == 16
+    assert report["warnings"] == []
+
+
+def test_claude_is_told_when_its_own_edit_left_a_rule_untested(root):
+    server = build_server(root)
+    rules = [rule.model_dump(mode="json") for rule in load_pack(root).policies]
+    rules.append(
+        {
+            "id": "no-competitors",
+            "text": "Never recommend another shop.",
+            "never_say": ["\\btry another shop\\b"],
+            "safe_reply": "I can only speak for Loop.",
+        }
+    )
+    assert call(server, "save_rules", rules=rules)["ok"] is True
+    report = call(server, "run_fake_customers")
+    assert report["summary"]["passed"] == 16
+    assert [w["where"] for w in report["warnings"]] == ["policies.yaml: no-competitors"]
