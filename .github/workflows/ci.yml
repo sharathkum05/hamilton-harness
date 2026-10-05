@@ -24,6 +24,12 @@ jobs:
           ruff format --check .
       - name: Unit tests
         run: pytest -q
+      - name: Pack warnings
+        # A demo pack whose own lines break its own rules fails the build.
+        run: |
+          hamilton-harness validate packs/loop-sneakers --strict
+          hamilton-harness validate packs/brightside-dental --strict
+          hamilton-harness validate packs/kestrel-lettings --strict
       - name: Fake customers (replay)
         # The gate: a change that lets a blocked action through fails the build.
         run: |
