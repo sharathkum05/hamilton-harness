@@ -66,6 +66,14 @@ _ABOUT_THE_REP = re.compile(
     r"|\bwhat can (?:you|u) (?:do|help)",
     re.IGNORECASE,
 )
+# Words that ask without naming a subject. "What treatments do you offer" is about
+# treatments; "offer" must not count as a second word the notes failed to cover.
+_FILLER = frozenset(
+    "about again also any anything actually could did does doing done else get give "
+    "go got just know let like look may maybe much many need now offer ok okay please "
+    "pls really say see should some something still sure tell than thank thanks then "
+    "thing think too want would yet".split()
+)
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
 
 
@@ -86,7 +94,7 @@ def _shared_words(message: str, context: TurnContext) -> tuple[int, int]:
     Numbers are left out: "348 * 12" must not count as on topic because the
     size chart happens to mention a 12.
     """
-    words = {word for word in tokenize(message) if word.isalpha()}
+    words = {word for word in tokenize(message) if word.isalpha() and word not in _FILLER}
     known: set[str] = set()
     for chunk in context.notes:
         known.update(tokenize(f"{chunk.heading} {chunk.text}"))
