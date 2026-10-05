@@ -150,3 +150,11 @@ def test_strict_mode_needs_more_than_one_shared_word(pack):
     assert strict.check(off, ContextBuilder(pack).for_turn(off, {})).reason == "strict"
     on = "do you have it in black"
     assert strict.check(on, ContextBuilder(pack).for_turn(on, {})).in_scope
+
+
+@pytest.mark.parametrize(
+    "message",
+    ["am I talking to a bot?", "am i chatting with a real person", "is this a chatbot"],
+)
+def test_strict_mode_lets_a_customer_ask_what_they_are_talking_to(message):
+    assert ScopeGate(ScopeSettings(strict=True)).check(message, EMPTY).in_scope

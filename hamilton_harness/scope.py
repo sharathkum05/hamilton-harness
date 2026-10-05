@@ -61,7 +61,9 @@ _CONVERSATIONAL = re.compile(
 )
 _ABOUT_THE_REP = re.compile(
     r"\b(?:are|r) (?:you|u)\b|\bwho (?:are|r) (?:you|u)\b|\bis this (?:a |an )?"
-    r"(?:bot|ai|human|person|robot)\b|\bwhat can (?:you|u) (?:do|help)",
+    r"(?:real )?(?:bot|ai|human|person|robot|chatbot|machine)\b"
+    r"|\bam i (?:talking|speaking|chatting|typing) (?:to|with)\b"
+    r"|\bwhat can (?:you|u) (?:do|help)",
     re.IGNORECASE,
 )
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
