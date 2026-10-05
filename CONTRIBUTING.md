@@ -38,7 +38,7 @@ for pack in packs/*/; do hamilton-harness sim "$pack" || break; done
 ```
 
 ```bash
-npm --prefix web run build
+npm --prefix web run format:check && npm --prefix web run build
 ```
 
 ```bash
