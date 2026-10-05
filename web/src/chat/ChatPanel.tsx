@@ -249,7 +249,9 @@ export function ChatPanel({
                       <MessageContent className="max-w-[82%] min-w-0 px-3.5 py-2.5">
                         {/* Plain text on purpose: nothing a customer or the model writes is
                             parsed as Markdown, so an email address or a link shows as typed. */}
-                        <p className="[overflow-wrap:anywhere] whitespace-pre-wrap">{message.text}</p>
+                        <p className="[overflow-wrap:anywhere] whitespace-pre-wrap">
+                          {message.text}
+                        </p>
                       </MessageContent>
                       {from === 'assistant' &&
                         (endsRun && status !== 'typing' ? (
