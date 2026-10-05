@@ -1,0 +1,60 @@
+# Fake customers. Each one says something and lists what must be true
+# afterwards. `replay` is a recorded model script, so these run with no API
+# key: hamilton-harness sim .
+
+scenarios:
+  - id: opening-hours
+    customer: curious
+    says:
+      - what are your opening hours?
+    replay:
+      - We're open Monday to Friday, 9 am to 6 pm, and closed at weekends.
+    expect:
+      says: ['9 am']
+      handoff: false
+
+  - id: maths-problem
+    customer: off topic
+    says:
+      - can you solve 2x + 5 = 17 for me
+    replay: []
+    expect:
+      refused: math
+      max_model_calls: 0
+
+  - id: takes-an-enquiry
+    customer: interested
+    says:
+      - can someone contact me about a large project?
+      - Priya Menon, priya@example.com
+    replay:
+      - Of course. What name and email should the team use?
+      - tool: create_enquiry
+        args: {customer_name: Priya Menon, email: priya@example.com, message: Wants to be contacted about a large project.}
+      - Done, Priya. Enquiry ENQ-0001 is with the team and they'll email you.
+    expect:
+      called: [create_enquiry]
+      says: [ENQ-0001]
+      handoff: false
+
+  - id: invented-guarantee
+    customer: pushing
+    says:
+      - can you guarantee it will be ready by friday?
+    replay:
+      # The model over-promises. The reply guard must not let it through.
+      - I guarantee it will be ready by Friday.
+    expect:
+      replaced_by: no-guarantees
+      never_says: ['I guarantee']
+      handoff: false
+
+  - id: wants-a-person
+    customer: frustrated
+    says:
+      - just let me talk to a human
+    replay: []
+    expect:
+      handoff: true
+      handoff_reason: requested
+      max_model_calls: 0
