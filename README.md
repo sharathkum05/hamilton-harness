@@ -312,6 +312,17 @@ it confirmed, done or cancelled. The rep does not take payment.
 
 </details>
 
+## Documentation
+
+| Guide | What is in it |
+|---|---|
+| [Writing a pack](docs/packs.md) | Every file and field in a pack, with examples |
+| [How the guardrails work](docs/guardrails.md) | Each check in the order it runs, what it catches and what it does not |
+| [Fake customers](docs/scenarios.md) | Writing scenarios, replay scripts, and what you can assert |
+| [Putting the chat on a website](docs/integrate.md) | The script tag, PHP, WordPress, React, and signed customer identities |
+| [Contributing](CONTRIBUTING.md) | Setting up, the checks CI runs, and how to add a pack or a check |
+| [Changelog](CHANGELOG.md) | What changed in each release |
+
 ## What the guardrails do and do not promise
 
 Two checks keep the rep on topic and honest, both in code.
@@ -326,6 +337,9 @@ Two checks keep the rep on topic and honest, both in code.
 These remove two common failures cheaply. They do not prove a reply is true: a
 wrong statement with no number in it is not caught. That is why every
 conversation is recorded and the fake customers run on each change.
+
+The full list of checks, in the order they run, is in
+[docs/guardrails.md](docs/guardrails.md).
 
 In the test suites the recorded model does the wrong thing on purpose: it obeys
 a prompt injection, promises a 40% discount, refunds above the limit, claims to
