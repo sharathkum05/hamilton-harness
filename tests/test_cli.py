@@ -13,6 +13,33 @@ def test_validate_describes_the_pack(capsys):
     assert "scenarios  16" in out
 
 
+def test_init_writes_a_pack_that_validates_and_passes(tmp_path, capsys):
+    target = tmp_path / "acme"
+    assert main(["init", str(target), "--company", "Acme Tools", "--rep", "Jo"]) == 0
+    out = capsys.readouterr().out
+    assert "Wrote a starter pack for Acme Tools" in out
+    assert "persona.yaml" in out
+    assert f"hamilton-harness sim {target}" in out
+
+    assert main(["validate", str(target)]) == 0
+    assert "Jo at Acme Tools" in capsys.readouterr().out
+    assert main(["sim", str(target)]) == 0
+    assert "5/5 scenarios passed" in capsys.readouterr().out
+
+
+def test_init_will_not_write_over_an_existing_pack(tmp_path, capsys):
+    assert main(["init", str(tmp_path), "--company", "Acme Tools"]) == 0
+    capsys.readouterr()
+    assert main(["init", str(tmp_path), "--company", "Other Co"]) == 2
+    assert "not empty" in capsys.readouterr().err
+    assert "Acme Tools" in (tmp_path / "persona.yaml").read_text(encoding="utf-8")
+
+
+def test_init_needs_a_company_name(tmp_path, capsys):
+    assert main(["init", str(tmp_path / "pack"), "--company", "  "]) == 2
+    assert "company name" in capsys.readouterr().err
+
+
 def test_validate_reports_a_broken_pack(tmp_path, capsys):
     assert main(["validate", str(tmp_path)]) == 2
     assert "persona.yaml is missing" in capsys.readouterr().err
