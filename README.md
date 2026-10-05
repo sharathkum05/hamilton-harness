@@ -238,9 +238,14 @@ hamilton-harness init packs/acme --company "Acme Tools" --rep Jo
 hamilton-harness sim packs/acme
 ```
 
-Two demo packs ship: **Loop Sneakers** (support, orders and quotes for a shoe
-shop) and **Brightside Dental** (a front desk with a strict scope and a
-no-medical-advice rule). Both companies are made up.
+Three demo packs ship, one for each kind of rep. All three companies are made
+up.
+
+| Pack | The rep | What it shows |
+|---|---|---|
+| [`loop-sneakers`](packs/loop-sneakers) | Maya, customer support and sales for a shoe shop | Refund limits, orders and bulk quotes, a rule against inventing discounts |
+| [`brightside-dental`](packs/brightside-dental) | Asha, a dental front desk | A strict scope, bookings, and a rule against medical advice |
+| [`kestrel-lettings`](packs/kestrel-lettings) | Noor, application intake for a lettings agency | Rental applications and viewing requests, and rules against deciding an application, giving legal advice or asking nosy questions |
 
 <details>
 <summary>A rule, enforced in code</summary>
