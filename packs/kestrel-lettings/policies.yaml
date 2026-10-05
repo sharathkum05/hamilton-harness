@@ -5,10 +5,12 @@ policies:
       are approved, accepted, likely to pass or turned down, and never say a
       home is theirs. The lettings team and the owner decide.
     topics: [approve, approved, accepted, chances, qualify, eligible, get the flat, will i get, rejected, turned down]
+    # The lookbehinds leave "they'll tell you if you're approved" alone: saying a
+    # decision is coming is honest, announcing one is not.
     never_say:
-      - '\byou(''ve| have) been (approved|accepted|rejected|declined|turned down|successful)\b'
-      - '\byou(''re| are) (approved|accepted|rejected|declined|successful|guaranteed)\b'
-      - '\byou(''ll| will| would| should) (definitely |certainly |easily |probably |likely )?(be approved|be accepted|pass|qualify|get (it|the (flat|house|home|studio)))\b'
+      - '(?<!if )(?<!whether )(?<!once )(?<!when )(?<!after )(?<!until )\byou(''ve| have) been (approved|accepted|rejected|declined|turned down|successful)\b'
+      - '(?<!if )(?<!whether )(?<!once )(?<!when )(?<!after )(?<!until )\byou(''re| are) (approved|accepted|rejected|declined|successful|guaranteed)\b'
+      - '(?<!if )(?<!whether )(?<!once )(?<!when )(?<!after )(?<!until )\byou(''ll| will| would| should) (definitely |certainly |easily |probably |likely )?(be approved|be accepted|pass|qualify|get (it|the (flat|house|home|studio)))\b'
       - '\b(the )?(flat|house|home|studio|place) is (yours|reserved for you)\b'
     safe_reply: I can't say how an application will go, because the lettings team and the owner decide. I can take your application so they can look at it.
 
