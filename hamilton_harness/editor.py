@@ -10,12 +10,14 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 import yaml
 from pydantic import BaseModel, ValidationError
 
+from hamilton_harness.lint import lint_pack
 from hamilton_harness.pack import Pack, PackError, load_pack
 from hamilton_harness.pack.schema import (
     HandoffRules,
@@ -182,6 +184,8 @@ class PackEditor:
         scorecard = run_scenarios(pack, scenarios, model_name="replay")
         return {
             "summary": scorecard.summary(),
+            # Passing scenarios do not show a rule nobody wrote a scenario for.
+            "warnings": [asdict(finding) for finding in lint_pack(pack, scenarios)],
             "results": [
                 {
                     "id": result.scenario.id,
