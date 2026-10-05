@@ -292,8 +292,10 @@ wants short, quick replies, so the default is `low`.
 
 Optional. A module with a `build()` function that returns a model, used by
 `hamilton-harness serve --offline` so the chat can be shown with no API key.
-The Loop Sneakers pack has one. It is a stand-in for demos: it pattern-matches
-a handful of messages and is not a measure of how the real model behaves.
+The Loop Sneakers and Kestrel Lettings packs each have one. It is a stand-in
+for demos: it pattern-matches a handful of messages and is not a measure of how
+the real model behaves. Both are careless on purpose, so the guard has
+something to stop.
 
 ## Editing a pack once it is running
 
