@@ -18,6 +18,27 @@ hamilton-harness validate packs/acme
 that is wrong. Unknown keys are errors, because in a hand-edited file they are
 almost always typos.
 
+A pack can load and still work against itself, so `validate` also lists
+warnings:
+
+```
+2 things worth a second look:
+  widget.yaml: greeting: contains the banned phrase "As an AI", which is cut before sending
+  policies.yaml: no-discounts: has never_say patterns but no fake customer expects replaced_by: no-discounts
+```
+
+| Warning | What it means |
+|---|---|
+| A line breaks a rule | A greeting, handoff message, off-topic line or `safe_reply` matches a `never_say` pattern, or claims to be a person |
+| A line has a banned phrase | One of those lines contains a phrase from `banned_phrases`, so the shaper will cut it |
+| A line is too long | One of those lines runs past three bubbles of `max_sentences`, so its end is never sent |
+| An example breaks a rule | A `rep:` line in an example chat says something a rule forbids. The model copies its examples |
+| A rule is untested | A rule with `limits`, `forbid` or `never_say` has no fake customer that proves it holds |
+| No scope, or no scenarios | `covers` is empty, or the pack has no `tests/scenarios.yaml` |
+
+Add `--strict` to make any warning a failure, which is how this repository's
+CI runs it.
+
 ## The files
 
 | File | Required | What it holds |
@@ -126,9 +147,9 @@ policies:
 are checked in code and hold whatever the model writes. A rule with limits must
 name a `tool`, and that tool must exist.
 
-Two things to check when you write a `never_say` pattern:
+Two things to get right when you write a `never_say` pattern:
 
-- The rule's own `safe_reply` must not match it.
+- The rule's own `safe_reply` must not match it. `validate` warns when it does.
 - An honest sentence must not match it. "You're approved" should be caught;
   "they'll tell you if you're approved" should not. The lettings pack shows how
   to tell them apart with lookbehinds.
