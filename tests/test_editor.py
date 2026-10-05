@@ -77,6 +77,41 @@ def test_fake_customers_run_against_the_pack_on_disk(editor):
     assert "refund-over-limit" in failed and "prompt-injection" in failed
 
 
+def test_a_test_run_reports_nothing_for_a_pack_in_good_order(editor):
+    assert editor.run_fake_customers()["warnings"] == []
+
+
+def test_a_test_run_warns_when_an_edit_makes_a_line_break_a_rule(editor):
+    # The edit is valid, so it is saved. It is also a greeting the rep's own rule forbids.
+    editor.update_section("widget", {"greeting": "Hi! Ask me about 20% off today."})
+    report = editor.run_fake_customers()
+    assert report["summary"]["passed"] == 16
+    assert report["warnings"] == [
+        {
+            "code": "line-breaks-rule",
+            "where": "widget.yaml: greeting",
+            "message": "this line breaks the rule 'no-discounts' (it matched \"20% off\")",
+        }
+    ]
+
+
+def test_a_test_run_warns_about_a_new_rule_nobody_tested(editor):
+    rules = [rule.model_dump(mode="json") for rule in editor.load().policies]
+    rules.append(
+        {
+            "id": "no-competitors",
+            "text": "Never recommend another shop.",
+            "never_say": ["\\btry (amazon|another shop)\\b"],
+            "safe_reply": "I can only speak for Loop.",
+        }
+    )
+    editor.save_policies(rules)
+    warnings = editor.run_fake_customers()["warnings"]
+    assert [(w["code"], w["where"]) for w in warnings] == [
+        ("untested-rule", "policies.yaml: no-competitors")
+    ]
+
+
 def test_conversations_without_a_trace_folder():
     assert list_conversations(None) == []
     with pytest.raises(EditError):
