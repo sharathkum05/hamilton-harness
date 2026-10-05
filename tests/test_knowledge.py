@@ -6,6 +6,38 @@ def test_tokenize_drops_stopwords_and_punctuation():
     assert tokenize("Where is my ORDER?!") == ["order"]
 
 
+def test_tokenize_folds_plurals():
+    assert tokenize("bedrooms flats treatments dogs") == ["bedroom", "flat", "treatment", "dog"]
+    assert tokenize("deliveries boxes watches addresses") == ["delivery", "box", "watch", "address"]
+
+
+def test_tokenize_leaves_words_that_only_look_plural():
+    assert tokenize("address glass status basis gas") == [
+        "address",
+        "glass",
+        "status",
+        "basis",
+        "gas",
+    ]
+
+
+def test_tokenize_folds_a_word_and_its_plural_to_the_same_thing():
+    for single, plural in [("size", "sizes"), ("shoe", "shoes"), ("brace", "braces")]:
+        assert tokenize(single) == tokenize(plural)
+
+
+def test_tokenize_reads_spelled_out_numbers():
+    assert tokenize("two bedrooms") == tokenize("2 bedroom") == ["2", "bedroom"]
+    assert tokenize("twelve") == ["12"]
+
+
+def test_search_finds_a_note_written_in_the_singular():
+    notes = "## Flat 4\nA 2 bedroom flat. Dogs are not allowed.\n\n## Viewings\nBring photo ID.\n"
+    base = KnowledgeBase([KnowledgeDoc(source="homes.md", text=notes)])
+    assert base.search("two bedrooms")[0].heading == "Flat 4"
+    assert [c.heading for c in base.search("what about my dog")] == ["Flat 4"]
+
+
 def test_split_keeps_the_heading_trail():
     text = "# Shipping\n\n## Times\nThree days.\n\n## Cost\nFree.\n"
     doc = KnowledgeDoc(source="s.md", text=text)
