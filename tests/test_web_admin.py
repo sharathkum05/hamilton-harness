@@ -166,6 +166,18 @@ def test_fake_customers_can_be_run_from_the_dashboard(client):
     assert report["summary"]["passed"] == 16
     injected = next(r for r in report["results"] if r["id"] == "prompt-injection")
     assert injected["passed"] is True and injected["failures"] == []
+    assert report["warnings"] == []
+
+
+def test_the_dashboard_test_run_carries_pack_warnings(client):
+    saved = client.put(
+        "/api/admin/pack/widget", headers=AUTH, json={"greeting": "Kindly ask me anything."}
+    )
+    assert saved.status_code == 200, saved.text
+    report = client.post("/api/admin/sim", headers=AUTH).json()
+    assert [(w["code"], w["where"]) for w in report["warnings"]] == [
+        ("line-has-banned-phrase", "widget.yaml: greeting")
+    ]
 
 
 def test_conversations_are_listed_with_flags(client):
