@@ -18,6 +18,10 @@ and is not published separately yet.
   agency. It takes rental applications and viewing requests, and has rules
   against deciding an application, giving legal advice and asking about
   protected characteristics.
+- The lettings pack has a stand-in model, so the intake chat and its inbox can
+  be run with `serve --offline` and no API key.
+- The dashboard's Tests screen and the `run_fake_customers` MCP tool report
+  pack warnings alongside the scorecard.
 - Guides: [writing a pack](docs/packs.md), [how the guardrails
   work](docs/guardrails.md) and [fake customers](docs/scenarios.md).
 - A contributing guide, a security policy, issue forms and a pull request
@@ -35,6 +39,11 @@ and is not published separately yet.
   counted.
 - Strict mode turned away "am I talking to a bot?" as off topic. It now gets
   the rep's disclosure line.
+- Strict mode turned away questions that said when: "can I see the studio
+  tomorrow morning" was refused because "tomorrow" and "morning" appear in no
+  note. Words that only say when are no longer counted.
+- A company with no logo had an empty box in the dashboard header. It now
+  shows the company's initial.
 
 ## 0.1.1 (4 October 2026)
 
