@@ -23,15 +23,15 @@ warnings:
 
 ```
 2 things worth a second look:
-  widget.yaml: greeting: contains the banned phrase "As an AI", which is cut before sending
+  handoff.yaml: message: contains the banned phrase "Kindly", which is cut before sending
   policies.yaml: no-discounts: has never_say patterns but no fake customer expects replaced_by: no-discounts
 ```
 
 | Warning | What it means |
 |---|---|
 | A line breaks a rule | A greeting, handoff message, off-topic line or `safe_reply` matches a `never_say` pattern, or claims to be a person |
-| A line has a banned phrase | One of those lines contains a phrase from `banned_phrases`, so the shaper will cut it |
-| A line is too long | One of those lines runs past three bubbles of `max_sentences`, so its end is never sent |
+| A line has a banned phrase | One of those lines contains a phrase from `banned_phrases`. The shaper cuts it from anything sent as a reply; a greeting is shown as written, banned phrase and all |
+| A line is too long | A line sent as a reply runs past three bubbles of `max_sentences`, so its end is never sent |
 | An example breaks a rule | A `rep:` line in an example chat says something a rule forbids. The model copies its examples |
 | A rule is untested | A rule with `limits`, `forbid` or `never_say` has no fake customer that proves it holds |
 | No scope, or no scenarios | `covers` is empty, or the pack has no `tests/scenarios.yaml` |
