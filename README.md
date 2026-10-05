@@ -227,6 +227,17 @@ packs/loop-sneakers/
   tests/           fake customers and what must happen
 ```
 
+To start your own, `init` writes a small pack that already validates and
+already passes its own fake customers, so your first edit is to a working rep:
+
+```bash
+hamilton-harness init packs/acme --company "Acme Tools" --rep Jo
+```
+
+```bash
+hamilton-harness sim packs/acme
+```
+
 Two demo packs ship: **Loop Sneakers** (support, orders and quotes for a shoe
 shop) and **Brightside Dental** (a front desk with a strict scope and a
 no-medical-advice rule). Both companies are made up.
@@ -350,6 +361,7 @@ server on a host with a disk that persists.
 | `hamilton_harness/trace.py` | Step-by-step trace of every turn |
 | `hamilton_harness/sim.py` | Fake customers and the scorecard |
 | `hamilton_harness/editor.py` | Validated, rolled-back edits to a pack |
+| `hamilton_harness/scaffold.py` | The starter pack that `init` writes |
 | `hamilton_harness/stats.py` | Numbers for the dashboard's overview |
 | `hamilton_harness/mcp_server.py` | MCP server for a pack on this machine |
 | `hamilton_harness/web/` | HTTP API, dashboard API, embed script |
@@ -368,6 +380,7 @@ server on a host with a disk that persists.
 - [x] Web chat, embed script, dashboard and product page
 - [x] MCP servers, and the `hamilton-harness` package on npm
 - [x] A hosted demo
+- [x] `init`, which scaffolds a starter pack for a new company
 - [ ] A run against the real model. Everything so far is tested with scripted and stand-in models
 - [ ] Live scorecard numbers: latency, tokens and cost per conversation
 - [ ] Fake customers played by a model, with a goal and a temperament
