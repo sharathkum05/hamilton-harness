@@ -152,9 +152,54 @@ def test_strict_mode_needs_more_than_one_shared_word(pack):
     assert strict.check(on, ContextBuilder(pack).for_turn(on, {})).in_scope
 
 
+def _strict_dental():
+    from pathlib import Path
+
+    from hamilton_harness.pack import load_pack
+
+    dental = load_pack(Path(__file__).parent.parent / "packs" / "brightside-dental")
+    assert dental.scope.strict
+    return ScopeGate(dental.scope), ContextBuilder(dental)
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "what treatments do you offer",
+        "do you do fillings",
+        "are you open on sundays",
+        "how much is whitening",
+        "do you still take insurance",
+        "tell me about braces please",
+    ],
+)
+def test_a_strict_pack_answers_ordinary_questions_about_itself(message):
+    gate, builder = _strict_dental()
+    assert gate.check(message, builder.for_turn(message, {})).in_scope
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "who do you think will win the cricket world cup",
+        "tell me about black holes",
+        "what do you think about electric cars",
+        "any good films out at the moment",
+    ],
+)
+def test_a_strict_pack_still_turns_away_other_subjects(message):
+    gate, builder = _strict_dental()
+    assert gate.check(message, builder.for_turn(message, {})).reason == "strict"
+
+
 @pytest.mark.parametrize(
     "message",
     ["am I talking to a bot?", "am i chatting with a real person", "is this a chatbot"],
 )
 def test_strict_mode_lets_a_customer_ask_what_they_are_talking_to(message):
     assert ScopeGate(ScopeSettings(strict=True)).check(message, EMPTY).in_scope
+
+
+def test_filler_words_alone_are_not_a_subject():
+    gate = ScopeGate(ScopeSettings(strict=True))
+    assert gate.check("tell me something else then", EMPTY).reason == "strict"
