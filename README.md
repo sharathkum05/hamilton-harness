@@ -357,6 +357,7 @@ it confirmed, done or cancelled. The rep does not take payment.
 
 | Guide | What is in it |
 |---|---|
+| [Vision](docs/vision.md) | Where this is going: a visual, drag-and-drop builder for an agent's harness, with one-click deploy. Says plainly what is built and what is not |
 | [Writing a pack](docs/packs.md) | Every file and field in a pack, with examples |
 | [How the guardrails work](docs/guardrails.md) | Each check in the order it runs, what it catches and what it does not |
 | [Fake customers](docs/scenarios.md) | Writing scenarios, replay scripts, and what you can assert |
@@ -444,6 +445,9 @@ server on a host with a disk that persists.
 - [x] `init`, which scaffolds a starter pack for a new company
 - [x] Pack warnings: lines that break the pack's own rules, and rules no fake customer tests
 - [ ] A run against the real model. Everything so far is tested with scripted and stand-in models
+- [ ] A canvas: build the harness by dragging blocks onto the path a message takes ([vision](docs/vision.md))
+- [ ] Connect GitHub, so every change on the canvas is a commit
+- [ ] One-click deploy to Vercel, with storage that persists
 - [ ] Live scorecard numbers: latency, tokens and cost per conversation
 - [ ] Fake customers played by a model, with a goal and a temperament
 - [ ] A voice channel
