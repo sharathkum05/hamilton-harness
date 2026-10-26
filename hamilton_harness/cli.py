@@ -19,7 +19,7 @@ import time
 from pathlib import Path
 
 from hamilton_harness.lint import lint_pack
-from hamilton_harness.llm import AnthropicModel, Model, ModelError, load_offline_model
+from hamilton_harness.llm import AnthropicModel, Model, ModelError
 from hamilton_harness.memory import FileStore
 from hamilton_harness.pack import PackError, load_pack
 from hamilton_harness.pack.schema import Pack
@@ -27,6 +27,7 @@ from hamilton_harness.records import FileRecordStore
 from hamilton_harness.runtime import Agent, TurnResult
 from hamilton_harness.scaffold import write_starter_pack
 from hamilton_harness.sim import load_scenarios, replay_model, run_scenarios
+from hamilton_harness.standin import offline_model
 from hamilton_harness.tools import ToolError, ToolRegistry
 
 
@@ -150,7 +151,7 @@ def build_web_app(args: argparse.Namespace):
     from hamilton_harness.web.app import create_app
 
     pack = load_pack(args.pack)
-    model = load_offline_model(pack.root) if args.offline else _live_model(pack)
+    model = offline_model(pack) if args.offline else _live_model(pack)
     state = Path(args.state)
     agent = Agent(
         pack,
@@ -233,7 +234,9 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("pack")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
-    serve.add_argument("--offline", action="store_true", help="use the pack's stand-in model")
+    serve.add_argument(
+        "--offline", action="store_true", help="use a stand-in for the model, no API key needed"
+    )
     serve.add_argument("--debug", action="store_true", help="expose each turn to the inspector")
     serve.add_argument("--state", default=".hamilton", help="where traces and memory are kept")
     serve.add_argument("--admin", action="store_true", help="switch on the dashboard at /admin")
