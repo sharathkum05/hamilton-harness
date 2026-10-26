@@ -8,6 +8,12 @@ and is not published separately yet.
 
 ### Added
 
+- `hamilton-harness demo` runs every pack in `./packs` at once, one per port,
+  from clean copies, and prints each rep's address and dashboard link.
+  Dashboard edits made during a demo never touch the packs themselves.
+- `serve --offline` works for any pack. A pack without its own stand-in model
+  gets one that answers from its notes.
+- `/example`: a plain example website with the chat embedded by one line.
 - `hamilton-harness init DIR --company NAME` writes a starter pack that
   validates and passes its own fake customers.
 - `hamilton-harness validate` lists warnings about a pack that loads but works
