@@ -81,6 +81,21 @@ def test_validate_warns_when_a_pack_has_no_fake_customers(tmp_path, capsys):
     assert "tests/scenarios.yaml: is missing" in out
 
 
+def test_serve_offline_works_for_a_pack_with_no_stand_in_of_its_own(tmp_path):
+    from fastapi.testclient import TestClient
+
+    from hamilton_harness.cli import build_parser, build_web_app
+
+    dental = DEMO_PACK.parent / "brightside-dental"
+    args = build_parser().parse_args(["serve", str(dental), "--offline", "--state", str(tmp_path)])
+    client = TestClient(build_web_app(args))
+    session_id = client.post("/api/conversations").json()["id"]
+    reply = client.post(
+        f"/api/conversations/{session_id}/messages", json={"text": "how much is whitening"}
+    ).json()
+    assert "₹12,000" in " ".join(b["text"] for b in reply["bubbles"])
+
+
 def test_validate_reports_a_broken_pack(tmp_path, capsys):
     assert main(["validate", str(tmp_path)]) == 2
     assert "persona.yaml is missing" in capsys.readouterr().err
