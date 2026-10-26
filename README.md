@@ -117,25 +117,35 @@ hamilton-harness sim packs/loop-sneakers
 actions run 8, blocked by guard 4, replies replaced 3, off topic refused 2, handoffs 4
 ```
 
-To run the site, the chat and the dashboard, build the web app once and start
-the server. `--offline` uses the demo pack's stand-in model.
+To see all three reps at once, build the web app once and run the demo. It
+needs no API key: each rep runs on a stand-in for the model, and every check
+around it runs exactly as it would around the real thing.
 
 ```bash
 npm --prefix web ci && npm --prefix web run build
 ```
 
 ```bash
-hamilton-harness serve packs/loop-sneakers --offline --debug --admin
+hamilton-harness demo
 ```
 
-The server prints two addresses: the site, and the dashboard link with its
-token. To use the real model, set `ANTHROPIC_API_KEY` and drop `--offline`.
+```
+Hamilton demo: 3 reps, using a stand-in for the model, no API key.
 
-The intake rep runs the same way, with its applications and viewing requests
-landing in the dashboard inbox:
+  Brightside Dental  Asha, front desk        http://127.0.0.1:8000
+  Kestrel Lettings   Noor, lettings intake   http://127.0.0.1:8001
+  Loop Sneakers      Maya, customer support  http://127.0.0.1:8002
+```
+
+It prints a dashboard link for each rep too. The demo works on copies of the
+packs, so changes made in a dashboard never touch the files in `packs/`, and
+the next run starts clean. Add `--keep` to carry on where you left off, or
+`--live` to use the real model with `ANTHROPIC_API_KEY` set.
+
+To run one pack on its own, the way you would for a real company:
 
 ```bash
-hamilton-harness serve packs/kestrel-lettings --offline --debug --admin
+hamilton-harness serve packs/loop-sneakers --offline --debug --admin
 ```
 
 | Address | What it is |
@@ -145,6 +155,7 @@ hamilton-harness serve packs/kestrel-lettings --offline --debug --admin
 | `/admin` | Dashboard: overview, orders and quotes, conversations, brand, voice, scope, knowledge, rules, handoff, tests, install |
 | `/chat` | The chat panel on its own, which the embed script loads in a frame |
 | `/widget.js` | The embed script: one tag puts the chat on any site |
+| `/example` | A plain example website with the chat embedded by that one tag |
 
 ## Connect Claude
 
@@ -423,6 +434,8 @@ server on a host with a disk that persists.
 | `hamilton_harness/sim.py` | Fake customers and the scorecard |
 | `hamilton_harness/editor.py` | Validated, rolled-back edits to a pack |
 | `hamilton_harness/scaffold.py` | The starter pack that `init` writes |
+| `hamilton_harness/demo.py` | Several packs side by side, from clean copies |
+| `hamilton_harness/standin.py` | A stand-in for the model, so any pack runs with no API key |
 | `hamilton_harness/lint.py` | Warnings about a pack that loads but works against itself |
 | `hamilton_harness/stats.py` | Numbers for the dashboard's overview |
 | `hamilton_harness/mcp_server.py` | MCP server for a pack on this machine |
