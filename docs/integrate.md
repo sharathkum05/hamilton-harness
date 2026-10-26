@@ -16,6 +16,10 @@ below call it `https://chat.example.com`.
 
 ## 2. Add the script
 
+To see what this looks like before touching your own site, open `/example` on
+your Hamilton server. It is a plain HTML page with nothing on it but some
+placeholder content and the one line below.
+
 ### Any HTML page
 
 ```html
