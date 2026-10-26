@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Example site</title>
+<style>
+  /* A deliberately ordinary small-business page: the point is that the chat
+     drops into a site that knows nothing about it. Hand-written HTML and CSS,
+     no framework, no build step. */
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --ink: #1c1917;
+    --muted: #57534e;
+    --line: #e7e5e4;
+    /* The brand colour, or the ink colour when the rep's accent is "auto". */
+    --accent: var(--ink);
+    --on-accent: var(--bg);
+    --code-bg: #f5f5f4;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0a09; --surface: #1c1917; --ink: #f5f5f4; --muted: #a8a29e;
+      --line: #292524; --code-bg: #292524;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--font); }
+  .notice {
+    background: var(--ink); color: var(--bg); font-size: 14px;
+    padding: 8px 16px; text-align: center;
+  }
+  header, main, footer { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+  header { display: flex; align-items: center; gap: 12px; padding-block: 20px; }
+  header img { width: 36px; height: 36px; border-radius: 9px; }
+  header .initial {
+    width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center;
+    background: var(--accent); color: var(--on-accent); font-weight: 600;
+  }
+  header strong { font-size: 18px; }
+  nav { margin-left: auto; display: flex; gap: 20px; color: var(--muted); font-size: 15px; }
+  .hero { padding-block: 64px 40px; max-width: 620px; }
+  h1 { font-size: clamp(32px, 6vw, 48px); line-height: 1.1; margin: 0 0 16px; }
+  .hero p { color: var(--muted); font-size: 18px; margin: 0; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .card h2 { font-size: 16px; margin: 0 0 6px; }
+  .card p { color: var(--muted); margin: 0; font-size: 15px; }
+  .embed {
+    margin-block: 48px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 24px; max-width: 720px;
+  }
+  .embed h2 { margin: 0 0 8px; font-size: 20px; }
+  .embed p { margin: 0 0 16px; color: var(--muted); }
+  .snippet { display: flex; gap: 8px; align-items: stretch; }
+  pre {
+    flex: 1; min-width: 0; margin: 0; overflow-x: auto; background: var(--code-bg);
+    border-radius: 8px; padding: 12px 14px; font: 14px/1.5 var(--mono);
+  }
+  button {
+    font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--surface);
+    color: var(--ink); border-radius: 8px; padding: 0 14px; cursor: pointer;
+  }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  footer { color: var(--muted); font-size: 14px; padding-block: 32px 120px; border-top: 1px solid var(--line); }
+  @media (max-width: 560px) { nav { display: none; } .snippet { flex-direction: column; } button { padding: 8px; } }
+</style>
+</head>
+<body>
+  <div class="notice">An example website, made up to show the chat on a page that is not part of Hamilton.</div>
+
+  <header>
+    <span class="initial" id="mark" aria-hidden="true">·</span>
+    <strong id="company">Your company</strong>
+    <nav aria-label="Example navigation"><span>Home</span><span>About</span><span>Contact</span></nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1 id="headline">Welcome.</h1>
+      <p id="lede">This could be any website: hand-written HTML, PHP, WordPress or a React app.</p>
+    </section>
+
+    <section class="cards" aria-label="Example content">
+      <div class="card"><h2>Plain HTML</h2><p>No framework and no build step on this page.</p></div>
+      <div class="card"><h2>One line</h2><p>The chat in the corner comes from a single script tag.</p></div>
+      <div class="card"><h2>Kept apart</h2><p>The chat runs in a frame, so this page's styles cannot break it.</p></div>
+    </section>
+
+    <section class="embed" aria-labelledby="embed-title">
+      <h2 id="embed-title">The only line added to this page</h2>
+      <p>Paste it before <code>&lt;/body&gt;</code> on your own site. Open the chat in the corner to try it.</p>
+      <div class="snippet">
+        <pre><code id="snippet">&lt;script src="/widget.js" defer&gt;&lt;/script&gt;</code></pre>
+        <button type="button" id="copy">Copy</button>
+      </div>
+    </section>
+  </main>
+
+  <footer id="footer">An example page served by Hamilton Harness.</footer>
+
+  <script>
+    // Fill the page in from the running rep. Every value goes in as text, never as HTML.
+    (async () => {
+      const tag = `<script src="${location.origin}/widget.js" defer><\/script>`;
+      document.getElementById('snippet').textContent = tag;
+      document.getElementById('copy').addEventListener('click', async (event) => {
+        try {
+          await navigator.clipboard.writeText(tag);
+          event.target.textContent = 'Copied';
+        } catch {
+          event.target.textContent = 'Select and copy';
+        }
+      });
+
+      let config;
+      try {
+        config = await (await fetch('/api/config')).json();
+      } catch {
+        return;
+      }
+      const { company, name } = config.rep;
+      const { accent, logo_url: logo } = config.widget;
+      document.title = `${company} (example site)`;
+      document.getElementById('company').textContent = company;
+      document.getElementById('headline').textContent = `Welcome to ${company}.`;
+      document.getElementById('lede').textContent =
+        `${name}, the company's AI assistant, is in the corner. This page knows nothing about it except one line.`;
+      document.getElementById('footer').textContent =
+        `An example page for ${company}, served by Hamilton Harness.`;
+      if (/^#[0-9a-f]{6}$/i.test(accent)) {
+        document.documentElement.style.setProperty('--accent', accent);
+        document.documentElement.style.setProperty('--on-accent', '#fff');
+      }
+      const mark = document.getElementById('mark');
+      if (logo) {
+        const img = document.createElement('img');
+        img.src = logo;
+        img.alt = '';
+        mark.replaceWith(img);
+      } else {
+        mark.textContent = company.trim().charAt(0).toUpperCase();
+      }
+    })();
+  </script>
+  <!-- The embed itself. On your own site this points at your Hamilton server. -->
+  <script src="/widget.js" defer></script>
+</body>
+</html>
