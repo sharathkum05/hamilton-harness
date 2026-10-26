@@ -8,6 +8,7 @@
     GET  /                                  the product page (the demo, if the app is not built)
     GET  /demo                              demo page with the widget and an inspector
     GET  /widget.js                         the embed script: a launcher and an iframe
+    GET  /example                           a plain example website with the embed on it
     GET  /chat                              the chat panel (React, built from web/)
     GET  /admin                             the dashboard, when an admin token is set
     /api/admin/...                          the dashboard's API (see admin.py)
@@ -269,6 +270,11 @@ def create_app(
     @app.get("/", include_in_schema=False)
     def home_page() -> FileResponse:
         return built_or_plain()
+
+    @app.get("/example", include_in_schema=False)
+    def example_page() -> FileResponse:
+        # Plain HTML on purpose: it stands in for a customer's own website.
+        return FileResponse(STATIC_DIR / "example.html", headers={"Cache-Control": "no-cache"})
 
     @app.get("/widget.js", include_in_schema=False)
     def widget_script() -> FileResponse:
