@@ -5,12 +5,14 @@ hamilton-harness validate PACK      check a pack loads and its handlers resolve
 hamilton-harness chat PACK          talk to the rep in the terminal
 hamilton-harness sim PACK           run the pack's fake customers and print a scorecard
 hamilton-harness serve PACK         run the web chat widget and its API
+hamilton-harness demo [PACK...]     run every demo pack at once, from clean copies
 hamilton-harness mcp PACK           let Claude manage the pack over MCP
 """
 
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import os
 import secrets
@@ -183,6 +185,31 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_demo(args: argparse.Namespace) -> int:
+    from hamilton_harness import demo
+
+    if args.live and not os.environ.get("ANTHROPIC_API_KEY", "").strip():
+        raise ModelError("--live needs ANTHROPIC_API_KEY set. Leave it off to use a stand-in.")
+    packs = [Path(p) for p in args.packs] or demo.find_packs(Path("packs"))
+    state = Path(args.state)
+    ports = list(range(args.port, args.port + len(packs)))
+    busy = demo.busy_ports(args.host, ports)
+    if busy:
+        raise PackError(
+            f"port {busy[0]} is already in use. Stop what is using it, or pass --port to start "
+            f"somewhere else (this demo needs {len(ports)} ports in a row)."
+        )
+    sites = demo.prepare(packs, state, first_port=args.port, keep=args.keep)
+    token = admin_token(state)
+    apps = [(demo.build_app(site, live=args.live, admin_token=token), site.port) for site in sites]
+    print(demo.describe(sites, host=args.host, live=args.live, admin_token=token), flush=True)
+    try:
+        asyncio.run(demo.serve_all(apps, args.host))
+    except KeyboardInterrupt:
+        pass
+    return 0
+
+
 def cmd_mcp(args: argparse.Namespace) -> int:
     try:
         from hamilton_harness.mcp_server import build_server
@@ -244,6 +271,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--allow-origin", action="append", metavar="URL", help="site allowed to embed the widget"
     )
     serve.set_defaults(run=cmd_serve)
+
+    demo = commands.add_parser("demo", help="run every demo pack at once, from clean copies")
+    demo.add_argument("packs", nargs="*", metavar="PACK", help="default: every pack in ./packs")
+    demo.add_argument("--host", default="127.0.0.1")
+    demo.add_argument("--port", type=int, default=8000, help="first port; one per pack")
+    demo.add_argument("--live", action="store_true", help="use the real model, not a stand-in")
+    demo.add_argument("--keep", action="store_true", help="keep edits and chats from last time")
+    demo.add_argument("--state", default=".hamilton/demo", help="where the copies are kept")
+    demo.set_defaults(run=cmd_demo)
 
     mcp = commands.add_parser("mcp", help="let Claude manage the pack over MCP")
     mcp.add_argument("pack")
