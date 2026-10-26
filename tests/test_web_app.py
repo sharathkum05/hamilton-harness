@@ -232,3 +232,17 @@ def test_pack_without_a_logo(pack):
     client = TestClient(create_app(Agent(bare, ScriptedModel([]), retry_wait=0)))
     assert client.get("/api/config").json()["widget"]["logo_url"] == ""
     assert client.get("/brand/logo").status_code == 404
+
+
+def test_the_example_site_carries_the_one_line_embed(client):
+    response = client.get("/example")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert '<script src="/widget.js" defer></script>' in response.text
+
+
+def test_the_example_site_fills_itself_in_as_text_only(client):
+    page = client.get("/example").text
+    # Pack values reach the page through textContent, never innerHTML.
+    assert "innerHTML" not in page
+    assert "textContent" in page
