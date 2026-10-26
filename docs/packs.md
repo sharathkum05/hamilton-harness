@@ -297,6 +297,12 @@ for demos: it pattern-matches a handful of messages and is not a measure of how
 the real model behaves. Both are careless on purpose, so the guard has
 something to stop.
 
+A pack without one still runs offline. It gets a general stand-in that answers
+with the sentence from its notes that best fits the question, gives the
+persona's disclosure line when asked what it is, and otherwise sends the
+pack's `unsure_reply`. It never takes an action, so a pack's own stand-in is
+the way to show its tools and records.
+
 ## Editing a pack once it is running
 
 Three ways:
