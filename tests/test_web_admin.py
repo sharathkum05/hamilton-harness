@@ -263,7 +263,11 @@ def test_signing_in_with_the_password_opens_the_dashboard(browser):
     cookie = signed.headers["set-cookie"]
     assert "httponly" in cookie.lower() and "samesite=strict" in cookie.lower()
     assert "path=/api/admin" in cookie.lower()
-    assert browser.get("/api/admin/session").json() == {"email": EMAIL, "password": True}
+    assert browser.get("/api/admin/session").json() == {
+        "email": EMAIL,
+        "password": True,
+        "demo": False,
+    }
     assert browser.get("/api/admin/pack").status_code == 200
 
 
@@ -296,6 +300,7 @@ def test_the_token_still_works_beside_the_password(browser):
     assert browser.get("/api/admin/session", headers=AUTH).json() == {
         "email": None,
         "password": True,
+        "demo": False,
     }
     assert browser.get("/api/admin/pack", headers=AUTH).status_code == 200
 
@@ -342,3 +347,76 @@ def test_a_bad_setup_answer_is_explained(client):
     )
     assert refused.status_code == 422
     assert "hex colour" in refused.json()["detail"]
+
+
+@pytest.fixture
+def public(root, tmp_path):
+    """The hosted demo's dashboard: open to anyone, read-only."""
+    from hamilton_harness.records import MemoryRecordStore
+
+    order = {
+        "product": "Court Classic",
+        "size": "9",
+        "quantity": 1,
+        "customer_name": "Priya",
+        "phone": "5550123",
+    }
+    script = [{"tool": "create_order", "args": order}, "Done.", "Hi! How can I help?"]
+    agent = Agent(
+        load_pack(root),
+        ScriptedModel(script),
+        retry_wait=0,
+        records=MemoryRecordStore(),
+        trace_dir=tmp_path / "traces",
+    )
+    return create_app(agent, admin_demo=True)
+
+
+def chat(app, text):
+    """One visitor: a browser of their own, which keeps its own cookies."""
+    client = TestClient(app)
+    session = client.post("/api/conversations").json()["id"]
+    client.post(f"/api/conversations/{session}/messages", json={"text": text})
+    return client
+
+
+def test_the_public_dashboard_needs_no_sign_in_and_says_it_is_a_demo(public):
+    client = TestClient(public)
+    assert client.get("/api/admin/session").json() == {
+        "email": None,
+        "password": False,
+        "demo": True,
+    }
+    assert client.get("/api/admin/pack").status_code == 200
+
+
+def test_the_public_dashboard_saves_nothing(public, root):
+    client = TestClient(public)
+    widget = client.get("/api/admin/pack").json()["widget"]
+    refused = client.put("/api/admin/pack/widget", json={**widget, "greeting": "hacked"})
+    assert refused.status_code == 403
+    assert "read-only demo" in refused.json()["detail"]
+    assert client.post("/api/admin/setup", json={"company": "X", "rep": "Y"}).status_code == 403
+    assert client.delete("/api/admin/knowledge/faq.md").status_code == 403
+    assert "hacked" not in (root / "widget.yaml").read_text(encoding="utf-8")
+    # Running the fake customers changes nothing, so a visitor may.
+    assert client.post("/api/admin/sim", json={}).status_code == 200
+
+
+def test_each_visitor_sees_only_their_own_chats_and_orders(public):
+    priya = chat(public, "I want to buy Court Classic in UK 9, I'm Priya")
+    arjun = chat(public, "hello there")
+    stranger = TestClient(public)
+
+    mine = priya.get("/api/admin/conversations").json()["conversations"]
+    assert [c["opening"] for c in mine] == ["I want to buy Court Classic in UK 9, I'm Priya"]
+    assert len(priya.get("/api/admin/records").json()["records"]) == 1
+    assert priya.get("/api/admin/overview").json()["conversations"]["total"] == 1
+
+    theirs = arjun.get("/api/admin/conversations").json()["conversations"]
+    assert [c["opening"] for c in theirs] == ["hello there"]
+    assert arjun.get("/api/admin/records").json()["records"] == []
+    assert arjun.get(f"/api/admin/conversations/{mine[0]['id']}").status_code == 404
+
+    assert stranger.get("/api/admin/conversations").json()["conversations"] == []
+    assert stranger.get("/api/admin/overview").json()["records"]["total"] == 0

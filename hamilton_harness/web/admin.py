@@ -2,7 +2,9 @@
 
 Every route needs the admin: either the admin token, sent as a bearer token by
 scripts and links, or the cookie set by signing in with the admin email and
-password (see auth.py). The editing itself is done by PackEditor,
+password (see auth.py). A public demo can instead open the dashboard to
+anyone, read-only, showing each visitor only the chats they started. The
+editing itself is done by PackEditor,
 which validates each change, writes it to the pack's own file and rolls it
 back if the pack would no longer load. After a successful edit the running
 rep is reloaded.
@@ -36,6 +38,7 @@ from hamilton_harness.web.auth import (
     FailureCounter,
     SessionSigner,
 )
+from hamilton_harness.web.sessions import VISITOR_COOKIE, Visitors
 
 MAX_LOGO_BYTES = 512_000
 LOGO_EXTENSIONS = {
@@ -86,10 +89,41 @@ def _same_site(request: Request) -> bool:
     return origin.split("://", 1)[-1] == request.headers.get("host", "")
 
 
+READ_ONLY = "This is a read-only demo, so changes are not saved. Run Hamilton yourself to edit."
+
+
+class _Only:
+    """A visitor's own slice of the traces and records, for the public demo."""
+
+    def __init__(self, traces: Any, records: Any, conversation_ids: set[str]) -> None:
+        self._traces, self._records, self._ids = traces, records, conversation_ids
+
+    def conversations(self, limit: int = 50) -> list[dict[str, Any]]:
+        everything = self._traces.conversations(limit=500) if self._traces else []
+        return [c for c in everything if c["id"] in self._ids][:limit]
+
+    def events(self, conversation_id: str) -> list[dict[str, Any]] | None:
+        if conversation_id not in self._ids or not self._traces:
+            return None
+        return self._traces.events(conversation_id)
+
+    def list(self, type_name: str | None = None) -> list[Any]:
+        return [r for r in self._records.list(type_name) if r.conversation_id in self._ids]
+
+
 def install_admin(
-    app: FastAPI, holder: Any, token: str, credentials: Credentials | None = None
+    app: FastAPI,
+    holder: Any,
+    token: str,
+    credentials: Credentials | None = None,
+    *,
+    visitors: Visitors | None = None,
 ) -> None:
-    """Add the dashboard routes to `app`, guarded by `token`, and by a password if given."""
+    """Add the dashboard routes to `app`, guarded by `token`, and by a password if given.
+
+    With `visitors`, the dashboard is a public, read-only demo instead.
+    """
+    demo = visitors is not None
     # Keyed on the token, so changing the token also signs everyone out.
     signer = SessionSigner(hashlib.sha256(f"session:{token}".encode()).hexdigest())
     failures = FailureCounter()
@@ -100,6 +134,8 @@ def install_admin(
         return bool(supplied) and secrets.compare_digest(supplied.encode(), token.encode())
 
     def signed_in(request: Request, authorization: str | None) -> str | None:
+        if demo:
+            return "demo"
         if token_ok(authorization):
             return "token"
         return signer.verify(request.cookies.get(COOKIE)) if credentials else None
@@ -108,6 +144,10 @@ def install_admin(
         who = signed_in(request, authorization)
         if who is None:
             raise HTTPException(status_code=401, detail="sign in to use the dashboard")
+        # Looking and running the fake customers are fine; nothing a visitor does is kept.
+        changes = request.method not in ("GET", "HEAD")
+        if who == "demo" and changes and request.url.path != "/api/admin/sim":
+            raise HTTPException(status_code=403, detail=READ_ONLY)
         # A cookie goes with any request the browser makes, so a change has to come
         # from this site's own pages. A bearer token is only sent on purpose.
         if who != "token" and request.method not in ("GET", "HEAD") and not _same_site(request):
@@ -124,7 +164,13 @@ def install_admin(
                 detail="sign in to use the dashboard",
                 headers={"x-hamilton-password": "on" if credentials else "off"},
             )
-        return {"email": None if who == "token" else who, "password": credentials is not None}
+        if who == "demo":
+            return {"email": None, "password": False, "demo": True}
+        return {
+            "email": None if who == "token" else who,
+            "password": credentials is not None,
+            "demo": False,
+        }
 
     @app.post("/api/admin/session")
     def sign_in(body: SignIn, request: Request, response: Response) -> dict[str, Any]:
@@ -159,6 +205,14 @@ def install_admin(
         return {"signed_out": True}
 
     router = APIRouter(prefix="/api/admin", dependencies=[Depends(require_admin)])
+
+    def visible(request: Request) -> Any:
+        """The traces and records this request may see: all of them, or a visitor's own."""
+        if not demo:
+            return holder.agent.traces, holder.agent.records
+        mine = visitors.conversations(request.cookies.get(VISITOR_COOKIE))
+        only = _Only(holder.agent.traces, holder.agent.records, mine)
+        return only, only
 
     def editor() -> PackEditor:
         return PackEditor(holder.pack.root, on_change=holder.reload)
@@ -251,14 +305,15 @@ def install_admin(
             raise _refuse(error) from error
 
     @router.get("/overview")
-    def get_overview() -> dict[str, Any]:
+    def get_overview(request: Request) -> dict[str, Any]:
         """Counts, a two-week timeline and the latest items, for the dashboard's first screen."""
-        return overview(holder.agent.traces, holder.agent.records)
+        return overview(*visible(request))
 
     @router.get("/records")
-    def list_records(type: str | None = None) -> dict[str, Any]:
+    def list_records(request: Request, type: str | None = None) -> dict[str, Any]:
         """What the rep has taken down: orders, quotation requests and the like."""
-        return {"records": [asdict(record) for record in holder.agent.records.list(type)]}
+        records = visible(request)[1]
+        return {"records": [asdict(record) for record in records.list(type)]}
 
     @router.patch("/records/{record_id}")
     def update_record(record_id: str, change: StatusChange) -> dict[str, Any]:
@@ -268,13 +323,13 @@ def install_admin(
         return asdict(record)
 
     @router.get("/conversations")
-    def conversations() -> dict[str, Any]:
-        traces = holder.agent.traces
+    def conversations(request: Request) -> dict[str, Any]:
+        traces = visible(request)[0]
         return {"conversations": traces.conversations() if traces else []}
 
     @router.get("/conversations/{conversation_id}")
-    def conversation(conversation_id: str) -> dict[str, Any]:
-        traces = holder.agent.traces
+    def conversation(request: Request, conversation_id: str) -> dict[str, Any]:
+        traces = visible(request)[0]
         events = traces.events(conversation_id) if traces else None
         if events is None:
             raise HTTPException(status_code=404, detail="conversation not found")

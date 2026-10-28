@@ -21,11 +21,12 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import secrets
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -34,7 +35,7 @@ from pydantic import BaseModel, Field, field_validator
 from hamilton_harness.pack.schema import Pack
 from hamilton_harness.runtime import Agent, TurnResult
 from hamilton_harness.web.auth import Credentials
-from hamilton_harness.web.sessions import Session, SessionStore
+from hamilton_harness.web.sessions import VISITOR_COOKIE, Session, SessionStore, Visitors
 from hamilton_harness.web.tries import demo_tries
 
 MAX_MESSAGE_CHARS = 2000
@@ -152,17 +153,21 @@ def create_app(
     app_dir: Path = APP_DIR,
     admin_token: str | None = None,
     admin_credentials: Credentials | None = None,
+    admin_demo: bool = False,
     identity_secret: str | None = None,
 ) -> FastAPI:
     """Build the app.
 
     `allow_origins` lists the sites allowed to call the API from their own
     pages. `admin_token` switches the dashboard on, and `admin_credentials`
-    lets people sign in to it with an email and password. `identity_secret` lets a
+    lets people sign in to it with an email and password. `admin_demo` opens a
+    read-only dashboard to anyone, for a public demo, showing each visitor only
+    the chats they started. `identity_secret` lets a
     company's server vouch for a signed-in customer, so the rep remembers them.
     """
     holder = AgentHolder(agent)
     store = sessions or SessionStore()
+    visitors = Visitors() if admin_demo else None
     app = FastAPI(title=f"{agent.pack.persona.company} chat", docs_url=None, redoc_url=None)
     app.state.sessions = store
     app.state.holder = holder
@@ -218,7 +223,9 @@ def create_app(
         )
 
     @app.post("/api/conversations", status_code=201)
-    def start_conversation(who: NewConversation | None = None) -> dict[str, Any]:
+    def start_conversation(
+        request: Request, response: Response, who: NewConversation | None = None
+    ) -> dict[str, Any]:
         customer_id = None
         if who and who.customer_id and identity_secret:
             expected = sign_customer(identity_secret, who.customer_id)
@@ -227,6 +234,17 @@ def create_app(
                 customer_id = who.customer_id
         session = store.create(holder.agent.start(customer_id))
         session.say("rep", holder.pack.widget.greeting)
+        if visitors is not None:
+            visitor = request.cookies.get(VISITOR_COOKIE) or secrets.token_urlsafe(18)
+            visitors.add(visitor, session.conversation.id)
+            response.set_cookie(
+                VISITOR_COOKIE,
+                visitor,
+                max_age=86400,
+                httponly=True,
+                samesite="lax",
+                secure=request.url.scheme == "https",
+            )
         return _public_session(session)
 
     @app.get("/api/conversations/{session_id}")
@@ -297,10 +315,12 @@ def create_app(
     def chat_page() -> FileResponse:
         return app_page()
 
-    if admin_token:
+    if admin_token or admin_demo:
         from hamilton_harness.web.admin import install_admin
 
-        install_admin(app, holder, admin_token, admin_credentials)
+        # A demo dashboard needs no token, but the routes are keyed on one: any will do.
+        token = admin_token or secrets.token_urlsafe(24)
+        install_admin(app, holder, token, admin_credentials, visitors=visitors)
 
     @app.get("/admin", include_in_schema=False)
     def admin_page() -> FileResponse:
