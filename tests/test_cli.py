@@ -173,3 +173,26 @@ def test_serve_admin_switches_the_dashboard_on(tmp_path, monkeypatch):
     headers = {"Authorization": "Bearer tok"}
     assert on.get("/api/admin/pack", headers=headers).status_code == 200
     assert off.get("/api/admin/pack", headers=headers).status_code == 404
+
+
+def test_serve_admin_takes_the_admin_email_and_password(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from hamilton_harness.cli import build_parser, build_web_app
+
+    monkeypatch.setenv("HAMILTON_ADMIN_EMAIL", "owner@shop.com")
+    monkeypatch.setenv("HAMILTON_ADMIN_PASSWORD", "a-long-password")
+    args = ["serve", str(DEMO_PACK), "--offline", "--admin", "--state", str(tmp_path)]
+    client = TestClient(build_web_app(build_parser().parse_args(args)))
+    login = {"email": "owner@shop.com", "password": "a-long-password"}
+    assert client.post("/api/admin/session", json=login).status_code == 200
+    assert client.get("/api/admin/pack").status_code == 200
+
+
+def test_a_short_admin_password_stops_serve_with_a_message(tmp_path, monkeypatch, capsys):
+    from hamilton_harness.cli import main
+
+    monkeypatch.setenv("HAMILTON_ADMIN_PASSWORD", "short")
+    code = main(["serve", str(DEMO_PACK), "--offline", "--admin", "--state", str(tmp_path)])
+    assert code == 2
+    assert "at least 8 characters" in capsys.readouterr().err

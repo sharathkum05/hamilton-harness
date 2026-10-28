@@ -31,6 +31,7 @@ from hamilton_harness.scaffold import write_starter_pack
 from hamilton_harness.sim import load_scenarios, replay_model, run_scenarios
 from hamilton_harness.standin import offline_model
 from hamilton_harness.tools import ToolError, ToolRegistry
+from hamilton_harness.web.auth import AdminLogin, Credentials, admin_login, sign_in_hint
 
 
 def _live_model(pack: Pack) -> Model:
@@ -148,6 +149,13 @@ def admin_token(state: Path) -> str:
     return token
 
 
+def _admin_login(state: Path) -> AdminLogin:
+    try:
+        return admin_login(state)
+    except ValueError as exc:
+        raise PackError(str(exc)) from exc
+
+
 def build_web_app(args: argparse.Namespace):
     """The web app for `serve`, built separately so it can be tested without a server."""
     from hamilton_harness.web.app import create_app
@@ -162,11 +170,16 @@ def build_web_app(args: argparse.Namespace):
         records=FileRecordStore(state / "records.json"),
         trace_dir=state / "traces",
     )
+    login = None
+    if args.admin:
+        email, password, _ = _admin_login(state)
+        login = Credentials.from_password(email, password)
     return create_app(
         agent,
         debug=args.debug,
         allow_origins=args.allow_origin or (),
         admin_token=admin_token(state) if args.admin else None,
+        admin_credentials=login,
         identity_secret=os.environ.get("HAMILTON_IDENTITY_SECRET") or None,
     )
 
@@ -178,9 +191,14 @@ def cmd_serve(args: argparse.Namespace) -> int:
     mode = "offline stand-in model" if args.offline else "live model"
     print(f"Serving the chat widget at http://{args.host}:{args.port} ({mode})", flush=True)
     if args.admin:
+        state = Path(args.state)
+        print(f"Dashboard: http://{args.host}:{args.port}/admin", flush=True)
+        print(f"  {sign_in_hint(_admin_login(state))}", flush=True)
         # The token rides in the URL fragment, which browsers never send to a server.
-        token = admin_token(Path(args.state))
-        print(f"Dashboard: http://{args.host}:{args.port}/admin#token={token}", flush=True)
+        token = admin_token(state)
+        print(
+            f"  or skip signing in: http://{args.host}:{args.port}/admin#token={token}", flush=True
+        )
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
     return 0
 
@@ -201,8 +219,17 @@ def cmd_demo(args: argparse.Namespace) -> int:
         )
     sites = demo.prepare(packs, state, first_port=args.port, keep=args.keep)
     token = admin_token(state)
-    apps = [(demo.build_app(site, live=args.live, admin_token=token), site.port) for site in sites]
-    print(demo.describe(sites, host=args.host, live=args.live, admin_token=token), flush=True)
+    login = _admin_login(state)
+    credentials = Credentials.from_password(login.email, login.password)
+    apps = [
+        (
+            demo.build_app(site, live=args.live, admin_token=token, credentials=credentials),
+            site.port,
+        )
+        for site in sites
+    ]
+    text = demo.describe(sites, host=args.host, live=args.live, admin_token=token, login=login)
+    print(text, flush=True)
     try:
         asyncio.run(demo.serve_all(apps, args.host))
     except KeyboardInterrupt:
