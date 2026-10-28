@@ -8,6 +8,11 @@ and is not published separately yet.
 
 ### Added
 
+- Playwright tests in `e2e/` walk through the demo in a real browser on every
+  push: the harness, each guardrail, the dashboard, an agent over MCP, the chat
+  on an existing HTML and PHP site, and the live deployment.
+- `demo` and `studio` take `--allow-origin`, so an existing website can show
+  the chat.
 - The dashboard's Flow screen draws the harness as the path a message takes,
   with how each stage is set up. A test message runs one turn and marks every
   stage as passed, stopped or not reached.
@@ -61,6 +66,11 @@ and is not published separately yet.
 
 ### Fixed
 
+- The dashboard's live preview starts a new chat after every save, so it shows
+  a changed greeting instead of the one its earlier chat opened with.
+- The integration guide said the script tag needed no set-up. A website on
+  another address must be allowed with `--allow-origin`; the guide says so now.
+- The product page had two main headings.
 - The offline stand-in now picks up dashboard edits, such as a new disclosure
   line, instead of the lines the pack had when the server started.
 
