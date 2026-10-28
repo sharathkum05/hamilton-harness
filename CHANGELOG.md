@@ -8,6 +8,10 @@ and is not published separately yet.
 
 ### Added
 
+- `hamilton-harness studio [DIR]` builds a rep for your own business from
+  blank. It opens the dashboard on a four-step setup (business, knowledge,
+  voice, look) that ends with a live chat and the embed line. Setup can be run
+  again from the sidebar.
 - The dashboard has a sign-in screen: an admin email and password, set with
   `HAMILTON_ADMIN_EMAIL` and `HAMILTON_ADMIN_PASSWORD` or made as a demo login
   and printed when the server starts. Passwords are hashed with scrypt, the
@@ -40,6 +44,9 @@ and is not published separately yet.
   checklist.
 
 ### Fixed
+
+- The offline stand-in now picks up dashboard edits, such as a new disclosure
+  line, instead of the lines the pack had when the server started.
 
 - Notes are now found when the customer uses a plural or spells out a number:
   "two bedrooms" matches a note that says "2 bedroom".
