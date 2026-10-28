@@ -20,6 +20,8 @@ export type Config = {
   disclosure: string
   widget: WidgetSettings
   debug: boolean
+  /** Messages for the demo page to suggest, written from the rep's own pack. */
+  tries: { say: string; why: string }[]
 }
 
 export type TranscriptLine = { from: 'rep' | 'customer'; text: string }
