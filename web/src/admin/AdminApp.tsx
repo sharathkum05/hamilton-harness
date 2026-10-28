@@ -90,6 +90,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ApiError } from '@/lib/api'
+import { forgetConversation } from '@/lib/conversation'
 import { useTheme } from '@/lib/theme'
 import type { Theme } from '@/lib/theme'
 import { cn } from '@/lib/utils'
@@ -376,6 +377,9 @@ export function AdminApp() {
         await work()
         toast.success(label)
         await refresh()
+        // The preview starts a new chat, so it shows the rep as it is now: a chat it
+        // carried on would keep the greeting it opened with.
+        forgetConversation()
         setPreviewKey((key) => key + 1)
         return true
       } catch (error) {

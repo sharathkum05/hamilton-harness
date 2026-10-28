@@ -21,7 +21,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { forgetConversation } from '@/lib/conversation'
 import { cn } from '@/lib/utils'
 
 const STEPS = ['Your business', 'What it knows', 'How it sounds', 'How it looks'] as const
@@ -216,11 +215,7 @@ export function SetupSection({ pack, api, commit, go }: SectionProps) {
 
   const finish = async () => {
     setBusy(true)
-    const saved = await commit(`${rep} is ready`, async () => {
-      await api.setup(answers)
-      // A chat open from before would carry on with the old rep's greeting.
-      forgetConversation()
-    })
+    const saved = await commit(`${rep} is ready`, () => api.setup(answers))
     setBusy(false)
     if (saved) setDone(true)
   }
