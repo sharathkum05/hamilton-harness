@@ -27,8 +27,10 @@ from hamilton_harness.editor import (
     PackEditor,
     dump_yaml,
 )
+from hamilton_harness.flow import STAGES, stages_from_events
 from hamilton_harness.pack import PackError
-from hamilton_harness.records import Status
+from hamilton_harness.records import MemoryRecordStore, Status
+from hamilton_harness.runtime import Agent
 from hamilton_harness.setup import apply_setup, needs_setup, read_answers
 from hamilton_harness.stats import overview
 from hamilton_harness.web.auth import (
@@ -56,6 +58,10 @@ class StatusChange(BaseModel):
 
 class KnowledgeText(BaseModel):
     text: str = Field(max_length=MAX_KNOWLEDGE_CHARS)
+
+
+class FlowMessage(BaseModel):
+    text: str = Field(min_length=1, max_length=2000)
 
 
 class SignIn(BaseModel):
@@ -89,6 +95,8 @@ def _same_site(request: Request) -> bool:
     return origin.split("://", 1)[-1] == request.headers.get("host", "")
 
 
+# Running the fake customers or a test message keeps nothing, so a demo visitor may.
+_SAFE_IN_DEMO = {"/api/admin/sim", "/api/admin/flow/try"}
 READ_ONLY = "This is a read-only demo, so changes are not saved. Run Hamilton yourself to edit."
 
 
@@ -146,7 +154,7 @@ def install_admin(
             raise HTTPException(status_code=401, detail="sign in to use the dashboard")
         # Looking and running the fake customers are fine; nothing a visitor does is kept.
         changes = request.method not in ("GET", "HEAD")
-        if who == "demo" and changes and request.url.path != "/api/admin/sim":
+        if who == "demo" and changes and request.url.path not in _SAFE_IN_DEMO:
             raise HTTPException(status_code=403, detail=READ_ONLY)
         # A cookie goes with any request the browser makes, so a change has to come
         # from this site's own pages. A bearer token is only sent on purpose.
@@ -325,6 +333,24 @@ def install_admin(
             return editor().run_fake_customers()
         except EditError as error:
             raise _refuse(error) from error
+
+    @router.get("/flow")
+    def get_flow() -> dict[str, Any]:
+        """The stages of a turn, in the order they run."""
+        return {"stages": [{"key": k, "name": n, "does": d} for k, n, d in STAGES]}
+
+    @router.post("/flow/try")
+    def try_flow(body: FlowMessage) -> dict[str, Any]:
+        """Send one test message through the rep and say what each stage did with it."""
+        agent = holder.agent
+        # A fresh customer, and orders kept nowhere: a test leaves no trace in the inbox.
+        trial = Agent(agent.pack, agent.model, records=MemoryRecordStore(), retry_wait=0)
+        result = trial.respond(trial.start(), body.text)
+        events = [{"kind": e.kind, **e.data} for e in result.events]
+        return {
+            "stages": stages_from_events(events, agent.pack),
+            "bubbles": [bubble.text for bubble in result.bubbles],
+        }
 
     @router.get("/overview")
     def get_overview(request: Request) -> dict[str, Any]:
