@@ -10,6 +10,7 @@ rep is reloaded.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import secrets
 from dataclasses import asdict
@@ -90,7 +91,7 @@ def install_admin(
 ) -> None:
     """Add the dashboard routes to `app`, guarded by `token`, and by a password if given."""
     # Keyed on the token, so changing the token also signs everyone out.
-    signer = SessionSigner(f"session:{token}")
+    signer = SessionSigner(hashlib.sha256(f"session:{token}".encode()).hexdigest())
     failures = FailureCounter()
 
     def token_ok(authorization: str | None) -> bool:

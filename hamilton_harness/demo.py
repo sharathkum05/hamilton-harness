@@ -22,6 +22,7 @@ from hamilton_harness.pack import Pack, PackError, load_pack
 from hamilton_harness.records import FileRecordStore
 from hamilton_harness.runtime import Agent
 from hamilton_harness.standin import offline_model
+from hamilton_harness.web.auth import AdminLogin, Credentials, sign_in_hint
 
 # Written into every folder a demo creates. A folder without it is never deleted.
 MARKER = ".hamilton-demo"
@@ -82,7 +83,9 @@ def prepare(packs: list[Path], state: Path, *, first_port: int, keep: bool) -> l
     return sites
 
 
-def build_app(site: DemoSite, *, live: bool, admin_token: str) -> FastAPI:
+def build_app(
+    site: DemoSite, *, live: bool, admin_token: str, credentials: Credentials | None = None
+) -> FastAPI:
     from hamilton_harness.web.app import create_app
 
     model: Model = AnthropicModel(site.pack.model) if live else offline_model(site.pack)
@@ -93,7 +96,7 @@ def build_app(site: DemoSite, *, live: bool, admin_token: str) -> FastAPI:
         records=FileRecordStore(site.folder / "records.json"),
         trace_dir=site.folder / "traces",
     )
-    return create_app(agent, debug=True, admin_token=admin_token)
+    return create_app(agent, debug=True, admin_token=admin_token, admin_credentials=credentials)
 
 
 def busy_ports(host: str, ports: list[int]) -> list[int]:
@@ -109,7 +112,14 @@ def busy_ports(host: str, ports: list[int]) -> list[int]:
     return busy
 
 
-def describe(sites: list[DemoSite], *, host: str, live: bool, admin_token: str) -> str:
+def describe(
+    sites: list[DemoSite],
+    *,
+    host: str,
+    live: bool,
+    admin_token: str,
+    login: AdminLogin | None = None,
+) -> str:
     """What to print once the servers are up: every rep, and where to find each page."""
     mode = "the real model" if live else "a stand-in for the model, no API key"
     rows = [
@@ -129,8 +139,11 @@ def describe(sites: list[DemoSite], *, host: str, live: bool, admin_token: str) 
         "  /example   a plain website with the chat embedded by one line",
         "  /admin     the dashboard",
         "",
-        "Dashboards:",
     ]
+    if login is not None:
+        # Cookies are kept per host, not per port, so one sign-in covers every rep here.
+        lines += [f"Dashboard: {sign_in_hint(login)}", ""]
+    lines.append("Dashboards, already signed in:" if login else "Dashboards:")
     for company, _, site in rows:
         lines.append(
             f"  {company:<{company_width}}  http://{host}:{site.port}/admin#token={admin_token}"

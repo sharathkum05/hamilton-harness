@@ -151,6 +151,15 @@ def test_describe_lists_every_rep_and_dashboard(sites):
     assert "/example" in text
 
 
+def test_describe_says_how_to_sign_in(sites):
+    from hamilton_harness.web.auth import AdminLogin
+
+    login = AdminLogin("admin@hamilton.local", "pw-shown-once", False)
+    text = demo.describe(sites, host="127.0.0.1", live=False, admin_token=TOKEN, login=login)
+    assert "sign in as admin@hamilton.local, password: pw-shown-once" in text
+    assert "Dashboards, already signed in:" in text
+
+
 def test_describe_says_when_the_real_model_is_used(sites):
     assert "using the real model" in demo.describe(
         sites[:1], host="127.0.0.1", live=True, admin_token=TOKEN
