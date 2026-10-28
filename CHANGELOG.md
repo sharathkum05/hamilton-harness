@@ -8,6 +8,13 @@ and is not published separately yet.
 
 ### Added
 
+- The dashboard's Flow screen draws the harness as the path a message takes,
+  with how each stage is set up. A test message runs one turn and marks every
+  stage as passed, stopped or not reached.
+- Tools that call a company's web API, set up on the dashboard's Tools screen
+  with no code. Secrets come from `TOOL_` environment variables, calls go only
+  to public addresses and never follow redirects. Any tool can be tried from
+  the dashboard.
 - The hosted demo's dashboard is open to anyone, read-only. Each visitor sees
   only the chats and orders they made; saving is refused.
 - The demo page's "Things to try" come from the rep's own fake customers and
