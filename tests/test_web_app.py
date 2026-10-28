@@ -246,3 +246,39 @@ def test_the_example_site_fills_itself_in_as_text_only(client):
     # Pack values reach the page through textContent, never innerHTML.
     assert "innerHTML" not in page
     assert "textContent" in page
+
+
+def test_the_demo_suggestions_come_from_the_rep_s_own_pack(pack):
+    from hamilton_harness.llm import ScriptedModel
+    from hamilton_harness.runtime import Agent
+    from hamilton_harness.web.app import create_app
+
+    agent = Agent(pack, ScriptedModel([]), retry_wait=0)
+    inspected = TestClient(create_app(agent, debug=True)).get("/api/config").json()["tries"]
+    says = [t["say"] for t in inspected]
+    assert "what is 348 * 12" in says
+    assert len(inspected) <= 8 and len(set(says)) == len(says)
+    whys = " ".join(t["why"] for t in inspected)
+    assert "turned away in code" in whys and "the guard blocks it" in whys
+    assert "Takes down an order" in whys
+
+    # Without the inspector the tests stay private: openers and the checks every rep has.
+    plain = TestClient(create_app(agent)).get("/api/config").json()["tries"]
+    assert [t["say"] for t in plain][: len(pack.widget.suggestions)] == pack.widget.suggestions
+    assert {"Are you a real person?", "Can I talk to a person?"} <= {t["say"] for t in plain}
+
+
+def test_a_new_rep_gets_suggestions_of_its_own(tmp_path):
+    from hamilton_harness.pack import load_pack
+    from hamilton_harness.scaffold import write_starter_pack
+    from hamilton_harness.web.tries import demo_tries
+
+    write_starter_pack(tmp_path / "acme", company="Acme Tools", rep="Jo")
+    tries = demo_tries(load_pack(tmp_path / "acme"), from_tests=True)
+    text = " ".join(t["say"] + " " + t["why"] for t in tries)
+    assert "LS-4471" not in text
+    assert "Takes down an enquiry for the team." in text
+    assert "Are you a real person?" in text
+    # The opener a fake customer already asks is not suggested twice.
+    assert text.lower().count("what are your opening hours?") == 1
+    assert "Can someone contact me?" in text

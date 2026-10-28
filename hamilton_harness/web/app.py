@@ -35,6 +35,7 @@ from hamilton_harness.pack.schema import Pack
 from hamilton_harness.runtime import Agent, TurnResult
 from hamilton_harness.web.auth import Credentials
 from hamilton_harness.web.sessions import Session, SessionStore
+from hamilton_harness.web.tries import demo_tries
 
 MAX_MESSAGE_CHARS = 2000
 STATIC_DIR = Path(__file__).parent / "static"
@@ -197,6 +198,8 @@ def create_app(
             "disclosure": "AI assistant",
             "widget": settings,
             "debug": debug,
+            # With the inspector on, these come from the pack's fake customers.
+            "tries": demo_tries(pack, from_tests=debug),
         }
 
     @app.get("/brand/logo", include_in_schema=False)
