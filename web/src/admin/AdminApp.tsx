@@ -278,6 +278,7 @@ export function AdminApp() {
   const [token, setToken] = useState(loadToken)
   const [status, setStatus] = useState<'checking' | 'signed-out' | 'signed-in' | 'off'>('checking')
   const [email, setEmail] = useState<string | null>(null)
+  const [demo, setDemo] = useState(false)
   const [pack, setPack] = useState<Pack | null>(null)
   const [rejected, setRejected] = useState(false)
   const [section, setSection] = useState(() => window.location.hash.slice(1) || 'overview')
@@ -294,6 +295,7 @@ export function AdminApp() {
     try {
       const session = await getSession(token)
       setEmail(session.email)
+      setDemo(session.demo)
       setStatus('signed-in')
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
@@ -515,17 +517,19 @@ export function AdminApp() {
                   </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Sign out" onClick={leave}>
-                  <LogOutIcon />
-                  <span className="grid min-w-0 text-left leading-tight">
-                    <span>Sign out</span>
-                    {email && (
-                      <span className="text-muted-foreground truncate text-xs">{email}</span>
-                    )}
-                  </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {!demo && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Sign out" onClick={leave}>
+                    <LogOutIcon />
+                    <span className="grid min-w-0 text-left leading-tight">
+                      <span>Sign out</span>
+                      {email && (
+                        <span className="text-muted-foreground truncate text-xs">{email}</span>
+                      )}
+                    </span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarFooter>
           <SidebarRail />
@@ -552,6 +556,14 @@ export function AdminApp() {
                 </span>
                 Rep is live
               </span>
+              {demo && (
+                <span
+                  title="Look around and run the fake customers. Changes are not saved here."
+                  className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs whitespace-nowrap text-amber-700 dark:text-amber-300"
+                >
+                  Read-only demo
+                </span>
+              )}
               <Button
                 variant="outline"
                 size="sm"

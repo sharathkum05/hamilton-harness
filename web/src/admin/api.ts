@@ -180,7 +180,8 @@ export type SetupAnswers = {
   accent: string
 }
 
-export type AdminSession = { email: string | null; password: boolean }
+// `demo`: the public, read-only dashboard of the hosted demo, open to anyone.
+export type AdminSession = { email: string | null; password: boolean; demo: boolean }
 
 export const getSession = (token: string) => request<AdminSession>('/api/admin/session', { token })
 export const signIn = (email: string, password: string) =>
