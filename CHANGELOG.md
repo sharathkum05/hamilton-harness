@@ -8,6 +8,10 @@ and is not published separately yet.
 
 ### Added
 
+- The hosted demo's dashboard is open to anyone, read-only. Each visitor sees
+  only the chats and orders they made; saving is refused.
+- The demo page's "Things to try" come from the rep's own fake customers and
+  openers, so a new rep gets suggestions of its own.
 - `HAMILTON_DATABASE_URL` keeps a served rep's orders, customer memory and
   conversations in Postgres, such as Supabase, instead of the state folder.
   Tables go in their own `hamilton` schema, off Supabase's public API, and
