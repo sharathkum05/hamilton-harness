@@ -42,9 +42,12 @@ shows the failure.
 
 ## If you run this yourself
 
-- **Keep the dashboard token secret.** It is the only thing protecting
-  `/api/admin`. Set `HAMILTON_ADMIN_TOKEN`, or let the server create one in
-  its state folder, and serve the dashboard over HTTPS.
+- **Set your own dashboard login.** `/api/admin` takes either the admin token
+  or a sign-in with `HAMILTON_ADMIN_EMAIL` and `HAMILTON_ADMIN_PASSWORD`.
+  Without them the server makes a demo login and a token in its state folder,
+  which is fine on your own machine and not for a server others can reach.
+  Keep both secret and serve the dashboard over HTTPS, so the sign-in cookie
+  is marked secure.
 - **Handlers are your code.** A pack's `handlers.py` runs with the server's
   permissions. Only load packs you trust, and treat every argument as coming
   from a customer: the schema and the policy guard run first, but a handler
