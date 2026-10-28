@@ -157,6 +157,21 @@ hamilton-harness serve packs/loop-sneakers --offline --debug --admin
 | `/widget.js` | The embed script: one tag puts the chat on any site |
 | `/example` | A plain example website with the chat embedded by that one tag |
 
+### Build your own
+
+To make a rep for your own business, start the studio. It makes a blank rep,
+starts the server and prints the dashboard's address and sign-in:
+
+```bash
+hamilton-harness studio my-assistant
+```
+
+Sign in and the setup opens: four short steps for the business, what the rep
+knows, how it sounds and how it looks. At the end the rep is live, with the
+chat to try and the one line for your website. It answers from your notes on
+a stand-in until `ANTHROPIC_API_KEY` is set, and then on the real model.
+Everything is saved as plain files in `my-assistant/`, so it can go in Git.
+
 ### Signing in to the dashboard
 
 `--admin` prints an email and a password to sign in with at `/admin`. Without
