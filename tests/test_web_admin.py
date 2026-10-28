@@ -304,3 +304,41 @@ def test_without_credentials_only_the_token_signs_in(client):
     refused = client.post("/api/admin/session", json={"email": EMAIL, "password": PASSWORD})
     assert refused.status_code == 400
     assert client.get("/api/admin/session").headers["x-hamilton-password"] == "off"
+
+
+def test_setup_from_the_dashboard_rebuilds_the_running_rep(tmp_path):
+    from hamilton_harness.scaffold import write_starter_pack
+    from hamilton_harness.setup import mark_pending
+    from hamilton_harness.standin import NotesModel
+
+    root = tmp_path / "assistant"
+    write_starter_pack(root, company="Your company", rep="Sam")
+    mark_pending(root)
+    pack = load_pack(root)
+    client = TestClient(create_app(Agent(pack, NotesModel(pack), retry_wait=0), admin_token=TOKEN))
+    assert client.get("/api/admin/pack", headers=AUTH).json()["setup_pending"] is True
+
+    answers = {
+        "company": "Bloom Florists",
+        "rep": "Ivy",
+        "knowledge": "## Delivery\nWe deliver across Chennai for ₹150, same day before 2 pm.",
+    }
+    assert client.post("/api/admin/setup", headers=AUTH, json=answers).status_code == 200
+    assert client.get("/api/admin/pack", headers=AUTH).json()["setup_pending"] is False
+    assert client.get("/api/config").json()["rep"]["company"] == "Bloom Florists"
+
+    session = client.post("/api/conversations").json()["id"]
+    reply = client.post(
+        f"/api/conversations/{session}/messages", json={"text": "do you deliver in chennai?"}
+    ).json()
+    assert "₹150" in reply["bubbles"][0]["text"]
+    bot = client.post(f"/api/conversations/{session}/messages", json={"text": "are you a bot?"})
+    assert "Ivy" in bot.json()["bubbles"][0]["text"]
+
+
+def test_a_bad_setup_answer_is_explained(client):
+    refused = client.post(
+        "/api/admin/setup", headers=AUTH, json={"company": "Acme", "rep": "Jo", "accent": "pink"}
+    )
+    assert refused.status_code == 422
+    assert "hex colour" in refused.json()["detail"]

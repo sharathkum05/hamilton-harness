@@ -27,7 +27,9 @@ from hamilton_harness.editor import (
     list_conversations,
     read_conversation,
 )
+from hamilton_harness.pack import PackError
 from hamilton_harness.records import Status
+from hamilton_harness.setup import apply_setup, needs_setup, read_answers
 from hamilton_harness.stats import overview
 from hamilton_harness.web.auth import (
     COOKIE,
@@ -165,7 +167,17 @@ def install_admin(
 
     @router.get("/pack")
     def get_pack() -> dict[str, Any]:
-        return editor().overview()
+        return {**editor().overview(), "setup_pending": needs_setup(holder.pack.root)}
+
+    @router.post("/setup")
+    def run_setup(answers: dict[str, Any]) -> dict[str, Any]:
+        """Rebuild the rep from the setup answers. Everything but the logo starts again."""
+        try:
+            apply_setup(holder.pack.root, read_answers(answers))
+        except PackError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        holder.reload()
+        return {"saved": "setup"}
 
     @router.put("/pack/policies")
     def put_policies(rules: list[dict[str, Any]]) -> dict[str, Any]:
