@@ -278,14 +278,14 @@ export function Landing() {
       {/* A floating glass bar over the page, with the content fading out beneath it. */}
       <div className="scroll-edge" aria-hidden="true" />
       <header className="sticky top-3 z-40 px-3">
-        <div className="glass mx-auto flex h-13 max-w-3xl items-center justify-between gap-4 rounded-full px-2 pl-5">
+        <div className="glass mx-auto flex h-13 max-w-4xl items-center justify-between gap-4 rounded-full px-2 pl-5">
           <a href="/" className="font-heading flex items-center gap-2 text-lg">
             <BrandMark />
             Hamilton
           </a>
           <nav
             aria-label="Page sections"
-            className="text-foreground/75 hidden items-center gap-0.5 text-sm md:flex"
+            className="text-foreground/75 hidden items-center gap-0.5 text-sm whitespace-nowrap lg:flex"
           >
             <a
               className="hover:text-foreground hover:bg-foreground/[0.07] rounded-full px-3 py-1.5 transition-colors"
@@ -318,11 +318,16 @@ export function Landing() {
               Install
             </a>
           </nav>
-          <Button asChild size="sm" className="rounded-full">
-            <a href="/demo">
-              Try the demo <ArrowUpRightIcon />
-            </a>
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="sm" className="rounded-full">
+              <a href="/admin">Admin</a>
+            </Button>
+            <Button asChild size="sm" className="rounded-full">
+              <a href="/demo">
+                Try the demo <ArrowUpRightIcon />
+              </a>
+            </Button>
+          </div>
         </div>
       </header>
 
