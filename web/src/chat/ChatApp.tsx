@@ -24,6 +24,11 @@ function remembered(): string | null {
   }
 }
 
+/** Start the next chat afresh, for when the rep it would continue has been rebuilt. */
+export function forgetConversation() {
+  remember(null)
+}
+
 function remember(id: string | null) {
   try {
     if (id) sessionStorage.setItem(STORAGE_KEY, id)
