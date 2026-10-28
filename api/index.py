@@ -3,8 +3,9 @@
 It serves the product page, the demo and the chat for the Loop Sneakers pack on
 the pack's stand-in model, so it needs no API key. Vercel's functions keep
 nothing between restarts and can only write to /tmp, so conversations, orders
-and traces here are temporary and the dashboard, which edits the pack on disk,
-is left switched off. Run the server yourself for the real thing.
+and traces here are temporary. The dashboard is open to anyone, read-only: each
+visitor sees the chats and orders they made themselves and nobody else's, and
+saving is refused. Run the server yourself for the real thing.
 """
 
 import os
@@ -32,4 +33,4 @@ agent = Agent(
     trace_dir=STATE / "traces",
 )
 # debug=True switches on the inspector, which is the point of the demo.
-app = create_app(agent, debug=True)
+app = create_app(agent, debug=True, admin_demo=True)
