@@ -56,5 +56,7 @@ shows the failure.
   your site to the chat, so they are signed. See
   [docs/integrate.md](docs/integrate.md).
 - **Restrict who may embed the chat** with `--allow-origin`.
-- **Conversations are stored in plain files** in the state folder. Put that
-  folder somewhere that suits what your customers will type into the chat.
+- **Conversations are stored in plain files** in the state folder, or in
+  Postgres when `HAMILTON_DATABASE_URL` is set. Put either somewhere that suits
+  what your customers will type into the chat. On Supabase, keep the `hamilton`
+  schema off the public API; see [docs/supabase.md](docs/supabase.md).
