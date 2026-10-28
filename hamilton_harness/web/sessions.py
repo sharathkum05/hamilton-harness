@@ -79,3 +79,31 @@ class SessionStore:
             session.last_seen = self._clock()
             self._sessions.move_to_end(session_id)
             return session
+
+
+VISITOR_COOKIE = "hamilton_visitor"
+
+
+class Visitors:
+    """Which conversations each browser started.
+
+    A public demo's dashboard shows each visitor only their own chats and
+    orders, never what someone else typed. Kept in memory, oldest forgotten
+    first, like the sessions themselves.
+    """
+
+    def __init__(self, *, max_visitors: int = 2000) -> None:
+        self._seen: OrderedDict[str, set[str]] = OrderedDict()
+        self._max = max_visitors
+        self._lock = threading.Lock()
+
+    def add(self, visitor: str, conversation_id: str) -> None:
+        with self._lock:
+            self._seen.setdefault(visitor, set()).add(conversation_id)
+            self._seen.move_to_end(visitor)
+            while len(self._seen) > self._max:
+                self._seen.popitem(last=False)
+
+    def conversations(self, visitor: str | None) -> set[str]:
+        with self._lock:
+            return set(self._seen.get(visitor or "", set()))
