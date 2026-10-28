@@ -7,6 +7,7 @@
 node_modules
 web/node_modules
 packages
+e2e
 # Only the repository's own tests: a pack's fake customers feed the demo's suggestions.
 /tests
 docs
