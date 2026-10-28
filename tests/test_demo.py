@@ -220,3 +220,14 @@ def test_live_needs_an_api_key(tmp_path, monkeypatch, capsys):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     assert main(["demo", "--live", "--state", str(tmp_path / "s")]) == 2
     assert "ANTHROPIC_API_KEY" in capsys.readouterr().err
+
+
+def test_the_demo_lets_a_listed_site_embed_the_chat(sites):
+    app = demo.build_app(
+        sites[0], live=False, admin_token=TOKEN, allow_origins=["https://shop.example"]
+    )
+    client = TestClient(app)
+    allowed = client.get("/api/config", headers={"Origin": "https://shop.example"})
+    assert allowed.headers["access-control-allow-origin"] == "https://shop.example"
+    other = client.get("/api/config", headers={"Origin": "https://elsewhere.example"})
+    assert "access-control-allow-origin" not in other.headers

@@ -224,7 +224,13 @@ def cmd_demo(args: argparse.Namespace) -> int:
     credentials = Credentials.from_password(login.email, login.password)
     apps = [
         (
-            demo.build_app(site, live=args.live, admin_token=token, credentials=credentials),
+            demo.build_app(
+                site,
+                live=args.live,
+                admin_token=token,
+                credentials=credentials,
+                allow_origins=args.allow_origin or (),
+            ),
             site.port,
         )
         for site in sites
@@ -345,6 +351,9 @@ def build_parser() -> argparse.ArgumentParser:
     demo.add_argument("--live", action="store_true", help="use the real model, not a stand-in")
     demo.add_argument("--keep", action="store_true", help="keep edits and chats from last time")
     demo.add_argument("--state", default=".hamilton/demo", help="where the copies are kept")
+    demo.add_argument(
+        "--allow-origin", action="append", metavar="URL", help="site allowed to embed the chat"
+    )
     demo.set_defaults(run=cmd_demo)
 
     studio = commands.add_parser("studio", help="build your own rep in the dashboard")
@@ -357,7 +366,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--offline", action="store_true", help="use the stand-in even if an API key is set"
     )
     studio.add_argument("--state", default=".hamilton", help="where chats and the login are kept")
-    studio.set_defaults(run=cmd_studio, admin=True, debug=True, allow_origin=None)
+    studio.add_argument(
+        "--allow-origin", action="append", metavar="URL", help="site allowed to embed the chat"
+    )
+    studio.set_defaults(run=cmd_studio, admin=True, debug=True)
 
     mcp = commands.add_parser("mcp", help="let Claude manage the pack over MCP")
     mcp.add_argument("pack")

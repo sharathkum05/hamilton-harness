@@ -12,6 +12,7 @@ import asyncio
 import os
 import shutil
 import socket
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -85,7 +86,12 @@ def prepare(packs: list[Path], state: Path, *, first_port: int, keep: bool) -> l
 
 
 def build_app(
-    site: DemoSite, *, live: bool, admin_token: str, credentials: Credentials | None = None
+    site: DemoSite,
+    *,
+    live: bool,
+    admin_token: str,
+    credentials: Credentials | None = None,
+    allow_origins: Sequence[str] = (),
 ) -> FastAPI:
     from hamilton_harness.web.app import create_app
 
@@ -100,6 +106,7 @@ def build_app(
     return create_app(
         agent,
         debug=True,
+        allow_origins=allow_origins,
         admin_token=admin_token,
         admin_credentials=credentials,
         # So a site that signs its customers in, such as the PHP example, can be shown too.
