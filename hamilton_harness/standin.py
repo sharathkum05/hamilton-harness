@@ -62,6 +62,10 @@ class NotesModel:
     def __init__(self, pack: Pack) -> None:
         self._pack = pack
 
+    def for_pack(self, pack: Pack) -> NotesModel:
+        """The stand-in for an edited pack, so it gives the pack's new lines."""
+        return NotesModel(pack)
+
     def complete(
         self, *, system: str, messages: list[dict[str, Any]], tools: list[dict[str, Any]]
     ) -> ModelResponse:

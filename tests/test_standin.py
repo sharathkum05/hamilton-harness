@@ -86,3 +86,11 @@ def test_a_new_starter_pack_runs_offline(tmp_path):
     pack = load_pack(tmp_path / "acme")
     (turn,) = chat(pack, "what are your opening hours?")
     assert "9 am to 6 pm" in turn.text
+
+
+def test_an_edited_pack_gets_a_stand_in_with_its_new_lines(dental):
+    agent = Agent(dental, NotesModel(dental), retry_wait=0)
+    persona = dental.persona.model_copy(update={"disclosure": "I'm Asha, a brand new AI."})
+    edited = agent.with_pack(dental.model_copy(update={"persona": persona}))
+    reply = edited.respond(edited.start(), "am I talking to a bot?")
+    assert reply.bubbles[0].text == "I'm Asha, a brand new AI."

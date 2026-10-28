@@ -114,9 +114,11 @@ class Agent:
 
     def with_pack(self, pack: Pack) -> Agent:
         """The same agent on a different pack, for when a pack is edited while serving."""
+        # A model built from the pack, such as the notes stand-in, is rebuilt from the new one.
+        for_pack = getattr(self.model, "for_pack", None)
         return Agent(
             pack,
-            self.model,
+            for_pack(pack) if callable(for_pack) else self.model,
             store=self.store,
             records=self.records,
             trace_dir=self.trace_dir,
