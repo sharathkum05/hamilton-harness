@@ -15,3 +15,5 @@ web/node_modules/
 hamilton_harness/web/static/app/
 skills-lock.json
 .vercel
+# What `hamilton-harness studio` builds by default.
+/my-assistant/
