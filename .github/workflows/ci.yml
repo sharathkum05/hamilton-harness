@@ -11,6 +11,20 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.11", "3.13"]
+    services:
+      # The database tests run on SQLite everywhere and on this Postgres here.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: hamilton
+          POSTGRES_PASSWORD: hamilton
+          POSTGRES_DB: hamilton_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U hamilton"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -23,6 +37,8 @@ jobs:
           ruff check .
           ruff format --check .
       - name: Unit tests
+        env:
+          HAMILTON_TEST_DATABASE_URL: postgresql://hamilton:hamilton@localhost:5432/hamilton_test
         run: pytest -q
       - name: Pack warnings
         # A demo pack whose own lines break its own rules fails the build.
