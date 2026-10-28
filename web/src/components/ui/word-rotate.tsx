@@ -37,13 +37,14 @@ export function WordRotate({
   return (
     <div className="overflow-hidden py-2">
       <AnimatePresence mode="wait">
-        <motion.h1
+        {/* A span, not a heading: the rotating word sits inside a sentence. */}
+        <motion.span
           key={words[index]}
           className={cn(className)}
           {...motionProps}
         >
           {words[index]}
-        </motion.h1>
+        </motion.span>
       </AnimatePresence>
     </div>
   )
