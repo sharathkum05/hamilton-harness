@@ -2,7 +2,7 @@
 // navigation that collapses to icons, a command menu, a theme switcher, the
 // open section with its unsaved-changes bar, and a live preview of the chat.
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ComponentType } from 'react'
 import {
   BookOpenIcon,
@@ -24,6 +24,7 @@ import {
   SunIcon,
   TargetIcon,
   UserRoundCheckIcon,
+  WandSparklesIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -35,6 +36,7 @@ import { InboxSection } from '@/admin/inbox'
 import { ConversationsSection } from '@/admin/conversations'
 import { InstallSection, TestSection } from '@/admin/more'
 import { OverviewSection } from '@/admin/overview'
+import { SetupSection } from '@/admin/setup'
 import {
   BrandSection,
   HandoffSection,
@@ -116,6 +118,7 @@ const GROUPS: [string, Entry[]][] = [
     [
       ['test', 'Test', FlaskConicalIcon, TestSection],
       ['install', 'Install', CodeIcon, InstallSection],
+      ['setup', 'Setup', WandSparklesIcon, SetupSection],
     ],
   ],
 ]
@@ -380,6 +383,14 @@ export function AdminApp() {
     setSection(key)
     history.replaceState(null, '', `#${key}`)
   }, [])
+
+  // A blank rep from `hamilton-harness studio` opens on its setup, once.
+  const openedSetup = useRef(false)
+  useEffect(() => {
+    if (!pack || openedSetup.current) return
+    openedSetup.current = true
+    if (pack.setup_pending) go('setup')
+  }, [pack, go])
 
   // Remounting the section throws its edits away and starts again from the saved pack.
   const discard = useCallback(() => setFormKey((key) => key + 1), [])
