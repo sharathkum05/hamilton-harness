@@ -9,34 +9,12 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { ApiError, getConfig, getConversation, sendMessage, startConversation } from '@/lib/api'
 import type { Config, ConversationState, Identity, TranscriptLine } from '@/lib/api'
 import { applyBrand } from '@/lib/brand'
+import { remember, remembered } from '@/lib/conversation'
 
-const STORAGE_KEY = 'hamilton:conversation'
 // When the panel runs inside the embed script's iframe, it reports to the page.
 const embedded = window.parent !== window
 // Shown inside a page rather than behind a launcher, so there is nothing to close.
 const inline = new URLSearchParams(window.location.search).has('inline')
-
-function remembered(): string | null {
-  try {
-    return sessionStorage.getItem(STORAGE_KEY)
-  } catch {
-    return null
-  }
-}
-
-/** Start the next chat afresh, for when the rep it would continue has been rebuilt. */
-export function forgetConversation() {
-  remember(null)
-}
-
-function remember(id: string | null) {
-  try {
-    if (id) sessionStorage.setItem(STORAGE_KEY, id)
-    else sessionStorage.removeItem(STORAGE_KEY)
-  } catch {
-    /* a private window may refuse storage; the chat still works for this view */
-  }
-}
 
 /** The embed script passes a signed-in customer in the URL fragment, which is never sent to a server. */
 function identityFromHash(): Identity | null {

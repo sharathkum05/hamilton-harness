@@ -15,13 +15,13 @@ import {
 import type { SetupAnswers, Tone } from '@/admin/api'
 import { Field, ROWS, Section, StackField, Toggle } from '@/admin/fields'
 import { Snippet } from '@/admin/more'
-import { forgetConversation } from '@/chat/ChatApp'
 import type { SectionProps } from '@/admin/sections'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { forgetConversation } from '@/lib/conversation'
 import { cn } from '@/lib/utils'
 
 const STEPS = ['Your business', 'What it knows', 'How it sounds', 'How it looks'] as const
@@ -194,6 +194,8 @@ export function SetupSection({ pack, api, commit, go }: SectionProps) {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const file = useRef<HTMLInputElement>(null)
+  // Bumped on each upload: the logo keeps its file name, so the browser must be told it changed.
+  const [logoVersion, setLogoVersion] = useState(0)
 
   const set = (changes: Partial<SetupAnswers>) => setAnswers((now) => ({ ...now, ...changes }))
   const company = answers.company.trim() || 'your company'
@@ -440,7 +442,7 @@ export function SetupSection({ pack, api, commit, go }: SectionProps) {
               <div className="bg-muted ring-border flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1">
                 {pack.widget.logo ? (
                   <img
-                    src={`/brand/logo?v=${encodeURIComponent(pack.widget.logo)}-${Date.now()}`}
+                    src={`/brand/logo?v=${encodeURIComponent(pack.widget.logo)}-${logoVersion}`}
                     alt="Current logo"
                     className="size-full object-cover"
                   />
@@ -455,7 +457,10 @@ export function SetupSection({ pack, api, commit, go }: SectionProps) {
                 className="hidden"
                 onChange={(e) => {
                   const chosen = e.target.files?.[0]
-                  if (chosen) commit('Logo uploaded', () => api.uploadLogo(chosen))
+                  if (chosen)
+                    commit('Logo uploaded', () => api.uploadLogo(chosen)).then(() =>
+                      setLogoVersion((version) => version + 1),
+                    )
                   e.target.value = ''
                 }}
               />
