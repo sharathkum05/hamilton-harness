@@ -13,13 +13,18 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import os
 import secrets
 import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
+from typing import NamedTuple
 
 COOKIE = "hamilton_admin"
+DEMO_EMAIL = "admin@hamilton.local"
+MIN_PASSWORD = 8
 SESSION_SECONDS = 12 * 3600
 MAX_FAILURES = 10
 FAILURE_WINDOW = 15 * 60
@@ -71,6 +76,42 @@ class Credentials:
         return password_ok and hmac.compare_digest(
             email.strip().lower().encode(), self.email.encode()
         )
+
+
+class AdminLogin(NamedTuple):
+    email: str
+    password: str
+    # A password from the environment is never printed: whoever set it knows it.
+    from_env: bool
+
+
+def admin_login(state: Path) -> AdminLogin:
+    """The dashboard's email and password.
+
+    HAMILTON_ADMIN_EMAIL and HAMILTON_ADMIN_PASSWORD set your own. Without a
+    password there, a demo one is made once and kept, readable only by you, in
+    the state folder.
+    """
+    email = os.environ.get("HAMILTON_ADMIN_EMAIL", "").strip().lower() or DEMO_EMAIL
+    from_env = os.environ.get("HAMILTON_ADMIN_PASSWORD", "")
+    if from_env:
+        if len(from_env) < MIN_PASSWORD:
+            raise ValueError(f"HAMILTON_ADMIN_PASSWORD must be at least {MIN_PASSWORD} characters")
+        return AdminLogin(email, from_env, True)
+    path = state / "admin-password"
+    if path.exists():
+        return AdminLogin(email, path.read_text(encoding="utf-8").strip(), False)
+    state.mkdir(parents=True, exist_ok=True)
+    password = secrets.token_urlsafe(12)
+    path.write_text(password, encoding="utf-8")
+    path.chmod(0o600)
+    return AdminLogin(email, password, False)
+
+
+def sign_in_hint(login: AdminLogin) -> str:
+    """One line telling the person at the terminal how to sign in."""
+    password = "the password in HAMILTON_ADMIN_PASSWORD" if login.from_env else login.password
+    return f"sign in as {login.email}, password: {password}"
 
 
 class SessionSigner:

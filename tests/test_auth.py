@@ -74,3 +74,29 @@ def test_a_successful_sign_in_clears_the_count():
     counter.clear("a")
     counter.fail("a")
     assert not counter.blocked("a")
+
+
+def test_a_demo_login_is_made_once_and_kept_private(tmp_path, monkeypatch):
+    from hamilton_harness.web.auth import DEMO_EMAIL, admin_login, sign_in_hint
+
+    monkeypatch.delenv("HAMILTON_ADMIN_EMAIL", raising=False)
+    monkeypatch.delenv("HAMILTON_ADMIN_PASSWORD", raising=False)
+    first = admin_login(tmp_path)
+    assert first.email == DEMO_EMAIL and len(first.password) >= 12 and not first.from_env
+    assert admin_login(tmp_path) == first
+    assert (tmp_path / "admin-password").stat().st_mode & 0o077 == 0
+    assert first.password in sign_in_hint(first)
+
+
+def test_a_login_from_the_environment_wins_and_is_never_printed(tmp_path, monkeypatch):
+    from hamilton_harness.web.auth import admin_login, sign_in_hint
+
+    monkeypatch.setenv("HAMILTON_ADMIN_EMAIL", "Owner@Shop.com")
+    monkeypatch.setenv("HAMILTON_ADMIN_PASSWORD", "a-long-password")
+    login = admin_login(tmp_path)
+    assert login == ("owner@shop.com", "a-long-password", True)
+    assert "a-long-password" not in sign_in_hint(login)
+    assert not (tmp_path / "admin-password").exists()
+    monkeypatch.setenv("HAMILTON_ADMIN_PASSWORD", "short")
+    with pytest.raises(ValueError, match="at least 8"):
+        admin_login(tmp_path)
