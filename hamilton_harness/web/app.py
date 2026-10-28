@@ -33,6 +33,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from hamilton_harness.pack.schema import Pack
 from hamilton_harness.runtime import Agent, TurnResult
+from hamilton_harness.web.auth import Credentials
 from hamilton_harness.web.sessions import Session, SessionStore
 
 MAX_MESSAGE_CHARS = 2000
@@ -149,12 +150,14 @@ def create_app(
     allow_origins: Sequence[str] = (),
     app_dir: Path = APP_DIR,
     admin_token: str | None = None,
+    admin_credentials: Credentials | None = None,
     identity_secret: str | None = None,
 ) -> FastAPI:
     """Build the app.
 
     `allow_origins` lists the sites allowed to call the API from their own
-    pages. `admin_token` switches the dashboard on. `identity_secret` lets a
+    pages. `admin_token` switches the dashboard on, and `admin_credentials`
+    lets people sign in to it with an email and password. `identity_secret` lets a
     company's server vouch for a signed-in customer, so the rep remembers them.
     """
     holder = AgentHolder(agent)
@@ -294,7 +297,7 @@ def create_app(
     if admin_token:
         from hamilton_harness.web.admin import install_admin
 
-        install_admin(app, holder, admin_token)
+        install_admin(app, holder, admin_token, admin_credentials)
 
     @app.get("/admin", include_in_schema=False)
     def admin_page() -> FileResponse:

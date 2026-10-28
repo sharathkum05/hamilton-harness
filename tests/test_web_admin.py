@@ -237,3 +237,70 @@ def test_overview_counts_what_has_happened(client):
     assert stats["records"]["waiting"] == 1
     assert stats["timeline"][-1]["conversations"] == 1
     assert client.get("/api/admin/overview").status_code == 401
+
+
+EMAIL, PASSWORD = "admin@example.com", "demo-password-1"
+
+
+@pytest.fixture
+def browser(root, tmp_path):
+    """A dashboard that also takes an email and password, as a browser would use it."""
+    from hamilton_harness.web.auth import Credentials
+
+    agent = Agent(load_pack(root), ScriptedModel([]), retry_wait=0, trace_dir=tmp_path / "traces")
+    login = Credentials.from_password(EMAIL, PASSWORD)
+    return TestClient(
+        create_app(agent, admin_token=TOKEN, admin_credentials=login),
+        base_url="http://testserver",
+    )
+
+
+def test_signing_in_with_the_password_opens_the_dashboard(browser):
+    assert browser.get("/api/admin/session").status_code == 401
+    assert browser.get("/api/admin/pack").status_code == 401
+    signed = browser.post("/api/admin/session", json={"email": EMAIL, "password": PASSWORD})
+    assert signed.status_code == 200
+    cookie = signed.headers["set-cookie"]
+    assert "httponly" in cookie.lower() and "samesite=strict" in cookie.lower()
+    assert "path=/api/admin" in cookie.lower()
+    assert browser.get("/api/admin/session").json() == {"email": EMAIL, "password": True}
+    assert browser.get("/api/admin/pack").status_code == 200
+
+
+def test_a_wrong_password_is_refused_and_counted(browser):
+    for _ in range(10):
+        wrong = browser.post("/api/admin/session", json={"email": EMAIL, "password": "guess"})
+        assert wrong.status_code == 401
+    # Even the right password waits once an address has failed too often.
+    blocked = browser.post("/api/admin/session", json={"email": EMAIL, "password": PASSWORD})
+    assert blocked.status_code == 429
+
+
+def test_signing_out_ends_the_session(browser):
+    browser.post("/api/admin/session", json={"email": EMAIL, "password": PASSWORD})
+    assert browser.delete("/api/admin/session").status_code == 200
+    assert browser.get("/api/admin/pack").status_code == 401
+
+
+def test_a_signed_in_cookie_cannot_make_changes_from_another_site(browser):
+    browser.post("/api/admin/session", json={"email": EMAIL, "password": PASSWORD})
+    widget = browser.get("/api/admin/pack").json()["widget"]
+    elsewhere = {"origin": "https://attacker.example"}
+    refused = browser.put("/api/admin/pack/widget", json=widget, headers=elsewhere)
+    assert refused.status_code == 403
+    here = {"origin": "http://testserver"}
+    assert browser.put("/api/admin/pack/widget", json=widget, headers=here).status_code == 200
+
+
+def test_the_token_still_works_beside_the_password(browser):
+    assert browser.get("/api/admin/session", headers=AUTH).json() == {
+        "email": None,
+        "password": True,
+    }
+    assert browser.get("/api/admin/pack", headers=AUTH).status_code == 200
+
+
+def test_without_credentials_only_the_token_signs_in(client):
+    refused = client.post("/api/admin/session", json={"email": EMAIL, "password": PASSWORD})
+    assert refused.status_code == 400
+    assert client.get("/api/admin/session").headers["x-hamilton-password"] == "off"

@@ -1,6 +1,8 @@
 """The dashboard's API: read and edit the pack that is being served.
 
-Every route needs the admin token. The editing itself is done by PackEditor,
+Every route needs the admin: either the admin token, sent as a bearer token by
+scripts and links, or the cookie set by signing in with the admin email and
+password (see auth.py). The editing itself is done by PackEditor,
 which validates each change, writes it to the pack's own file and rolls it
 back if the pack would no longer load. After a successful edit the running
 rep is reloaded.
@@ -13,7 +15,7 @@ import secrets
 from dataclasses import asdict
 from typing import Any
 
-from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
 from hamilton_harness.editor import (
@@ -26,6 +28,13 @@ from hamilton_harness.editor import (
 )
 from hamilton_harness.records import Status
 from hamilton_harness.stats import overview
+from hamilton_harness.web.auth import (
+    COOKIE,
+    SESSION_SECONDS,
+    Credentials,
+    FailureCounter,
+    SessionSigner,
+)
 
 MAX_LOGO_BYTES = 512_000
 LOGO_EXTENSIONS = {
@@ -45,6 +54,11 @@ class KnowledgeText(BaseModel):
     text: str = Field(max_length=MAX_KNOWLEDGE_CHARS)
 
 
+class SignIn(BaseModel):
+    email: str = Field(max_length=254)
+    password: str = Field(max_length=1024)
+
+
 def _looks_like(content_type: str, data: bytes) -> bool:
     """Check the bytes are the image the upload claims to be."""
     if content_type == "image/png":
@@ -62,14 +76,86 @@ def _refuse(error: EditError) -> HTTPException:
     return HTTPException(status_code=404 if error.missing else 422, detail=str(error))
 
 
-def install_admin(app: FastAPI, holder: Any, token: str) -> None:
-    """Add the dashboard routes to `app`, guarded by `token`."""
+def _same_site(request: Request) -> bool:
+    """Whether a browser request came from a page on this server."""
+    origin = request.headers.get("origin")
+    if origin is None:
+        # Browsers send Origin on every request that changes something; tools do not.
+        return True
+    return origin.split("://", 1)[-1] == request.headers.get("host", "")
 
-    def require_admin(authorization: str | None = Header(default=None)) -> None:
+
+def install_admin(
+    app: FastAPI, holder: Any, token: str, credentials: Credentials | None = None
+) -> None:
+    """Add the dashboard routes to `app`, guarded by `token`, and by a password if given."""
+    # Keyed on the token, so changing the token also signs everyone out.
+    signer = SessionSigner(f"session:{token}")
+    failures = FailureCounter()
+
+    def token_ok(authorization: str | None) -> bool:
         supplied = (authorization or "").removeprefix("Bearer ").strip()
         # compare_digest: the time taken must not reveal how much of the token matched.
-        if not supplied or not secrets.compare_digest(supplied.encode(), token.encode()):
-            raise HTTPException(status_code=401, detail="admin token required")
+        return bool(supplied) and secrets.compare_digest(supplied.encode(), token.encode())
+
+    def signed_in(request: Request, authorization: str | None) -> str | None:
+        if token_ok(authorization):
+            return "token"
+        return signer.verify(request.cookies.get(COOKIE)) if credentials else None
+
+    def require_admin(request: Request, authorization: str | None = Header(default=None)) -> None:
+        who = signed_in(request, authorization)
+        if who is None:
+            raise HTTPException(status_code=401, detail="sign in to use the dashboard")
+        # A cookie goes with any request the browser makes, so a change has to come
+        # from this site's own pages. A bearer token is only sent on purpose.
+        if who != "token" and request.method not in ("GET", "HEAD") and not _same_site(request):
+            raise HTTPException(status_code=403, detail="request from another site refused")
+
+    @app.get("/api/admin/session")
+    def get_session(
+        request: Request, authorization: str | None = Header(default=None)
+    ) -> dict[str, Any]:
+        who = signed_in(request, authorization)
+        if who is None:
+            raise HTTPException(
+                status_code=401,
+                detail="sign in to use the dashboard",
+                headers={"x-hamilton-password": "on" if credentials else "off"},
+            )
+        return {"email": None if who == "token" else who, "password": credentials is not None}
+
+    @app.post("/api/admin/session")
+    def sign_in(body: SignIn, request: Request, response: Response) -> dict[str, Any]:
+        if credentials is None:
+            raise HTTPException(
+                status_code=400,
+                detail="signing in with a password is not set up here. Use the admin token.",
+            )
+        address = request.client.host if request.client else "unknown"
+        if failures.blocked(address):
+            raise HTTPException(
+                status_code=429, detail="too many failed sign-ins. Try again in 15 minutes."
+            )
+        if not credentials.check(body.email, body.password):
+            failures.fail(address)
+            raise HTTPException(status_code=401, detail="that email and password do not match")
+        failures.clear(address)
+        response.set_cookie(
+            COOKIE,
+            signer.issue(credentials.email),
+            max_age=SESSION_SECONDS,
+            path="/api/admin",
+            httponly=True,
+            samesite="strict",
+            secure=request.url.scheme == "https",
+        )
+        return {"email": credentials.email}
+
+    @app.delete("/api/admin/session")
+    def sign_out(response: Response) -> dict[str, Any]:
+        response.delete_cookie(COOKIE, path="/api/admin", httponly=True, samesite="strict")
+        return {"signed_out": True}
 
     router = APIRouter(prefix="/api/admin", dependencies=[Depends(require_admin)])
 
