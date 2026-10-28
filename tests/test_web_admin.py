@@ -399,8 +399,11 @@ def test_the_public_dashboard_saves_nothing(public, root):
     assert client.post("/api/admin/setup", json={"company": "X", "rep": "Y"}).status_code == 403
     assert client.delete("/api/admin/knowledge/faq.md").status_code == 403
     assert "hacked" not in (root / "widget.yaml").read_text(encoding="utf-8")
-    # Running the fake customers changes nothing, so a visitor may.
+    # Running the fake customers or trying a tool changes nothing, so a visitor may.
     assert client.post("/api/admin/sim", json={}).status_code == 200
+    tried = client.post("/api/admin/tools/lookup_order/try", json={"order_id": "LS-4471"})
+    assert tried.status_code == 200 and tried.json()["ok"]
+    assert client.put("/api/admin/pack/tools", json=[]).status_code == 403
 
 
 def test_each_visitor_sees_only_their_own_chats_and_orders(public):

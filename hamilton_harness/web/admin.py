@@ -95,8 +95,16 @@ def _same_site(request: Request) -> bool:
     return origin.split("://", 1)[-1] == request.headers.get("host", "")
 
 
-# Running the fake customers or a test message keeps nothing, so a demo visitor may.
+# Running the fake customers, a test message or a tool keeps nothing, so a demo
+# visitor may. A test message already runs the same tools.
 _SAFE_IN_DEMO = {"/api/admin/sim", "/api/admin/flow/try"}
+_TRY_TOOL = re.compile(r"/api/admin/tools/[a-z][a-z0-9_]*/try")
+
+
+def _safe_in_demo(path: str) -> bool:
+    return path in _SAFE_IN_DEMO or bool(_TRY_TOOL.fullmatch(path))
+
+
 READ_ONLY = "This is a read-only demo, so changes are not saved. Run Hamilton yourself to edit."
 
 
@@ -154,7 +162,7 @@ def install_admin(
             raise HTTPException(status_code=401, detail="sign in to use the dashboard")
         # Looking and running the fake customers are fine; nothing a visitor does is kept.
         changes = request.method not in ("GET", "HEAD")
-        if who == "demo" and changes and request.url.path not in _SAFE_IN_DEMO:
+        if who == "demo" and changes and not _safe_in_demo(request.url.path):
             raise HTTPException(status_code=403, detail=READ_ONLY)
         # A cookie goes with any request the browser makes, so a change has to come
         # from this site's own pages. A bearer token is only sent on purpose.
