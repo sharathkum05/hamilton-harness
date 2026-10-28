@@ -20,7 +20,9 @@ dependencies = [
 
 [project.optional-dependencies]
 mcp = ["mcp>=2.0"]
-dev = ["pytest>=8.0", "ruff>=0.5", "httpx>=0.27", "hamilton-harness[mcp]"]
+# Keep records, customer memory and conversations in Postgres, such as Supabase.
+db = ["sqlalchemy>=2.0", "psycopg[binary]>=3.1"]
+dev = ["pytest>=8.0", "ruff>=0.5", "httpx>=0.27", "hamilton-harness[mcp,db]"]
 
 [project.scripts]
 hamilton-harness = "hamilton_harness.cli:main"
