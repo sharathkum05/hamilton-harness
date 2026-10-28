@@ -239,6 +239,28 @@ def install_admin(
             raise _refuse(error) from error
         return {"saved": "policies", "count": len(saved)}
 
+    @router.put("/pack/tools")
+    def put_tools(tools: list[dict[str, Any]]) -> dict[str, Any]:
+        """Replace the tools set up without code, the calls to the company's own web API."""
+        try:
+            saved = editor().save_api_tools(tools)
+        except EditError as error:
+            raise _refuse(error) from error
+        return {"saved": "tools", "count": len(saved)}
+
+    @router.post("/tools/{name}/try")
+    def try_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Run one tool with given inputs, as the rep would, and show what came back."""
+        registry = holder.agent.tools
+        if registry.spec(name) is None:
+            raise HTTPException(status_code=404, detail=f"no tool called {name}")
+        if name.startswith("create_") and any(r.tool_name == name for r in holder.pack.records):
+            raise HTTPException(
+                status_code=422, detail="records are taken in a chat, so they are not tried here"
+            )
+        outcome = registry.call(name, arguments)
+        return {"ok": outcome.ok, "result": outcome.content}
+
     @router.put("/pack/{section}")
     def put_section(section: str, values: dict[str, Any]) -> dict[str, Any]:
         try:

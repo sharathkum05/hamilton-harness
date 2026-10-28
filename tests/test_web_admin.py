@@ -82,7 +82,7 @@ def test_invalid_values_are_refused_and_nothing_is_written(client, root):
 
 
 def test_unknown_section(client):
-    assert client.put("/api/admin/pack/tools", headers=AUTH, json={}).status_code == 404
+    assert client.put("/api/admin/pack/secrets", headers=AUTH, json={}).status_code == 404
 
 
 def test_scope_can_be_made_strict(client):
@@ -420,3 +420,67 @@ def test_each_visitor_sees_only_their_own_chats_and_orders(public):
 
     assert stranger.get("/api/admin/conversations").json()["conversations"] == []
     assert stranger.get("/api/admin/overview").json()["records"]["total"] == 0
+
+
+def api_tool(**changes):
+    tool = {
+        "name": "check_stock",
+        "description": "Check how many pairs of a shoe are in stock.",
+        "http": {"method": "GET", "url": "https://shop.example.com/stock/{product}"},
+        "input_schema": {
+            "type": "object",
+            "properties": {"product": {"type": "string", "description": "Shoe name."}},
+            "required": ["product"],
+            "additionalProperties": False,
+        },
+    }
+    return {**tool, **changes}
+
+
+def test_api_tools_are_saved_beside_the_code_ones(client, root):
+    assert client.put("/api/admin/pack/tools", headers=AUTH, json=[api_tool()]).status_code == 200
+    tools = {t["name"]: t for t in client.get("/api/admin/pack", headers=AUTH).json()["tools"]}
+    assert tools["check_stock"]["kind"] == "api"
+    assert tools["check_stock"]["http"]["url"].endswith("/stock/{product}")
+    assert tools["lookup_order"]["kind"] == "code"
+    text = (root / "tools.yaml").read_text(encoding="utf-8")
+    assert "handler: handlers:lookup_order" in text and "check_stock" in text
+
+    # Saving the list again replaces the API tools and still keeps the code ones.
+    assert client.put("/api/admin/pack/tools", headers=AUTH, json=[]).status_code == 200
+    names = {t["name"] for t in client.get("/api/admin/pack", headers=AUTH).json()["tools"]}
+    assert "check_stock" not in names and "lookup_order" in names
+
+
+@pytest.mark.parametrize(
+    ("tool", "message"),
+    [
+        (api_tool(name="lookup_order"), "already a tool called"),
+        (api_tool(name="create_order"), "already a tool called"),
+        (api_tool(name="Check Stock"), "lower case"),
+        (api_tool(http=None, handler="handlers:lookup_order"), "only API tools"),
+        (
+            api_tool(http={"url": "https://x.example/stock"}, input_schema={"type": "nonsense"}),
+            "inputs are not valid",
+        ),
+        (api_tool(http={"url": "https://x.example/{size}"}), "not one of its inputs"),
+    ],
+)
+def test_a_bad_api_tool_is_refused_with_the_reason(client, root, tool, message):
+    before = (root / "tools.yaml").read_text(encoding="utf-8")
+    refused = client.put("/api/admin/pack/tools", headers=AUTH, json=[tool])
+    assert refused.status_code == 422
+    assert message in refused.json()["detail"]
+    assert (root / "tools.yaml").read_text(encoding="utf-8") == before
+
+
+def test_a_tool_can_be_tried_from_the_dashboard(client):
+    tried = client.post(
+        "/api/admin/tools/lookup_order/try", headers=AUTH, json={"order_id": "LS-4471"}
+    ).json()
+    assert tried["ok"] and "LS-4471" in tried["result"]
+    wrong = client.post("/api/admin/tools/lookup_order/try", headers=AUTH, json={"order": 1})
+    assert wrong.json()["ok"] is False and "Invalid arguments" in wrong.json()["result"]
+    assert client.post("/api/admin/tools/nope/try", headers=AUTH, json={}).status_code == 404
+    record = client.post("/api/admin/tools/create_order/try", headers=AUTH, json={})
+    assert record.status_code == 422
