@@ -1,4 +1,4 @@
-// The dashboard shell, on the official shadcn/ui sidebar: a token gate, grouped
+// The dashboard shell, on the official shadcn/ui sidebar: a sign-in screen, grouped
 // navigation that collapses to icons, a command menu, a theme switcher, the
 // open section with its unsaved-changes bar, and a live preview of the chat.
 
@@ -11,6 +11,7 @@ import {
   FlaskConicalIcon,
   InboxIcon,
   LayoutDashboardIcon,
+  LogOutIcon,
   MessagesSquareIcon,
   MicIcon,
   MonitorIcon,
@@ -26,7 +27,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { adminApi, loadToken, storeToken } from '@/admin/api'
+import { adminApi, getSession, loadToken, signIn, signOut, storeToken } from '@/admin/api'
 import type { Pack } from '@/admin/api'
 import { CommandMenu } from '@/admin/command-menu'
 import { DiscardContext } from '@/admin/fields'
@@ -60,6 +61,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import {
   Sidebar,
@@ -128,32 +130,118 @@ const NAVIGATION = GROUPS.map(
 )
 const THEME_ICON: Record<Theme, Icon> = { system: MonitorIcon, light: SunIcon, dark: MoonIcon }
 
-function TokenGate({ onToken, rejected }: { onToken: (token: string) => void; rejected: boolean }) {
-  const [value, setValue] = useState('')
+/** The server's reasons are written in lower case for logs; shown here as a sentence. */
+function sentence(message: string) {
+  const text = message.charAt(0).toUpperCase() + message.slice(1)
+  return /[.!?]$/.test(text) ? text : `${text}.`
+}
+
+function SignIn({
+  onSignedIn,
+  onToken,
+  tokenRejected,
+}: {
+  onSignedIn: () => void
+  onToken: (token: string) => void
+  tokenRejected: boolean
+}) {
+  const [withToken, setWithToken] = useState(tokenRejected)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [token, setToken] = useState('')
+  const [error, setError] = useState(tokenRejected ? 'That token was not accepted.' : '')
+  const [busy, setBusy] = useState(false)
+
+  const submit = async () => {
+    if (withToken) {
+      onToken(token.trim())
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      await signIn(email.trim(), password)
+      onSignedIn()
+    } catch (failure) {
+      setError(failure instanceof Error ? sentence(failure.message) : 'Could not sign in.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="flex h-full items-center justify-center p-6">
       <form
-        className="bg-card flex w-full max-w-sm flex-col gap-4 rounded-2xl border p-6"
+        className="bg-card flex w-full max-w-sm flex-col gap-5 rounded-2xl border p-6"
         onSubmit={(event) => {
           event.preventDefault()
-          onToken(value.trim())
+          submit()
         }}
       >
-        <h1 className="text-2xl">Dashboard</h1>
-        <p className="text-muted-foreground text-sm">
-          Enter the admin token. The server prints a link that includes it when started with{' '}
-          <code>--admin</code>.
-        </p>
-        <Input
-          type="password"
-          aria-label="Admin token"
-          autoComplete="off"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-        />
-        {rejected && <p className="text-destructive text-sm">That token was not accepted.</p>}
-        <Button type="submit" disabled={!value.trim()}>
-          Open dashboard
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-2xl">Sign in to the dashboard</h1>
+          <p className="text-muted-foreground text-sm">
+            {withToken
+              ? 'Paste the admin token from the server.'
+              : 'The server prints the admin email and password when it starts.'}
+          </p>
+        </div>
+        {withToken ? (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="admin-token">Admin token</Label>
+            <Input
+              id="admin-token"
+              type="password"
+              autoComplete="off"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+            />
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="admin-email">Email</Label>
+              <Input
+                id="admin-email"
+                type="email"
+                autoComplete="username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="admin-password">Password</Label>
+              <Input
+                id="admin-password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          </>
+        )}
+        {error && (
+          <p role="alert" className="text-destructive text-sm">
+            {error}
+          </p>
+        )}
+        <Button
+          type="submit"
+          disabled={busy || (withToken ? !token.trim() : !email.trim() || !password)}
+        >
+          {busy ? 'Signing in…' : 'Sign in'}
+        </Button>
+        <Button
+          type="button"
+          variant="link"
+          className="text-muted-foreground h-auto self-center p-0 text-xs"
+          onClick={() => {
+            setWithToken((on) => !on)
+            setError('')
+          }}
+        >
+          {withToken ? 'Sign in with email and password' : 'Use the admin token instead'}
         </Button>
       </form>
     </div>
@@ -185,9 +273,10 @@ function LoadingShell() {
 
 export function AdminApp() {
   const [token, setToken] = useState(loadToken)
+  const [status, setStatus] = useState<'checking' | 'signed-out' | 'signed-in' | 'off'>('checking')
+  const [email, setEmail] = useState<string | null>(null)
   const [pack, setPack] = useState<Pack | null>(null)
   const [rejected, setRejected] = useState(false)
-  const [switchedOff, setSwitchedOff] = useState(false)
   const [section, setSection] = useState(() => window.location.hash.slice(1) || 'overview')
   const [previewKey, setPreviewKey] = useState(0)
   const [formKey, setFormKey] = useState(0)
@@ -197,8 +286,35 @@ export function AdminApp() {
   const { theme, dark, setTheme } = useTheme()
   const api = useMemo(() => adminApi(token), [token])
 
+  // Who is signed in: a token from the link, or the cookie from signing in.
+  const check = useCallback(async () => {
+    try {
+      const session = await getSession(token)
+      setEmail(session.email)
+      setStatus('signed-in')
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        // This server was started without the dashboard, as the hosted demo is.
+        setStatus('off')
+        return
+      }
+      if (error instanceof ApiError && error.status === 401 && token) {
+        storeToken('')
+        setToken('')
+        setRejected(true)
+      } else if (!(error instanceof ApiError)) {
+        toast.error('Could not reach the server.')
+      }
+      setStatus('signed-out')
+    }
+  }, [token])
+
+  useEffect(() => {
+    check()
+  }, [check])
+
   const refresh = useCallback(async () => {
-    if (!token) return
+    if (status !== 'signed-in') return
     try {
       setPack(await api.pack())
       setRejected(false)
@@ -206,15 +322,25 @@ export function AdminApp() {
       if (error instanceof ApiError && error.status === 401) {
         storeToken('')
         setToken('')
-        setRejected(true)
-      } else if (error instanceof ApiError && error.status === 404) {
-        // This server was started without the dashboard, as the hosted demo is.
-        setSwitchedOff(true)
+        setStatus('signed-out')
       } else {
         toast.error('Could not load the pack.')
       }
     }
-  }, [api, token])
+  }, [api, status])
+
+  const leave = useCallback(async () => {
+    try {
+      await signOut()
+    } catch {
+      /* signed out here either way */
+    }
+    storeToken('')
+    setToken('')
+    setPack(null)
+    setEmail(null)
+    setStatus('signed-out')
+  }, [])
 
   useEffect(() => {
     refresh()
@@ -222,12 +348,12 @@ export function AdminApp() {
 
   // The sidebar shows how many orders and quotes are waiting, refreshed as you move around.
   useEffect(() => {
-    if (!token) return
+    if (status !== 'signed-in') return
     api
       .overview()
       .then((stats) => setWaiting(stats.records.waiting))
       .catch(() => {})
-  }, [api, token, section])
+  }, [api, status, section])
 
   useEffect(() => {
     document.title = pack ? `${pack.persona.company} dashboard` : 'Dashboard'
@@ -258,7 +384,7 @@ export function AdminApp() {
   // Remounting the section throws its edits away and starts again from the saved pack.
   const discard = useCallback(() => setFormKey((key) => key + 1), [])
 
-  if (switchedOff) {
+  if (status === 'off') {
     return (
       <div className="flex h-full items-center justify-center p-6">
         <div className="bg-card flex w-full max-w-md flex-col gap-4 rounded-2xl border p-6">
@@ -274,17 +400,23 @@ export function AdminApp() {
       </div>
     )
   }
-  if (!token) {
+  if (status === 'signed-out') {
     return (
-      <TokenGate
-        rejected={rejected}
+      <SignIn
+        tokenRejected={rejected}
+        onSignedIn={() => {
+          setRejected(false)
+          check()
+        }}
         onToken={(value) => {
           storeToken(value)
           setToken(value)
+          setStatus('checking')
         }}
       />
     )
   }
+  if (status === 'checking') return <LoadingShell />
   if (!pack) return <LoadingShell />
 
   const active = ENTRIES.find(({ entry }) => entry[0] === section) ?? ENTRIES[0]
@@ -370,6 +502,17 @@ export function AdminApp() {
                     <ExternalLinkIcon />
                     <span>Open the demo</span>
                   </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Sign out" onClick={leave}>
+                  <LogOutIcon />
+                  <span className="grid min-w-0 text-left leading-tight">
+                    <span>Sign out</span>
+                    {email && (
+                      <span className="text-muted-foreground truncate text-xs">{email}</span>
+                    )}
+                  </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
