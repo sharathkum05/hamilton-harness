@@ -26,12 +26,12 @@ from hamilton_harness.llm import AnthropicModel, Model, ModelError
 from hamilton_harness.memory import FileStore
 from hamilton_harness.pack import PackError, load_pack
 from hamilton_harness.pack.schema import Pack
-from hamilton_harness.records import FileRecordStore
 from hamilton_harness.runtime import Agent, TurnResult
 from hamilton_harness.scaffold import write_starter_pack
 from hamilton_harness.setup import mark_pending, needs_setup
 from hamilton_harness.sim import load_scenarios, replay_model, run_scenarios
 from hamilton_harness.standin import offline_model
+from hamilton_harness.storage import agent_storage
 from hamilton_harness.tools import ToolError, ToolRegistry
 from hamilton_harness.web.auth import AdminLogin, Credentials, admin_login, sign_in_hint
 
@@ -165,18 +165,14 @@ def build_web_app(args: argparse.Namespace):
     pack = load_pack(args.pack)
     model = offline_model(pack) if args.offline else _live_model(pack)
     state = Path(args.state)
-    agent = Agent(
-        pack,
-        model,
-        store=FileStore(state / "customers"),
-        records=FileRecordStore(state / "records.json"),
-        trace_dir=state / "traces",
-    )
+    # A shared database names each rep's rows after its folder.
+    storage, where = agent_storage(state, Path(pack.root).resolve().name)
+    agent = Agent(pack, model, **storage)
     login = None
     if args.admin:
         email, password, _ = _admin_login(state)
         login = Credentials.from_password(email, password)
-    return create_app(
+    app = create_app(
         agent,
         debug=args.debug,
         allow_origins=args.allow_origin or (),
@@ -184,6 +180,8 @@ def build_web_app(args: argparse.Namespace):
         admin_credentials=login,
         identity_secret=os.environ.get("HAMILTON_IDENTITY_SECRET") or None,
     )
+    app.state.storage = where
+    return app
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
@@ -192,6 +190,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
     mode = "offline stand-in model" if args.offline else "live model"
     print(f"Serving the chat widget at http://{args.host}:{args.port} ({mode})", flush=True)
+    print(f"Keeping orders, memory and conversations in {app.state.storage}", flush=True)
     if args.admin:
         state = Path(args.state)
         print(f"Dashboard: http://{args.host}:{args.port}/admin", flush=True)
@@ -264,6 +263,7 @@ def cmd_studio(args: argparse.Namespace) -> int:
         print(f"Hamilton studio: made a blank rep in {root}/, using {mode}.", flush=True)
     else:
         print(f"Hamilton studio: {pack.persona.company} from {root}/, using {mode}.", flush=True)
+    print(f"Keeping orders, memory and conversations in {app.state.storage}.", flush=True)
     print(f"\n  Open {base}/admin", flush=True)
     print(f"  {sign_in_hint(_admin_login(state))}\n", flush=True)
     if needs_setup(root):

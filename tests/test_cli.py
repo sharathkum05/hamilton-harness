@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from conftest import DEMO_PACK
 
 from hamilton_harness.cli import main
@@ -224,3 +225,38 @@ def test_studio_makes_a_blank_rep_once_and_serves_it_for_setup(tmp_path, monkeyp
     assert cli.main(["studio", str(root), "--state", str(tmp_path / "state")]) == 0
     out = capsys.readouterr().out
     assert "Bloom Florists from" in out and "The setup opens first" not in out
+
+
+def test_serve_keeps_everything_in_the_database_when_given_one(tmp_path, monkeypatch, capsys):
+    pytest.importorskip("sqlalchemy")
+    from fastapi.testclient import TestClient
+
+    import hamilton_harness.cli as cli
+
+    served = []
+    monkeypatch.setattr("uvicorn.run", lambda app, **kw: served.append(app))
+    monkeypatch.setenv("HAMILTON_DATABASE_URL", f"sqlite:///{tmp_path / 'shared.db'}")
+    monkeypatch.setenv("HAMILTON_ADMIN_TOKEN", "tok")
+    state = tmp_path / "state"
+    args = ["serve", str(DEMO_PACK), "--offline", "--admin", "--state", str(state)]
+    assert cli.main(args) == 0
+    assert "Keeping orders, memory and conversations in sqlite:///" in capsys.readouterr().out
+
+    client = TestClient(served[0])
+    session = client.post("/api/conversations").json()["id"]
+    client.post(f"/api/conversations/{session}/messages", json={"text": "where is LS-4471"})
+    listed = client.get("/api/admin/conversations", headers={"Authorization": "Bearer tok"})
+    assert len(listed.json()["conversations"]) == 1
+    assert not (state / "traces").exists() and not (state / "records.json").exists()
+
+
+def test_a_database_that_cannot_be_opened_stops_serve_with_a_message(tmp_path, monkeypatch, capsys):
+    pytest.importorskip("sqlalchemy")
+    from hamilton_harness.cli import main
+
+    monkeypatch.setenv("HAMILTON_DATABASE_URL", "postgresql://u:s3cret@127.0.0.1:1/none")
+    code = main(["serve", str(DEMO_PACK), "--offline", "--state", str(tmp_path)])
+    err = capsys.readouterr().err
+    assert code == 2
+    assert "could not open the database in HAMILTON_DATABASE_URL" in err
+    assert "s3cret" not in err
