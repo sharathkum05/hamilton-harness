@@ -1,7 +1,8 @@
 """Run the actions a pack allows.
 
 The registry turns `tools.yaml` into the tool list the model sees and executes
-calls against the pack's own handler code. It validates arguments itself, so a
+calls against the pack's own handler code, or against a company's web API for
+a tool set up without code (see http_tools.py). It validates arguments itself, so a
 malformed call never reaches a company system.
 """
 
@@ -19,6 +20,7 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
+from hamilton_harness.http_tools import run_http
 from hamilton_harness.pack.schema import Pack, RecordType, ToolSpec
 from hamilton_harness.records import MemoryRecordStore, RecordStore, input_schema, tool_description
 
@@ -88,6 +90,10 @@ class ToolRegistry:
         return module
 
     def _resolve(self, spec: ToolSpec) -> Callable[..., Any]:
+        if spec.http is not None:
+            call = spec.http
+            # Set up in the dashboard, no code: a call to the company's own web API.
+            return lambda **arguments: run_http(call, arguments)
         module_name, _, function_name = spec.handler.partition(":")
         if not module_name or not function_name:
             raise ToolError(f"tool '{spec.name}' handler must look like 'module:function'")
