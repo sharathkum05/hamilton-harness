@@ -8,6 +8,12 @@ and is not published separately yet.
 
 ### Added
 
+- The dashboard has a sign-in screen: an admin email and password, set with
+  `HAMILTON_ADMIN_EMAIL` and `HAMILTON_ADMIN_PASSWORD` or made as a demo login
+  and printed when the server starts. Passwords are hashed with scrypt, the
+  session is an HttpOnly, SameSite=Strict cookie, and repeated wrong passwords
+  lock an address out for a while. The admin token still works.
+- The product page header links to the dashboard.
 - `hamilton-harness demo` runs every pack in `./packs` at once, one per port,
   from clean copies, and prints each rep's address and dashboard link.
   Dashboard edits made during a demo never touch the packs themselves.
