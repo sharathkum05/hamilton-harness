@@ -157,6 +157,22 @@ hamilton-harness serve packs/loop-sneakers --offline --debug --admin
 | `/widget.js` | The embed script: one tag puts the chat on any site |
 | `/example` | A plain example website with the chat embedded by that one tag |
 
+### Signing in to the dashboard
+
+`--admin` prints an email and a password to sign in with at `/admin`. Without
+any setup it makes a demo login, `admin@hamilton.local` with a random password
+kept in the state folder. Set your own before anyone else can reach the server:
+
+```bash
+export HAMILTON_ADMIN_EMAIL=you@yourcompany.com
+export HAMILTON_ADMIN_PASSWORD='a long password'
+```
+
+The password is kept only as a scrypt hash in memory. Signing in sets a cookie
+that scripts cannot read and other sites cannot send, it lasts 12 hours, and
+ten wrong passwords from one address lock it out for 15 minutes. The admin
+token still works for scripts and for the npm package below.
+
 ## Connect Claude
 
 The [`hamilton-harness`](https://www.npmjs.com/package/hamilton-harness) npm
