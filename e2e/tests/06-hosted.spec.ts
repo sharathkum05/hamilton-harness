@@ -23,6 +23,13 @@ test('the live dashboard opens read-only, with no sign-in', async ({ page }) => 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Maya at Loop Sneakers')
 })
 
+test('a visitor can try a tool on the live dashboard', async ({ page }) => {
+  await page.goto('/admin#tools')
+  await page.getByPlaceholder('Order number such as LS-4471.').fill('LS-4471')
+  await page.getByRole('button', { name: 'Run' }).first().click()
+  await expect(page.getByText('It worked')).toBeVisible()
+})
+
 test('the live example site carries the chat', async ({ page }) => {
   await page.goto('/example')
   await expect(page.locator('#hamilton-widget')).toBeAttached()
