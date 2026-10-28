@@ -9,6 +9,7 @@ repository are never touched, and the next run starts clean.
 from __future__ import annotations
 
 import asyncio
+import os
 import shutil
 import socket
 from dataclasses import dataclass
@@ -96,7 +97,14 @@ def build_app(
         records=FileRecordStore(site.folder / "records.json"),
         trace_dir=site.folder / "traces",
     )
-    return create_app(agent, debug=True, admin_token=admin_token, admin_credentials=credentials)
+    return create_app(
+        agent,
+        debug=True,
+        admin_token=admin_token,
+        admin_credentials=credentials,
+        # So a site that signs its customers in, such as the PHP example, can be shown too.
+        identity_secret=os.environ.get("HAMILTON_IDENTITY_SECRET") or None,
+    )
 
 
 def busy_ports(host: str, ports: list[int]) -> list[int]:
