@@ -171,6 +171,8 @@ knows, how it sounds and how it looks. At the end the rep is live, with the
 chat to try and the one line for your website. It answers from your notes on
 a stand-in until `ANTHROPIC_API_KEY` is set, and then on the real model.
 Everything is saved as plain files in `my-assistant/`, so it can go in Git.
+To keep orders and conversations in Supabase instead of the state folder, set
+`HAMILTON_DATABASE_URL` first; see [docs/supabase.md](docs/supabase.md).
 
 ### Signing in to the dashboard
 
@@ -404,6 +406,7 @@ it confirmed, done or cancelled. The rep does not take payment.
 | [How the guardrails work](docs/guardrails.md) | Each check in the order it runs, what it catches and what it does not |
 | [Fake customers](docs/scenarios.md) | Writing scenarios, replay scripts, and what you can assert |
 | [Putting the chat on a website](docs/integrate.md) | The script tag, PHP, WordPress, React, and signed customer identities |
+| [Keeping the data in Supabase](docs/supabase.md) | One connection string moves orders, customer memory and conversations into Postgres |
 | [Contributing](CONTRIBUTING.md) | Setting up, the checks CI runs, and how to add a pack or a check |
 | [Changelog](CHANGELOG.md) | What changed in each release |
 
@@ -469,8 +472,10 @@ server on a host with a disk that persists.
 | `hamilton_harness/standin.py` | A stand-in for the model, so any pack runs with no API key |
 | `hamilton_harness/lint.py` | Warnings about a pack that loads but works against itself |
 | `hamilton_harness/stats.py` | Numbers for the dashboard's overview |
+| `hamilton_harness/setup.py` | Builds a rep from the dashboard's setup answers |
+| `hamilton_harness/storage.py`, `db.py` | The state folder, or Postgres such as Supabase, for a served rep's data |
 | `hamilton_harness/mcp_server.py` | MCP server for a pack on this machine |
-| `hamilton_harness/web/` | HTTP API, dashboard API, embed script |
+| `hamilton_harness/web/` | HTTP API, dashboard API and sign-in, embed script |
 | `web/` | React app: chat panel, dashboard, demo, product page |
 | `packages/cli/` | The `hamilton-harness` npm package |
 | `api/` | Entry point for the hosted demo |
@@ -488,6 +493,9 @@ server on a host with a disk that persists.
 - [x] A hosted demo
 - [x] `init`, which scaffolds a starter pack for a new company
 - [x] Pack warnings: lines that break the pack's own rules, and rules no fake customer tests
+- [x] `studio` and a setup wizard: build a rep for your own business from the dashboard
+- [x] Dashboard sign-in with an email and password
+- [x] Orders, memory and conversations in Postgres, such as Supabase
 - [ ] A run against the real model. Everything so far is tested with scripted and stand-in models
 - [ ] A canvas: build the harness by dragging blocks onto the path a message takes ([vision](docs/vision.md))
 - [ ] Connect GitHub, so every change on the canvas is a commit
