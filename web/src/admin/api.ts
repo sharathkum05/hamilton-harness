@@ -93,6 +93,8 @@ export type Overview = {
 }
 
 export type Pack = {
+  // True until the setup has run once on a rep made by `hamilton-harness studio`.
+  setup_pending: boolean
   persona: Persona
   scope: Scope
   widget: Widget
@@ -162,6 +164,22 @@ export function storeToken(token: string) {
   }
 }
 
+export type Tone = 'friendly' | 'professional' | 'playful' | 'direct'
+
+/** What the setup asks. The server builds a whole rep from these. */
+export type SetupAnswers = {
+  company: string
+  rep: string
+  role: string
+  covers: string
+  knowledge: string
+  tone: Tone[]
+  emoji: boolean
+  greeting: string
+  suggestions: string[]
+  accent: string
+}
+
 export type AdminSession = { email: string | null; password: boolean }
 
 export const getSession = (token: string) => request<AdminSession>('/api/admin/session', { token })
@@ -174,6 +192,7 @@ export function adminApi(token: string) {
     request<T>(`/api/admin${path}`, { ...init, token })
   return {
     pack: () => call<Pack>('/pack'),
+    setup: (answers: SetupAnswers) => call('/setup', { method: 'POST', body: answers }),
     saveSection: (section: string, values: unknown) =>
       call(`/pack/${section}`, { method: 'PUT', body: values }),
     saveKnowledge: (name: string, text: string) =>
