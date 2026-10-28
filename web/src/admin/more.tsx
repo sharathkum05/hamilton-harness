@@ -281,7 +281,7 @@ export default function RootLayout({ children }) {
   return (
     <Section
       title="Install"
-      description="One script tag puts the chat on your site. It adds a launcher button and loads the chat in its own frame, so it cannot clash with your site's styles."
+      description="One script tag puts the chat on your site. It adds a launcher button and loads the chat in its own frame, so it cannot clash with your site's styles. Start the server with --allow-origin and your site's address, so your site may load it."
     >
       <Tabs defaultValue="html">
         <TabsList>

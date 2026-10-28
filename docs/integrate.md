@@ -8,8 +8,15 @@ hand-written page, a PHP site, WordPress, Shopify or a React app.
 ## 1. Run the server somewhere the site can reach
 
 ```bash
-hamilton-harness serve packs/your-company --host 0.0.0.0 --port 8000 --admin
+hamilton-harness serve packs/your-company --host 0.0.0.0 --port 8000 --admin \
+  --allow-origin https://www.example.com
 ```
+
+`--allow-origin` names each website that may show the chat. The script tag
+reads the rep's name and look from the server, and browsers only let a page
+on another address do that when the server allows it. A site that is not
+listed gets no chat, so nobody can put your rep on their pages. Give the flag
+once per site, such as `https://www.example.com` and `https://example.com`.
 
 Put it behind HTTPS (a reverse proxy such as Caddy or nginx). The examples
 below call it `https://chat.example.com`.
@@ -108,9 +115,6 @@ window.addEventListener("hamilton:turn", (event) => {
 
 ## Calling the API from another origin
 
-The iframe talks to the chat server directly, so the script tag needs no extra
-setup. If your own pages call the API with `fetch`, allow their origin:
-
-```bash
-hamilton-harness serve packs/your-company --allow-origin https://www.example.com
-```
+The same `--allow-origin` list covers your own pages calling the API with
+`fetch`. The chat itself runs in a frame on the Hamilton server's own address,
+so only the script tag's first request, for the rep's name and look, needs it.
