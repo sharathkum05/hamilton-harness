@@ -102,17 +102,77 @@ class PolicyRule(_Strict):
         return patterns
 
 
+_PLACEHOLDER = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
+# Secrets in a header come from the server's environment, never from the pack,
+# and only from variables named for tools, so a pack cannot send out other keys.
+SECRET = re.compile(r"\$\{(TOOL_[A-Z0-9_]+)\}")
+
+
+class HttpCall(_Strict):
+    """A call to a company's own web API, set up without writing code."""
+
+    method: Literal["GET", "POST"] = "GET"
+    # Arguments named in braces go into the path, such as /orders/{order_id}.
+    # The rest go in the query string for GET and the JSON body for POST.
+    url: str
+    # A value may name a secret as ${TOOL_SHOP_KEY}, read from the environment.
+    headers: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("url")
+    @classmethod
+    def _is_a_web_address(cls, value: str) -> str:
+        value = value.strip()
+        if not re.match(r"https?://[^/\s{}]+", value):
+            raise ValueError("url must start with http:// or https:// and a host name")
+        return value
+
+    @field_validator("headers")
+    @classmethod
+    def _headers_are_plain(cls, value: dict[str, str]) -> dict[str, str]:
+        for name, header in value.items():
+            if not re.fullmatch(r"[A-Za-z0-9-]{1,64}", name):
+                raise ValueError(f"header name {name!r} must be letters, digits and dashes")
+            if "\n" in header or "\r" in header:
+                raise ValueError(f"header {name} must be one line")
+            leftover = SECRET.sub("", header)
+            if "${" in leftover:
+                raise ValueError(
+                    f"header {name}: secrets must be named like ${{TOOL_SHOP_KEY}}, "
+                    "starting with TOOL_"
+                )
+        return value
+
+    def path_fields(self) -> list[str]:
+        return _PLACEHOLDER.findall(self.url)
+
+
 class ToolSpec(_Strict):
     """Something the rep can do in the company's systems."""
 
     name: str
     description: str
     input_schema: dict[str, Any]
-    # "module:function", resolved relative to the pack directory.
-    handler: str
+    # "module:function", resolved relative to the pack directory. Or, instead:
+    handler: str = ""
+    # A call to a web API, which needs no code.
+    http: HttpCall | None = None
     # Facts to keep about the customer after a successful call, as
     # {fact name: field in the tool result}.
     remember: dict[str, str] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _one_way_to_run(self) -> ToolSpec:
+        if bool(self.handler) == bool(self.http):
+            raise ValueError(f"tool '{self.name}' needs either a handler or an http call, not both")
+        if self.http:
+            fields = self.input_schema.get("properties", {})
+            for field in self.http.path_fields():
+                if field not in fields:
+                    raise ValueError(
+                        f"tool '{self.name}': the url uses {{{field}}}, "
+                        "which is not one of its inputs"
+                    )
+        return self
 
 
 class HandoffRules(_Strict):
