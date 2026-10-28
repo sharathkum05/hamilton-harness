@@ -8,6 +8,11 @@ and is not published separately yet.
 
 ### Added
 
+- `HAMILTON_DATABASE_URL` keeps a served rep's orders, customer memory and
+  conversations in Postgres, such as Supabase, instead of the state folder.
+  Tables go in their own `hamilton` schema, off Supabase's public API, and
+  several reps can share one database. Install with `pip install
+  "hamilton-harness[db]"`. See docs/supabase.md.
 - `hamilton-harness studio [DIR]` builds a rep for your own business from
   blank. It opens the dashboard on a four-step setup (business, knowledge,
   voice, look) that ends with a live chat and the embed line. Setup can be run
