@@ -1,4 +1,5 @@
-// Client for the dashboard API. Every call carries the admin token.
+// Client for the dashboard API. Every call is signed in: by the cookie set when
+// someone signs in with the admin email and password, or by the admin token.
 
 import { request } from '@/lib/api'
 
@@ -161,6 +162,13 @@ export function storeToken(token: string) {
   }
 }
 
+export type AdminSession = { email: string | null; password: boolean }
+
+export const getSession = (token: string) => request<AdminSession>('/api/admin/session', { token })
+export const signIn = (email: string, password: string) =>
+  request<{ email: string }>('/api/admin/session', { body: { email, password } })
+export const signOut = () => request('/api/admin/session', { method: 'DELETE' })
+
 export function adminApi(token: string) {
   const call = <T>(path: string, init: { method?: string; body?: unknown } = {}) =>
     request<T>(`/api/admin${path}`, { ...init, token })
@@ -176,7 +184,10 @@ export function adminApi(token: string) {
     async uploadLogo(file: File) {
       const response = await fetch('/api/admin/logo', {
         method: 'PUT',
-        headers: { authorization: `Bearer ${token}`, 'content-type': file.type },
+        headers: {
+          'content-type': file.type,
+          ...(token ? { authorization: `Bearer ${token}` } : {}),
+        },
         body: file,
       })
       if (!response.ok) {
