@@ -190,6 +190,44 @@ Raise `LookupError` or `ValueError` for something the rep can explain to the
 customer; the message is passed to the model. Any other exception is logged and
 the model is told only that the system is not responding.
 
+### Tools that call your web API, with no code
+
+A tool can call the company's own web API instead of running Python. These are
+what the dashboard's Tools screen sets up:
+
+```yaml
+tools:
+  - name: check_stock
+    description: Check how many pairs of a shoe are in stock. Call before promising a size.
+    http:
+      method: GET
+      url: https://shop.example.com/api/stock/{product}
+      headers:
+        Authorization: Bearer ${TOOL_SHOP_KEY}
+    input_schema:
+      type: object
+      properties:
+        product: {type: string}
+      required: [product]
+      additionalProperties: false
+```
+
+- Inputs named in braces go into the address, quoted so they can never add to
+  the path. The rest go in the query string for `GET` and the JSON body for
+  `POST`.
+- `${TOOL_SHOP_KEY}` is read from the server's environment when the call is
+  made, so the key is never in the pack. Only variables starting with `TOOL_`
+  can be used, so a pack cannot send out the server's other secrets.
+- Calls go only to public addresses. An address on the server's own machine or
+  a private network is refused, and redirects are not followed. Set
+  `HAMILTON_ALLOW_PRIVATE_TOOL_URLS=1` to call an API on your own machine
+  while testing.
+- A `4xx` answer is passed to the rep as the reason, so it can tell the
+  customer; a `404` becomes "nothing was found". Anything else is logged and the
+  rep is told only that the system is not responding.
+- Rules limit an API tool the same way as any other: name it as a rule's
+  `tool`.
+
 ## records.yaml
 
 A record type is something the rep takes down for the business. Each one
