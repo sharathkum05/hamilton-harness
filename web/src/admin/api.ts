@@ -99,8 +99,9 @@ export type Pack = {
   scope: Scope
   widget: Widget
   handoff: Handoff
+  model: { name: string; effort: string; max_tokens: number }
   policies: Rule[]
-  tools: { name: string; description: string; handler: string }[]
+  tools: Tool[]
   records: RecordType[]
   knowledge: { source: string; text: string }[]
   examples: { title: string; turns: { speaker: string; text: string }[] }[]
@@ -164,6 +165,31 @@ export function storeToken(token: string) {
   }
 }
 
+/** A call to a company's web API, set up without code. */
+export type HttpCall = { method: 'GET' | 'POST'; url: string; headers: Record<string, string> }
+
+export type JsonSchema = {
+  type?: string
+  properties?: Record<string, { type?: string; description?: string; enum?: string[] }>
+  required?: string[]
+  additionalProperties?: boolean
+}
+
+export type Tool = {
+  name: string
+  description: string
+  handler: string
+  // "code" tools are Python in the pack; "api" tools are set up in the dashboard.
+  kind: 'code' | 'api'
+  http: HttpCall | null
+  input_schema: JsonSchema
+  remember: Record<string, string>
+}
+
+export type StageStatus = 'passed' | 'stopped' | 'unused' | 'skipped'
+export type Stage = { key: string; name: string; does: string }
+export type StageResult = { key: string; status: StageStatus; note: string }
+
 export type Tone = 'friendly' | 'professional' | 'playful' | 'direct'
 
 /** What the setup asks. The server builds a whole rep from these. */
@@ -194,6 +220,19 @@ export function adminApi(token: string) {
   return {
     pack: () => call<Pack>('/pack'),
     setup: (answers: SetupAnswers) => call('/setup', { method: 'POST', body: answers }),
+    saveTools: (tools: Omit<Tool, 'kind' | 'handler'>[]) =>
+      call('/pack/tools', { method: 'PUT', body: tools }),
+    tryTool: (name: string, args: Record<string, unknown>) =>
+      call<{ ok: boolean; result: string }>(`/tools/${encodeURIComponent(name)}/try`, {
+        method: 'POST',
+        body: args,
+      }),
+    flow: () => call<{ stages: Stage[] }>('/flow'),
+    tryFlow: (text: string) =>
+      call<{ stages: StageResult[]; bubbles: string[] }>('/flow/try', {
+        method: 'POST',
+        body: { text },
+      }),
     saveSection: (section: string, values: unknown) =>
       call(`/pack/${section}`, { method: 'PUT', body: values }),
     saveKnowledge: (name: string, text: string) =>

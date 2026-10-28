@@ -39,7 +39,7 @@ export type SectionProps = {
  * The unsaved-changes bar. It slides up at the bottom of the page the moment
  * something is edited, so saving never needs a scroll back to the top.
  */
-function SaveButton({ dirty, onSave }: { dirty: boolean; onSave: () => void }) {
+export function SaveButton({ dirty, onSave }: { dirty: boolean; onSave: () => void }) {
   const discard = useContext(DiscardContext)
   const slot = document.getElementById('save-slot')
   if (!slot) return null
@@ -86,7 +86,7 @@ function useDraft<T>(source: T) {
   return { draft, set, dirty }
 }
 
-function Choice<T extends string>({
+export function Choice<T extends string>({
   id,
   value,
   options,
