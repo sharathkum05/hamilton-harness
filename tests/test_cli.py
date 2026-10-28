@@ -196,3 +196,31 @@ def test_a_short_admin_password_stops_serve_with_a_message(tmp_path, monkeypatch
     code = main(["serve", str(DEMO_PACK), "--offline", "--admin", "--state", str(tmp_path)])
     assert code == 2
     assert "at least 8 characters" in capsys.readouterr().err
+
+
+def test_studio_makes_a_blank_rep_once_and_serves_it_for_setup(tmp_path, monkeypatch, capsys):
+    from fastapi.testclient import TestClient
+
+    import hamilton_harness.cli as cli
+
+    served = []
+    monkeypatch.setattr("uvicorn.run", lambda app, **kw: served.append(app))
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("HAMILTON_ADMIN_TOKEN", "tok")
+    root = tmp_path / "mine"
+    assert cli.main(["studio", str(root), "--state", str(tmp_path / "state")]) == 0
+    out = capsys.readouterr().out
+    assert "made a blank rep" in out and "stand-in" in out
+    assert "/admin" in out and "sign in as admin@hamilton.local" in out
+    assert "The setup opens first" in out
+
+    client = TestClient(served[0])
+    auth = {"Authorization": "Bearer tok"}
+    assert client.get("/api/admin/pack", headers=auth).json()["setup_pending"] is True
+    answers = {"company": "Bloom Florists", "rep": "Ivy"}
+    assert client.post("/api/admin/setup", headers=auth, json=answers).status_code == 200
+
+    # A second run keeps what was built.
+    assert cli.main(["studio", str(root), "--state", str(tmp_path / "state")]) == 0
+    out = capsys.readouterr().out
+    assert "Bloom Florists from" in out and "The setup opens first" not in out

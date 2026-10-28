@@ -6,6 +6,7 @@ hamilton-harness chat PACK          talk to the rep in the terminal
 hamilton-harness sim PACK           run the pack's fake customers and print a scorecard
 hamilton-harness serve PACK         run the web chat widget and its API
 hamilton-harness demo [PACK...]     run every demo pack at once, from clean copies
+hamilton-harness studio [DIR]       build your own rep in the dashboard, from blank
 hamilton-harness mcp PACK           let Claude manage the pack over MCP
 """
 
@@ -28,6 +29,7 @@ from hamilton_harness.pack.schema import Pack
 from hamilton_harness.records import FileRecordStore
 from hamilton_harness.runtime import Agent, TurnResult
 from hamilton_harness.scaffold import write_starter_pack
+from hamilton_harness.setup import mark_pending, needs_setup
 from hamilton_harness.sim import load_scenarios, replay_model, run_scenarios
 from hamilton_harness.standin import offline_model
 from hamilton_harness.tools import ToolError, ToolRegistry
@@ -237,6 +239,43 @@ def cmd_demo(args: argparse.Namespace) -> int:
     return 0
 
 
+def prepare_studio(root: Path) -> bool:
+    """Make a blank rep at `root` if there is none. True when one was made."""
+    if (root / "persona.yaml").exists():
+        return False
+    write_starter_pack(root, company="Your company", rep="Sam")
+    mark_pending(root)
+    return True
+
+
+def cmd_studio(args: argparse.Namespace) -> int:
+    root = Path(args.pack)
+    made = prepare_studio(root)
+    # With no API key the rep still answers, from its notes, on the stand-in.
+    args.offline = args.offline or not os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    app = build_web_app(args)
+    import uvicorn
+
+    pack = load_pack(root)
+    mode = "a stand-in for the model, no API key" if args.offline else "the real model"
+    base = f"http://{args.host}:{args.port}"
+    state = Path(args.state)
+    if made:
+        print(f"Hamilton studio: made a blank rep in {root}/, using {mode}.", flush=True)
+    else:
+        print(f"Hamilton studio: {pack.persona.company} from {root}/, using {mode}.", flush=True)
+    print(f"\n  Open {base}/admin", flush=True)
+    print(f"  {sign_in_hint(_admin_login(state))}\n", flush=True)
+    if needs_setup(root):
+        print("The setup opens first: your business, what it knows, how it sounds and looks.")
+    print(f"Chat with it at {base}/demo. The line for your website is on the Install screen.")
+    print(
+        "Everything you build is saved as plain files in that folder. Ctrl-C to stop.", flush=True
+    )
+    uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
+    return 0
+
+
 def cmd_mcp(args: argparse.Namespace) -> int:
     try:
         from hamilton_harness.mcp_server import build_server
@@ -307,6 +346,18 @@ def build_parser() -> argparse.ArgumentParser:
     demo.add_argument("--keep", action="store_true", help="keep edits and chats from last time")
     demo.add_argument("--state", default=".hamilton/demo", help="where the copies are kept")
     demo.set_defaults(run=cmd_demo)
+
+    studio = commands.add_parser("studio", help="build your own rep in the dashboard")
+    studio.add_argument(
+        "pack", nargs="?", default="my-assistant", metavar="DIR", help="default: ./my-assistant"
+    )
+    studio.add_argument("--host", default="127.0.0.1")
+    studio.add_argument("--port", type=int, default=8000)
+    studio.add_argument(
+        "--offline", action="store_true", help="use the stand-in even if an API key is set"
+    )
+    studio.add_argument("--state", default=".hamilton", help="where chats and the login are kept")
+    studio.set_defaults(run=cmd_studio, admin=True, debug=True, allow_origin=None)
 
     mcp = commands.add_parser("mcp", help="let Claude manage the pack over MCP")
     mcp.add_argument("pack")
