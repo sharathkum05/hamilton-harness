@@ -406,6 +406,7 @@ it confirmed, done or cancelled. The rep does not take payment.
 | [How the guardrails work](docs/guardrails.md) | Each check in the order it runs, what it catches and what it does not |
 | [Fake customers](docs/scenarios.md) | Writing scenarios, replay scripts, and what you can assert |
 | [Putting the chat on a website](docs/integrate.md) | The script tag, PHP, WordPress, React, and signed customer identities |
+| [Showing Hamilton](docs/demo.md) | A ten-minute walkthrough, each step a Playwright test run on every push |
 | [Keeping the data in Supabase](docs/supabase.md) | One connection string moves orders, customer memory and conversations into Postgres |
 | [Contributing](CONTRIBUTING.md) | Setting up, the checks CI runs, and how to add a pack or a check |
 | [Changelog](CHANGELOG.md) | What changed in each release |
@@ -499,6 +500,7 @@ server on a host with a disk that persists.
 - [x] Dashboard sign-in with an email and password
 - [x] Orders, memory and conversations in Postgres, such as Supabase
 - [x] A Flow screen: the harness as a path, lit up by a test message
+- [x] Browser tests that walk through the whole demo, in CI
 - [x] Tools that call your web API, set up in the dashboard with no code
 - [ ] A run against the real model. Everything so far is tested with scripted and stand-in models
 - [ ] A canvas: build the harness by dragging blocks onto the path a message takes ([vision](docs/vision.md))
