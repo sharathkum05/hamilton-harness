@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import SchemaError
 from pydantic import BaseModel, ValidationError
 
 from hamilton_harness.lint import lint_pack
@@ -24,6 +26,7 @@ from hamilton_harness.pack.schema import (
     Persona,
     PolicyRule,
     ScopeSettings,
+    ToolSpec,
     WidgetSettings,
 )
 from hamilton_harness.sim import load_scenarios, run_scenarios
@@ -38,6 +41,7 @@ SECTIONS: dict[str, type[BaseModel]] = {
 }
 MAX_KNOWLEDGE_CHARS = 200_000
 _KNOWLEDGE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,60}\.md")
+_TOOL_NAME = re.compile(r"[a-z][a-z0-9_]{1,63}")
 
 
 class EditError(Exception):
@@ -109,6 +113,11 @@ class PackEditor:
                     "name": t.name,
                     "description": " ".join(t.description.split()),
                     "handler": t.handler,
+                    # "code" tools are Python in the pack; "api" tools are set up here.
+                    "kind": "api" if t.http else "code",
+                    "http": t.http.model_dump(mode="json") if t.http else None,
+                    "input_schema": t.input_schema,
+                    "remember": t.remember,
                 }
                 for t in pack.tools
             ],
@@ -160,6 +169,48 @@ class PackEditor:
         if not path.exists():
             raise EditError(f"no knowledge file {name}", missing=True)
         return path.read_text(encoding="utf-8")
+
+    def save_api_tools(self, tools: list[dict[str, Any]]) -> list[ToolSpec]:
+        """Replace the tools set up without code. Tools written in Python are kept as they are."""
+        pack = self.load()
+        code_names = {t.name for t in pack.tools if not t.http}
+        taken = code_names | {r.tool_name for r in pack.records}
+        validated: list[ToolSpec] = []
+        for raw in tools:
+            try:
+                spec = ToolSpec.model_validate(raw)
+            except ValidationError as error:
+                raise EditError(_problems(error)) from error
+            if not spec.http:
+                raise EditError(
+                    f"tool '{spec.name}': only API tools are set up here; "
+                    "tools written in code are changed in tools.yaml"
+                )
+            if not _TOOL_NAME.fullmatch(spec.name):
+                raise EditError(
+                    f"tool name '{spec.name}' must be lower case letters, digits and _, "
+                    "starting with a letter"
+                )
+            if spec.name in taken or any(spec.name == v.name for v in validated):
+                raise EditError(f"there is already a tool called '{spec.name}'")
+            try:
+                Draft202012Validator.check_schema(spec.input_schema)
+            except SchemaError as error:
+                problem = f"tool '{spec.name}': its inputs are not valid: {error.message}"
+                raise EditError(problem) from error
+            validated.append(spec)
+
+        path = self.root / "tools.yaml"
+        existing = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else None
+        kept = [t for t in (existing or {}).get("tools", []) if not t.get("http")]
+        dumped = [
+            spec.model_dump(mode="json", exclude_defaults=True, exclude={"handler"})
+            for spec in validated
+        ]
+        # A pack with no tools at all needs no tools file.
+        everything = kept + dumped
+        self.write(path, dump_yaml({"tools": everything}) if everything else None)
+        return validated
 
     def save_knowledge(self, name: str, text: str) -> None:
         if len(text) > MAX_KNOWLEDGE_CHARS:
