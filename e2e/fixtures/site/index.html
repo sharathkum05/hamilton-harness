@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loop Sneakers</title>
+<style>
+  /* A shop's own website, on its own address. It knows nothing about Hamilton
+     except the one script tag at the bottom. */
+  body { margin: 0; font: 16px/1.6 Georgia, serif; background: #fffaf3; color: #2b2118; }
+  header { display: flex; justify-content: space-between; align-items: center; padding: 18px 32px; border-bottom: 1px solid #eadfce; }
+  header strong { font-size: 22px; letter-spacing: 0.02em; }
+  nav { display: flex; gap: 20px; font-size: 15px; }
+  main { max-width: 880px; margin: 0 auto; padding: 48px 32px 160px; }
+  h1 { font-size: 44px; line-height: 1.1; margin: 0 0 12px; }
+  .shoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 32px; }
+  .shoe { background: #fff; border: 1px solid #eadfce; border-radius: 12px; padding: 18px; }
+  .shoe b { display: block; }
+</style>
+</head>
+<body>
+  <header>
+    <strong>Loop Sneakers</strong>
+    <nav><span>Shop</span><span>Our story</span><span>Help</span></nav>
+  </header>
+  <main>
+    <h1>Shoes that loop back to you.</h1>
+    <p>Hand-finished sneakers, sent across India in three days.</p>
+    <section class="shoes" aria-label="Shoes">
+      <div class="shoe"><b>Drift Runner</b>₹2,499</div>
+      <div class="shoe"><b>Court Classic</b>₹2,999</div>
+      <div class="shoe"><b>Trail Loop</b>₹3,499</div>
+    </section>
+  </main>
+  <!-- The only line added for the chat. It points at the Hamilton server. -->
+  <script src="http://127.0.0.1:8900/widget.js" defer></script>
+</body>
+</html>
