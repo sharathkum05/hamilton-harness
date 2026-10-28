@@ -25,6 +25,8 @@ import {
   TargetIcon,
   UserRoundCheckIcon,
   WandSparklesIcon,
+  WorkflowIcon,
+  WrenchIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -37,6 +39,8 @@ import { ConversationsSection } from '@/admin/conversations'
 import { InstallSection, TestSection } from '@/admin/more'
 import { OverviewSection } from '@/admin/overview'
 import { SetupSection } from '@/admin/setup'
+import { FlowSection } from '@/admin/flow'
+import { ToolsSection } from '@/admin/tools'
 import {
   BrandSection,
   HandoffSection,
@@ -105,10 +109,12 @@ const GROUPS: [string, Entry[]][] = [
   [
     'Your rep',
     [
+      ['flow', 'Flow', WorkflowIcon, FlowSection],
       ['brand', 'Brand', PaletteIcon, BrandSection],
       ['voice', 'Voice', MicIcon, VoiceSection],
       ['scope', 'Scope', TargetIcon, ScopeSection],
       ['knowledge', 'Knowledge', BookOpenIcon, KnowledgeSection],
+      ['tools', 'Tools', WrenchIcon, ToolsSection],
       ['rules', 'Rules', ShieldCheckIcon, RulesSection],
       ['handoff', 'Handoff', UserRoundCheckIcon, HandoffSection],
     ],
