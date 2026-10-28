@@ -8,8 +8,8 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from hamilton_harness.editor import list_conversations
 from hamilton_harness.records import RecordStore
+from hamilton_harness.trace import FileTraceStore, TraceStore
 
 
 def _day(moment: datetime) -> str:
@@ -17,10 +17,16 @@ def _day(moment: datetime) -> str:
 
 
 def overview(
-    trace_dir: Path | None, records: RecordStore, *, days: int = 14, today: date | None = None
+    traces: TraceStore | Path | None,
+    records: RecordStore,
+    *,
+    days: int = 14,
+    today: date | None = None,
 ) -> dict[str, Any]:
     """Counts, a day-by-day timeline and the latest items, for the dashboard's first screen."""
-    conversations = list_conversations(trace_dir, limit=500)
+    if isinstance(traces, Path):
+        traces = FileTraceStore(traces)
+    conversations = traces.conversations(limit=500) if traces else []
     taken = records.list()
     end = today or datetime.now(UTC).date()
     window = [(end - timedelta(days=offset)).isoformat() for offset in range(days - 1, -1, -1)]

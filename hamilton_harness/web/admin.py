@@ -24,8 +24,6 @@ from hamilton_harness.editor import (
     EditError,
     PackEditor,
     dump_yaml,
-    list_conversations,
-    read_conversation,
 )
 from hamilton_harness.pack import PackError
 from hamilton_harness.records import Status
@@ -255,7 +253,7 @@ def install_admin(
     @router.get("/overview")
     def get_overview() -> dict[str, Any]:
         """Counts, a two-week timeline and the latest items, for the dashboard's first screen."""
-        return overview(holder.agent.trace_dir, holder.agent.records)
+        return overview(holder.agent.traces, holder.agent.records)
 
     @router.get("/records")
     def list_records(type: str | None = None) -> dict[str, Any]:
@@ -271,14 +269,15 @@ def install_admin(
 
     @router.get("/conversations")
     def conversations() -> dict[str, Any]:
-        return {"conversations": list_conversations(holder.agent.trace_dir)}
+        traces = holder.agent.traces
+        return {"conversations": traces.conversations() if traces else []}
 
     @router.get("/conversations/{conversation_id}")
     def conversation(conversation_id: str) -> dict[str, Any]:
-        try:
-            events = read_conversation(holder.agent.trace_dir, conversation_id)
-        except EditError as error:
-            raise _refuse(error) from error
+        traces = holder.agent.traces
+        events = traces.events(conversation_id) if traces else None
+        if events is None:
+            raise HTTPException(status_code=404, detail="conversation not found")
         return {"id": conversation_id, "events": events}
 
     app.include_router(router)

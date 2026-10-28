@@ -28,7 +28,7 @@ from hamilton_harness.records import RecordStore
 from hamilton_harness.scope import ScopeGate, evidence_text, ungrounded_numbers
 from hamilton_harness.shaper import Bubble, ReplyShaper
 from hamilton_harness.tools import ToolRegistry
-from hamilton_harness.trace import Event, Trace, TraceWriter
+from hamilton_harness.trace import Event, FileTraceStore, Trace, TraceStore
 
 Outcome = Literal["ok", "error", "invalid", "blocked"]
 
@@ -81,6 +81,7 @@ class Agent:
         store: CustomerStore | None = None,
         records: RecordStore | None = None,
         trace_dir: str | Path | None = None,
+        traces: TraceStore | None = None,
         max_steps: int = 6,
         retry_wait: float = 0.5,
     ) -> None:
@@ -107,7 +108,8 @@ class Agent:
         )
         self.store = store or InMemoryStore()
         self.trace_dir = Path(trace_dir) if trace_dir else None
-        self._writer = TraceWriter(trace_dir) if trace_dir else None
+        # Where turns are recorded: a database when given one, else a folder of files.
+        self.traces = traces or (FileTraceStore(trace_dir) if trace_dir else None)
         self._tool_definitions = self.tools.definitions()
         self._max_steps = max_steps
         self._retry_wait = retry_wait
@@ -122,6 +124,7 @@ class Agent:
             store=self.store,
             records=self.records,
             trace_dir=self.trace_dir,
+            traces=self.traces,
             max_steps=self._max_steps,
             retry_wait=self._retry_wait,
         )
@@ -152,8 +155,8 @@ class Agent:
                 latency_ms=round(result.latency_ms, 1),
             )
             result.events = trace.events
-            if self._writer:
-                self._writer.write(trace)
+            if self.traces:
+                self.traces.write(trace)
         return result
 
     def _turn(

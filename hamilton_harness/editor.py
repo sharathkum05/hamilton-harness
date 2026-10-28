@@ -27,7 +27,7 @@ from hamilton_harness.pack.schema import (
     WidgetSettings,
 )
 from hamilton_harness.sim import load_scenarios, run_scenarios
-from hamilton_harness.trace import read_trace
+from hamilton_harness.trace import FileTraceStore
 
 # Parts of the pack stored as one YAML mapping each.
 SECTIONS: dict[str, type[BaseModel]] = {
@@ -38,7 +38,6 @@ SECTIONS: dict[str, type[BaseModel]] = {
 }
 MAX_KNOWLEDGE_CHARS = 200_000
 _KNOWLEDGE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,60}\.md")
-_TRACE_ID = re.compile(r"[0-9a-f]{12}")
 
 
 class EditError(Exception):
@@ -203,35 +202,11 @@ class PackEditor:
 
 def list_conversations(trace_dir: Path | None, *, limit: int = 50) -> list[dict[str, Any]]:
     """Recorded conversations, newest first, with what stood out in each."""
-    if trace_dir is None or not trace_dir.is_dir():
-        return []
-    files = sorted(trace_dir.glob("*.jsonl"), key=lambda p: p.stat().st_mtime, reverse=True)
-    summaries = []
-    for path in files[:limit]:
-        records = read_trace(path)
-        first = next((r.get("text", "") for r in records if r["kind"] == "customer"), "")
-        summaries.append(
-            {
-                "id": path.stem,
-                "turns": max((r.get("turn", 0) for r in records), default=0),
-                "updated_at": path.stat().st_mtime,
-                "opening": first[:140],
-                "handed_off": any(r["kind"] == "handoff" for r in records),
-                "blocked": any(
-                    r["kind"] == "reply_blocked"
-                    or (r["kind"] == "action" and r.get("outcome") == "blocked")
-                    for r in records
-                ),
-                "refused": any(r["kind"] == "scope_refused" for r in records),
-            }
-        )
-    return summaries
+    return FileTraceStore(trace_dir).conversations(limit) if trace_dir else []
 
 
 def read_conversation(trace_dir: Path | None, conversation_id: str) -> list[dict[str, Any]]:
-    if trace_dir is None or not _TRACE_ID.fullmatch(conversation_id):
+    events = FileTraceStore(trace_dir).events(conversation_id) if trace_dir else None
+    if events is None:
         raise EditError("conversation not found", missing=True)
-    path = trace_dir / f"{conversation_id}.jsonl"
-    if not path.is_file():
-        raise EditError("conversation not found", missing=True)
-    return read_trace(path)
+    return events

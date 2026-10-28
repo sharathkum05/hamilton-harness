@@ -8,10 +8,14 @@ event, and a conversation's events can be written out as JSON lines.
 from __future__ import annotations
 
 import json
+import re
 import time
 from dataclasses import asdict, dataclass, field, is_dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
+
+# Conversation ids are 12 hex characters; anything else is never looked up.
+CONVERSATION_ID = re.compile(r"[0-9a-f]{12}")
 
 
 def jsonable(value: Any) -> Any:
@@ -73,3 +77,60 @@ class TraceWriter:
 def read_trace(path: str | Path) -> list[dict[str, Any]]:
     lines = Path(path).read_text(encoding="utf-8").splitlines()
     return [json.loads(line) for line in lines if line.strip()]
+
+
+def summarize(conversation_id: str, events: list[dict[str, Any]], updated_at: float) -> dict:
+    """One conversation as the dashboard lists it: how it opened and what stood out."""
+    first = next((e.get("text", "") for e in events if e["kind"] == "customer"), "")
+    return {
+        "id": conversation_id,
+        "turns": max((e.get("turn", 0) for e in events), default=0),
+        "updated_at": updated_at,
+        "opening": first[:140],
+        "handed_off": any(e["kind"] == "handoff" for e in events),
+        "blocked": any(
+            e["kind"] == "reply_blocked"
+            or (e["kind"] == "action" and e.get("outcome") == "blocked")
+            for e in events
+        ),
+        "refused": any(e["kind"] == "scope_refused" for e in events),
+    }
+
+
+class TraceStore(Protocol):
+    """Where turns are recorded, and read back for the dashboard."""
+
+    def write(self, trace: Trace) -> None: ...
+
+    def conversations(self, limit: int = 50) -> list[dict[str, Any]]:
+        """Summaries of the most recently active conversations, newest first."""
+        ...
+
+    def events(self, conversation_id: str) -> list[dict[str, Any]] | None:
+        """Every event of one conversation, or None if there is no such conversation."""
+        ...
+
+
+class FileTraceStore:
+    """One JSON-lines file per conversation in a folder."""
+
+    def __init__(self, directory: str | Path) -> None:
+        self.directory = Path(directory)
+        self._writer = TraceWriter(directory)
+
+    def write(self, trace: Trace) -> None:
+        self._writer.write(trace)
+
+    def conversations(self, limit: int = 50) -> list[dict[str, Any]]:
+        if not self.directory.is_dir():
+            return []
+        files = sorted(
+            self.directory.glob("*.jsonl"), key=lambda p: p.stat().st_mtime, reverse=True
+        )
+        return [summarize(p.stem, read_trace(p), p.stat().st_mtime) for p in files[:limit]]
+
+    def events(self, conversation_id: str) -> list[dict[str, Any]] | None:
+        if not CONVERSATION_ID.fullmatch(conversation_id):
+            return None
+        path = self._writer.path(conversation_id)
+        return read_trace(path) if path.is_file() else None
