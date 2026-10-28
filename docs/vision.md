@@ -96,11 +96,11 @@ production do not yet.
 | Dashboard | Built, as forms: one screen per part of the pack |
 | Chat on your website with one tag | Built |
 | Claude managing an agent over MCP | Built, and on npm |
-| Hosted demo on Vercel | Built, but it keeps nothing between restarts |
-| **The canvas: build the harness by dragging blocks** | Not built |
-| **Watching a message travel the path, live** | Not built. The trace it would draw from exists |
+| Hosted demo on Vercel | Built, with a read-only dashboard. It keeps nothing between restarts |
+| **The canvas: build the harness by dragging blocks** | Partly. The Flow screen draws the path, each block opens its settings; there is no dragging yet |
+| **Watching a message travel the path, live** | Built: a test message on the Flow screen marks each stage passed or stopped |
 | **Connect GitHub: every change a commit** | Not built |
 | **One-click deploy to Vercel, with storage that persists** | Not built |
-| **Connectors as drag-in actions** | Not built. Actions are Python functions today |
-| **Templates to start from** | Not built. `init` writes one starter pack |
+| **Connectors as drag-in actions** | Partly. Calls to a web API are set up on the Tools screen with no code; ready-made connectors are not built |
+| **Templates to start from** | Partly. `studio` and its setup build a rep from blank; there is one starter |
 | A run against the real model | Not done. Tests use scripted and stand-in models |
