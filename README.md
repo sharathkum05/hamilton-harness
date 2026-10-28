@@ -152,7 +152,7 @@ hamilton-harness serve packs/loop-sneakers --offline --debug --admin
 |---|---|
 | `/` | Product page, with the real chat panel running in it |
 | `/demo` | The chat plus an inspector that shows each turn from the inside |
-| `/admin` | Dashboard: overview, orders and quotes, conversations, brand, voice, scope, knowledge, rules, handoff, tests, install |
+| `/admin` | Dashboard: overview, orders and quotes, conversations, flow, brand, voice, scope, knowledge, tools, rules, handoff, tests, install |
 | `/chat` | The chat panel on its own, which the embed script loads in a frame |
 | `/widget.js` | The embed script: one tag puts the chat on any site |
 | `/example` | A plain example website with the chat embedded by that one tag |
@@ -473,6 +473,8 @@ server on a host with a disk that persists.
 | `hamilton_harness/lint.py` | Warnings about a pack that loads but works against itself |
 | `hamilton_harness/stats.py` | Numbers for the dashboard's overview |
 | `hamilton_harness/setup.py` | Builds a rep from the dashboard's setup answers |
+| `hamilton_harness/flow.py` | The stages of a turn, and what each did with a test message |
+| `hamilton_harness/http_tools.py` | Tools that call a company's web API, set up with no code |
 | `hamilton_harness/storage.py`, `db.py` | The state folder, or Postgres such as Supabase, for a served rep's data |
 | `hamilton_harness/mcp_server.py` | MCP server for a pack on this machine |
 | `hamilton_harness/web/` | HTTP API, dashboard API and sign-in, embed script |
@@ -496,6 +498,8 @@ server on a host with a disk that persists.
 - [x] `studio` and a setup wizard: build a rep for your own business from the dashboard
 - [x] Dashboard sign-in with an email and password
 - [x] Orders, memory and conversations in Postgres, such as Supabase
+- [x] A Flow screen: the harness as a path, lit up by a test message
+- [x] Tools that call your web API, set up in the dashboard with no code
 - [ ] A run against the real model. Everything so far is tested with scripted and stand-in models
 - [ ] A canvas: build the harness by dragging blocks onto the path a message takes ([vision](docs/vision.md))
 - [ ] Connect GitHub, so every change on the canvas is a commit
