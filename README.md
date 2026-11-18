@@ -176,19 +176,28 @@ To keep orders and conversations in Supabase instead of the state folder, set
 
 ### Signing in to the dashboard
 
-`--admin` prints an email and a password to sign in with at `/admin`. Without
-any setup it makes a demo login, `admin@hamilton.local` with a random password
-kept in the state folder. Set your own before anyone else can reach the server:
+`--admin` prints the admin user ID and passcode to sign in with at `/admin`:
 
-```bash
-export HAMILTON_ADMIN_EMAIL=you@yourcompany.com
-export HAMILTON_ADMIN_PASSWORD='a long password'
+```
+Dashboard: http://127.0.0.1:8000/admin
+  user ID admin, passcode 4821-0937-1056
 ```
 
-The password is kept only as a scrypt hash in memory. Signing in sets a cookie
-that scripts cannot read and other sites cannot send, it lasts 12 hours, and
-ten wrong passwords from one address lock it out for 15 minutes. The admin
-token still works for scripts and for the npm package below.
+Without any setup the user ID is `admin` and the passcode is twelve random
+digits, made once and kept in the state folder. Change it on the dashboard's
+Account screen, under your name at the bottom of the sidebar, or set your own
+before anyone else can reach the server:
+
+```bash
+export HAMILTON_ADMIN_USER=you
+export HAMILTON_ADMIN_PASSWORD='a long passcode'
+```
+
+The passcode is kept only as a scrypt hash. Signing in sets a cookie that
+scripts cannot read and other sites cannot send, and it lasts 12 hours. Ten
+wrong passcodes from one address lock it out for 15 minutes, and the sign-in
+screen says how long is left. The admin token still works for scripts and for
+the npm package below.
 
 ## Connect Claude
 
@@ -497,7 +506,7 @@ server on a host with a disk that persists.
 - [x] `init`, which scaffolds a starter pack for a new company
 - [x] Pack warnings: lines that break the pack's own rules, and rules no fake customer tests
 - [x] `studio` and a setup wizard: build a rep for your own business from the dashboard
-- [x] Dashboard sign-in with an email and password
+- [x] Dashboard sign-in with an admin user ID and passcode, changeable from the Account screen
 - [x] Orders, memory and conversations in Postgres, such as Supabase
 - [x] A Flow screen: the harness as a path, lit up by a test message
 - [x] Browser tests that walk through the whole demo, in CI
