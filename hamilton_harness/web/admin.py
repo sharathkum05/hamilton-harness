@@ -15,11 +15,12 @@ from __future__ import annotations
 import hashlib
 import re
 import secrets
+import time
 from dataclasses import asdict
 from typing import Any
 
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Request, Response
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 from hamilton_harness.editor import (
     MAX_KNOWLEDGE_CHARS,
@@ -36,6 +37,7 @@ from hamilton_harness.stats import overview
 from hamilton_harness.web.auth import (
     COOKIE,
     SESSION_SECONDS,
+    Account,
     Credentials,
     FailureCounter,
     SessionSigner,
@@ -65,8 +67,19 @@ class FlowMessage(BaseModel):
 
 
 class SignIn(BaseModel):
-    email: str = Field(max_length=254)
-    password: str = Field(max_length=1024)
+    # "email" and "password" are the older names, still accepted.
+    user: str = Field(max_length=254, validation_alias=AliasChoices("user", "email"))
+    passcode: str = Field(max_length=1024, validation_alias=AliasChoices("passcode", "password"))
+
+
+class PasscodeChange(BaseModel):
+    current: str = Field(max_length=1024)
+    new: str = Field(max_length=1024)
+
+
+def _wait(seconds: int) -> str:
+    minutes = -(-seconds // 60)
+    return f"{minutes} minute{'s' if minutes != 1 else ''}"
 
 
 def _looks_like(content_type: str, data: bytes) -> bool:
@@ -131,7 +144,7 @@ def install_admin(
     app: FastAPI,
     holder: Any,
     token: str,
-    credentials: Credentials | None = None,
+    credentials: Credentials | Account | None = None,
     *,
     visitors: Visitors | None = None,
 ) -> None:
@@ -140,6 +153,7 @@ def install_admin(
     With `visitors`, the dashboard is a public, read-only demo instead.
     """
     demo = visitors is not None
+    account = Account(credentials) if isinstance(credentials, Credentials) else credentials
     # Keyed on the token, so changing the token also signs everyone out.
     signer = SessionSigner(hashlib.sha256(f"session:{token}".encode()).hexdigest())
     failures = FailureCounter()
@@ -154,7 +168,7 @@ def install_admin(
             return "demo"
         if token_ok(authorization):
             return "token"
-        return signer.verify(request.cookies.get(COOKIE)) if credentials else None
+        return signer.verify(request.cookies.get(COOKIE)) if account else None
 
     def require_admin(request: Request, authorization: str | None = Header(default=None)) -> None:
         who = signed_in(request, authorization)
@@ -178,42 +192,50 @@ def install_admin(
             raise HTTPException(
                 status_code=401,
                 detail="sign in to use the dashboard",
-                headers={"x-hamilton-password": "on" if credentials else "off"},
+                headers={"x-hamilton-password": "on" if account else "off"},
             )
         if who == "demo":
-            return {"email": None, "password": False, "demo": True}
+            return {"user": None, "password": False, "demo": True, "expires_at": None}
+        session = signer.read(request.cookies.get(COOKIE)) if who != "token" else None
         return {
-            "email": None if who == "token" else who,
-            "password": credentials is not None,
+            # None when signed in with the admin token, which belongs to no one.
+            "user": None if who == "token" else who,
+            "password": account is not None,
             "demo": False,
+            "expires_at": session[1] if session else None,
+            "can_change_passcode": bool(account and not account.fixed),
+            "passcode_note": account.fixed if account else "",
         }
 
     @app.post("/api/admin/session")
     def sign_in(body: SignIn, request: Request, response: Response) -> dict[str, Any]:
-        if credentials is None:
+        if account is None:
             raise HTTPException(
                 status_code=400,
-                detail="signing in with a password is not set up here. Use the admin token.",
+                detail="signing in with a passcode is not set up here. Use the admin token.",
             )
         address = request.client.host if request.client else "unknown"
-        if failures.blocked(address):
+        wait = failures.retry_after(address)
+        if wait:
             raise HTTPException(
-                status_code=429, detail="too many failed sign-ins. Try again in 15 minutes."
+                status_code=429,
+                detail=f"too many failed sign-ins. Try again in {_wait(wait)}.",
+                headers={"Retry-After": str(wait)},
             )
-        if not credentials.check(body.email, body.password):
+        if not account.check(body.user, body.passcode):
             failures.fail(address)
-            raise HTTPException(status_code=401, detail="that email and password do not match")
+            raise HTTPException(status_code=401, detail="that user ID and passcode do not match")
         failures.clear(address)
         response.set_cookie(
             COOKIE,
-            signer.issue(credentials.email),
+            signer.issue(account.user),
             max_age=SESSION_SECONDS,
             path="/api/admin",
             httponly=True,
             samesite="strict",
             secure=request.url.scheme == "https",
         )
-        return {"email": credentials.email}
+        return {"user": account.user, "expires_at": int(time.time()) + SESSION_SECONDS}
 
     @app.delete("/api/admin/session")
     def sign_out(response: Response) -> dict[str, Any]:
@@ -221,6 +243,29 @@ def install_admin(
         return {"signed_out": True}
 
     router = APIRouter(prefix="/api/admin", dependencies=[Depends(require_admin)])
+
+    @router.post("/passcode")
+    def change_passcode(body: PasscodeChange, request: Request) -> dict[str, Any]:
+        """Set a new admin passcode. Sessions already signed in stay signed in."""
+        if account is None:
+            raise HTTPException(status_code=400, detail="there is no passcode on this server")
+        address = request.client.host if request.client else "unknown"
+        wait = failures.retry_after(address)
+        if wait:
+            raise HTTPException(
+                status_code=429,
+                detail=f"too many wrong passcodes. Try again in {_wait(wait)}.",
+                headers={"Retry-After": str(wait)},
+            )
+        try:
+            account.change(body.current, body.new)
+        except PermissionError as error:
+            # A wrong current passcode counts like a failed sign-in.
+            failures.fail(address)
+            raise HTTPException(status_code=403, detail=str(error)) from error
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        return {"changed": True}
 
     def visible(request: Request) -> Any:
         """The traces and records this request may see: all of them, or a visitor's own."""

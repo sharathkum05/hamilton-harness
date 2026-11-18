@@ -239,55 +239,97 @@ def test_overview_counts_what_has_happened(client):
     assert client.get("/api/admin/overview").status_code == 401
 
 
-EMAIL, PASSWORD = "admin@example.com", "demo-password-1"
+USER, PASSCODE = "admin", "1234-5678-9012"
+SIGN_IN = {"user": USER, "passcode": PASSCODE}
 
 
 @pytest.fixture
 def browser(root, tmp_path):
-    """A dashboard that also takes an email and password, as a browser would use it."""
-    from hamilton_harness.web.auth import Credentials
+    """A dashboard that also takes the admin user ID and passcode, as a browser would."""
+    from hamilton_harness.web.auth import Account, Credentials
 
     agent = Agent(load_pack(root), ScriptedModel([]), retry_wait=0, trace_dir=tmp_path / "traces")
-    login = Credentials.from_password(EMAIL, PASSWORD)
+    account = Account(Credentials.from_password(USER, PASSCODE), state=tmp_path / "state")
     return TestClient(
-        create_app(agent, admin_token=TOKEN, admin_credentials=login),
+        create_app(agent, admin_token=TOKEN, admin_credentials=account),
         base_url="http://testserver",
     )
 
 
-def test_signing_in_with_the_password_opens_the_dashboard(browser):
+def test_signing_in_with_the_passcode_opens_the_dashboard(browser):
     assert browser.get("/api/admin/session").status_code == 401
     assert browser.get("/api/admin/pack").status_code == 401
-    signed = browser.post("/api/admin/session", json={"email": EMAIL, "password": PASSWORD})
+    signed = browser.post("/api/admin/session", json=SIGN_IN)
     assert signed.status_code == 200
     cookie = signed.headers["set-cookie"]
     assert "httponly" in cookie.lower() and "samesite=strict" in cookie.lower()
     assert "path=/api/admin" in cookie.lower()
-    assert browser.get("/api/admin/session").json() == {
-        "email": EMAIL,
-        "password": True,
-        "demo": False,
-    }
+    session = browser.get("/api/admin/session").json()
+    assert session["user"] == USER and session["demo"] is False
+    assert session["can_change_passcode"] is True
+    assert session["expires_at"] == signed.json()["expires_at"]
     assert browser.get("/api/admin/pack").status_code == 200
 
 
-def test_a_wrong_password_is_refused_and_counted(browser):
+def test_the_older_field_names_still_sign_in(browser):
+    signed = browser.post("/api/admin/session", json={"email": USER, "password": PASSCODE})
+    assert signed.status_code == 200
+
+
+def test_a_wrong_passcode_is_refused_and_counted(browser):
     for _ in range(10):
-        wrong = browser.post("/api/admin/session", json={"email": EMAIL, "password": "guess"})
+        wrong = browser.post("/api/admin/session", json={**SIGN_IN, "passcode": "guess"})
         assert wrong.status_code == 401
-    # Even the right password waits once an address has failed too often.
-    blocked = browser.post("/api/admin/session", json={"email": EMAIL, "password": PASSWORD})
+        assert wrong.json()["detail"] == "that user ID and passcode do not match"
+    # Even the right passcode waits once an address has failed too often, and is told how long.
+    blocked = browser.post("/api/admin/session", json=SIGN_IN)
     assert blocked.status_code == 429
+    assert int(blocked.headers["retry-after"]) > 0
+    assert "Try again in 15 minutes" in blocked.json()["detail"]
 
 
 def test_signing_out_ends_the_session(browser):
-    browser.post("/api/admin/session", json={"email": EMAIL, "password": PASSWORD})
+    browser.post("/api/admin/session", json=SIGN_IN)
     assert browser.delete("/api/admin/session").status_code == 200
     assert browser.get("/api/admin/pack").status_code == 401
 
 
+def test_the_passcode_can_be_changed_from_the_dashboard(browser):
+    browser.post("/api/admin/session", json=SIGN_IN)
+    changed = browser.post(
+        "/api/admin/passcode", json={"current": PASSCODE, "new": "a new passcode"}
+    )
+    assert changed.status_code == 200
+    # Still signed in; the next sign-in needs the new passcode.
+    assert browser.get("/api/admin/pack").status_code == 200
+    browser.delete("/api/admin/session")
+    assert browser.post("/api/admin/session", json=SIGN_IN).status_code == 401
+    new = {"user": USER, "passcode": "a new passcode"}
+    assert browser.post("/api/admin/session", json=new).status_code == 200
+
+
+@pytest.mark.parametrize(
+    ("change", "status", "message"),
+    [
+        ({"current": "wrong", "new": "a new passcode"}, 403, "not right"),
+        ({"current": PASSCODE, "new": "short"}, 422, "at least 8"),
+        ({"current": PASSCODE, "new": PASSCODE}, 422, "different"),
+    ],
+)
+def test_a_bad_passcode_change_is_refused_with_the_reason(browser, change, status, message):
+    browser.post("/api/admin/session", json=SIGN_IN)
+    refused = browser.post("/api/admin/passcode", json=change)
+    assert refused.status_code == status
+    assert message in refused.json()["detail"]
+
+
+def test_changing_the_passcode_needs_a_signed_in_admin(browser):
+    refused = browser.post("/api/admin/passcode", json={"current": PASSCODE, "new": "x" * 12})
+    assert refused.status_code == 401
+
+
 def test_a_signed_in_cookie_cannot_make_changes_from_another_site(browser):
-    browser.post("/api/admin/session", json={"email": EMAIL, "password": PASSWORD})
+    browser.post("/api/admin/session", json=SIGN_IN)
     widget = browser.get("/api/admin/pack").json()["widget"]
     elsewhere = {"origin": "https://attacker.example"}
     refused = browser.put("/api/admin/pack/widget", json=widget, headers=elsewhere)
@@ -296,17 +338,16 @@ def test_a_signed_in_cookie_cannot_make_changes_from_another_site(browser):
     assert browser.put("/api/admin/pack/widget", json=widget, headers=here).status_code == 200
 
 
-def test_the_token_still_works_beside_the_password(browser):
-    assert browser.get("/api/admin/session", headers=AUTH).json() == {
-        "email": None,
-        "password": True,
-        "demo": False,
-    }
+def test_the_token_still_works_beside_the_passcode(browser):
+    session = browser.get("/api/admin/session", headers=AUTH).json()
+    # The token belongs to no one, so the session names no user and has no end.
+    assert session["user"] is None and session["password"] is True
+    assert session["expires_at"] is None
     assert browser.get("/api/admin/pack", headers=AUTH).status_code == 200
 
 
 def test_without_credentials_only_the_token_signs_in(client):
-    refused = client.post("/api/admin/session", json={"email": EMAIL, "password": PASSWORD})
+    refused = client.post("/api/admin/session", json=SIGN_IN)
     assert refused.status_code == 400
     assert client.get("/api/admin/session").headers["x-hamilton-password"] == "off"
 
@@ -382,11 +423,8 @@ def chat(app, text):
 
 def test_the_public_dashboard_needs_no_sign_in_and_says_it_is_a_demo(public):
     client = TestClient(public)
-    assert client.get("/api/admin/session").json() == {
-        "email": None,
-        "password": False,
-        "demo": True,
-    }
+    session = client.get("/api/admin/session").json()
+    assert session["demo"] is True and session["user"] is None
     assert client.get("/api/admin/pack").status_code == 200
 
 

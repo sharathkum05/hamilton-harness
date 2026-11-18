@@ -34,7 +34,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from hamilton_harness.pack.schema import Pack
 from hamilton_harness.runtime import Agent, TurnResult
-from hamilton_harness.web.auth import Credentials
+from hamilton_harness.web.auth import Account, Credentials
 from hamilton_harness.web.sessions import VISITOR_COOKIE, Session, SessionStore, Visitors
 from hamilton_harness.web.tries import demo_tries
 
@@ -152,7 +152,7 @@ def create_app(
     allow_origins: Sequence[str] = (),
     app_dir: Path = APP_DIR,
     admin_token: str | None = None,
-    admin_credentials: Credentials | None = None,
+    admin_credentials: Credentials | Account | None = None,
     admin_demo: bool = False,
     identity_secret: str | None = None,
 ) -> FastAPI:
@@ -160,7 +160,7 @@ def create_app(
 
     `allow_origins` lists the sites allowed to call the API from their own
     pages. `admin_token` switches the dashboard on, and `admin_credentials`
-    lets people sign in to it with an email and password. `admin_demo` opens a
+    lets people sign in to it with an admin user ID and passcode. `admin_demo` opens a
     read-only dashboard to anyone, for a public demo, showing each visitor only
     the chats they started. `identity_secret` lets a
     company's server vouch for a signed-in customer, so the rep remembers them.
