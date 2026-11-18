@@ -8,6 +8,15 @@ and is not published separately yet.
 
 ### Added
 
+- The dashboard signs in with an admin **user ID and passcode**. The demo
+  user ID is `admin` and the passcode twelve digits, easy to read out. Set
+  your own with `HAMILTON_ADMIN_USER` and `HAMILTON_ADMIN_PASSWORD`;
+  `HAMILTON_ADMIN_EMAIL` still works.
+- A redesigned sign-in screen: show or hide the passcode, a Caps Lock warning,
+  the last user ID remembered on this computer, and how long a lockout lasts.
+- An Account screen, under your name in the sidebar: who is signed in, until
+  when, signing out, and changing the passcode. A changed passcode is kept as
+  a hash and holds across restarts, for every rep the server runs.
 - Playwright tests in `e2e/` walk through the demo in a real browser on every
   push: the harness, each guardrail, the dashboard, an agent over MCP, the chat
   on an existing HTML and PHP site, and the live deployment.
