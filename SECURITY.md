@@ -43,9 +43,11 @@ shows the failure.
 ## If you run this yourself
 
 - **Set your own dashboard login.** `/api/admin` takes either the admin token
-  or a sign-in with `HAMILTON_ADMIN_EMAIL` and `HAMILTON_ADMIN_PASSWORD`.
-  Without them the server makes a demo login and a token in its state folder,
-  which is fine on your own machine and not for a server others can reach.
+  or a sign-in with `HAMILTON_ADMIN_USER` and `HAMILTON_ADMIN_PASSWORD`.
+  Without them the server makes a demo login (user ID `admin` and a random
+  passcode) and a token in its state folder, which is fine on your own machine
+  and not for a server others can reach. A passcode changed on the Account
+  screen is kept as a hash in the state folder, readable only by you.
   Keep both secret and serve the dashboard over HTTPS, so the sign-in cookie
   is marked secure.
 - **Handlers are your code.** A pack's `handlers.py` runs with the server's
