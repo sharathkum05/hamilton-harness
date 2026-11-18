@@ -69,6 +69,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -441,6 +442,12 @@ export function AdminApp() {
                       </SidebarMenuButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent side="top" align="start" className="w-56">
+                      <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
+                        {session?.expires_at
+                          ? `Signed in until ${new Date(session.expires_at * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+                          : 'Signed in with the admin token'}
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem onSelect={() => go('account')}>
                         <UserRoundCogIcon /> Account
                       </DropdownMenuItem>
