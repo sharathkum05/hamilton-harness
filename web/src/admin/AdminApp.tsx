@@ -11,6 +11,7 @@ import {
   FlaskConicalIcon,
   InboxIcon,
   LayoutDashboardIcon,
+  ChevronsUpDownIcon,
   LogOutIcon,
   MessagesSquareIcon,
   MicIcon,
@@ -24,13 +25,18 @@ import {
   SunIcon,
   TargetIcon,
   UserRoundCheckIcon,
+  UserRoundCogIcon,
   WandSparklesIcon,
   WorkflowIcon,
   WrenchIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { adminApi, getSession, loadToken, signIn, signOut, storeToken } from '@/admin/api'
+import { adminApi, getSession, loadToken, signOut, storeToken } from '@/admin/api'
+import type { AdminSession } from '@/admin/api'
+import { AccountSection } from '@/admin/account'
+import { SessionContext } from '@/admin/session'
+import { SignIn } from '@/admin/signin'
 import type { Pack } from '@/admin/api'
 import { CommandMenu } from '@/admin/command-menu'
 import { DiscardContext } from '@/admin/fields'
@@ -62,12 +68,12 @@ import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import {
   Sidebar,
@@ -130,8 +136,15 @@ const GROUPS: [string, Entry[]][] = [
   ],
 ]
 
-const ENTRIES = GROUPS.flatMap(([group, entries]) => entries.map((entry) => ({ group, entry })))
-const NAVIGATION = GROUPS.map(
+// Screens kept out of the sidebar's list: Account opens from the menu under the user's name.
+const MORE: [string, Entry[]][] = [
+  ['Admin', [['account', 'Account', UserRoundCogIcon, AccountSection]]],
+]
+
+const ENTRIES = [...GROUPS, ...MORE].flatMap(([group, entries]) =>
+  entries.map((entry) => ({ group, entry })),
+)
+const NAVIGATION = [...GROUPS, ...MORE].map(
   ([group, entries]) =>
     [group, entries.map(([key, label, icon]) => [key, label, icon])] as [
       string,
@@ -139,124 +152,6 @@ const NAVIGATION = GROUPS.map(
     ],
 )
 const THEME_ICON: Record<Theme, Icon> = { system: MonitorIcon, light: SunIcon, dark: MoonIcon }
-
-/** The server's reasons are written in lower case for logs; shown here as a sentence. */
-function sentence(message: string) {
-  const text = message.charAt(0).toUpperCase() + message.slice(1)
-  return /[.!?]$/.test(text) ? text : `${text}.`
-}
-
-function SignIn({
-  onSignedIn,
-  onToken,
-  tokenRejected,
-}: {
-  onSignedIn: () => void
-  onToken: (token: string) => void
-  tokenRejected: boolean
-}) {
-  const [withToken, setWithToken] = useState(tokenRejected)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [token, setToken] = useState('')
-  const [error, setError] = useState(tokenRejected ? 'That token was not accepted.' : '')
-  const [busy, setBusy] = useState(false)
-
-  const submit = async () => {
-    if (withToken) {
-      onToken(token.trim())
-      return
-    }
-    setBusy(true)
-    setError('')
-    try {
-      await signIn(email.trim(), password)
-      onSignedIn()
-    } catch (failure) {
-      setError(failure instanceof Error ? sentence(failure.message) : 'Could not sign in.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <div className="flex h-full items-center justify-center p-6">
-      <form
-        className="bg-card flex w-full max-w-sm flex-col gap-5 rounded-2xl border p-6"
-        onSubmit={(event) => {
-          event.preventDefault()
-          submit()
-        }}
-      >
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-2xl">Sign in to the dashboard</h1>
-          <p className="text-muted-foreground text-sm">
-            {withToken
-              ? 'Paste the admin token from the server.'
-              : 'The server prints the admin email and password when it starts.'}
-          </p>
-        </div>
-        {withToken ? (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="admin-token">Admin token</Label>
-            <Input
-              id="admin-token"
-              type="password"
-              autoComplete="off"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-            />
-          </div>
-        ) : (
-          <>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="admin-email">Email</Label>
-              <Input
-                id="admin-email"
-                type="email"
-                autoComplete="username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="admin-password">Password</Label>
-              <Input
-                id="admin-password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </>
-        )}
-        {error && (
-          <p role="alert" className="text-destructive text-sm">
-            {error}
-          </p>
-        )}
-        <Button
-          type="submit"
-          disabled={busy || (withToken ? !token.trim() : !email.trim() || !password)}
-        >
-          {busy ? 'Signing in…' : 'Sign in'}
-        </Button>
-        <Button
-          type="button"
-          variant="link"
-          className="text-muted-foreground h-auto self-center p-0 text-xs"
-          onClick={() => {
-            setWithToken((on) => !on)
-            setError('')
-          }}
-        >
-          {withToken ? 'Sign in with email and password' : 'Use the admin token instead'}
-        </Button>
-      </form>
-    </div>
-  )
-}
 
 /** The shape of the dashboard while the pack loads, so nothing jumps when it arrives. */
 function LoadingShell() {
@@ -284,8 +179,7 @@ function LoadingShell() {
 export function AdminApp() {
   const [token, setToken] = useState(loadToken)
   const [status, setStatus] = useState<'checking' | 'signed-out' | 'signed-in' | 'off'>('checking')
-  const [email, setEmail] = useState<string | null>(null)
-  const [demo, setDemo] = useState(false)
+  const [session, setSession] = useState<AdminSession | null>(null)
   const [pack, setPack] = useState<Pack | null>(null)
   const [rejected, setRejected] = useState(false)
   const [section, setSection] = useState(() => window.location.hash.slice(1) || 'overview')
@@ -295,14 +189,13 @@ export function AdminApp() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [waiting, setWaiting] = useState(0)
   const { theme, dark, setTheme } = useTheme()
+  const demo = Boolean(session?.demo)
   const api = useMemo(() => adminApi(token), [token])
 
   // Who is signed in: a token from the link, or the cookie from signing in.
   const check = useCallback(async () => {
     try {
-      const session = await getSession(token)
-      setEmail(session.email)
-      setDemo(session.demo)
+      setSession(await getSession(token))
       setStatus('signed-in')
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
@@ -350,7 +243,7 @@ export function AdminApp() {
     storeToken('')
     setToken('')
     setPack(null)
-    setEmail(null)
+    setSession(null)
     setStatus('signed-out')
   }, [])
 
@@ -529,15 +422,34 @@ export function AdminApp() {
               </SidebarMenuItem>
               {!demo && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Sign out" onClick={leave}>
-                    <LogOutIcon />
-                    <span className="grid min-w-0 text-left leading-tight">
-                      <span>Sign out</span>
-                      {email && (
-                        <span className="text-muted-foreground truncate text-xs">{email}</span>
-                      )}
-                    </span>
-                  </SidebarMenuButton>
+                  {/* Who is signed in, with their account and signing out one click away. */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SidebarMenuButton size="lg" tooltip={session?.user ?? 'Admin token'}>
+                        <Avatar className="size-8 rounded-lg after:rounded-lg">
+                          <AvatarFallback className="rounded-lg text-sm font-medium">
+                            {(session?.user ?? 'T').charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                          <span className="truncate font-medium">
+                            {session?.user ?? 'Admin token'}
+                          </span>
+                          <span className="text-muted-foreground truncate text-xs">Admin</span>
+                        </span>
+                        <ChevronsUpDownIcon className="ml-auto size-4" />
+                      </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="top" align="start" className="w-56">
+                      <DropdownMenuItem onSelect={() => go('account')}>
+                        <UserRoundCogIcon /> Account
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={leave}>
+                        <LogOutIcon /> Sign out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </SidebarMenuItem>
               )}
             </SidebarMenu>
@@ -630,15 +542,17 @@ export function AdminApp() {
               className="relative min-w-0 flex-1 overflow-y-auto outline-none"
             >
               <div className="mx-auto max-w-5xl px-5 pt-8 pb-28 sm:px-8">
-                <DiscardContext.Provider value={discard}>
-                  {/* Keyed on the section, so each one eases in as it opens. */}
-                  <div
-                    key={active.entry[0]}
-                    className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 motion-reduce:animate-none"
-                  >
-                    <Active key={formKey} pack={pack} api={api} commit={commit} go={go} />
-                  </div>
-                </DiscardContext.Provider>
+                <SessionContext.Provider value={{ session, token, signOut: leave }}>
+                  <DiscardContext.Provider value={discard}>
+                    {/* Keyed on the section, so each one eases in as it opens. */}
+                    <div
+                      key={active.entry[0]}
+                      className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 motion-reduce:animate-none"
+                    >
+                      <Active key={formKey} pack={pack} api={api} commit={commit} go={go} />
+                    </div>
+                  </DiscardContext.Provider>
+                </SessionContext.Provider>
               </div>
               {/* The open section's unsaved-changes bar is drawn here. */}
               <div
