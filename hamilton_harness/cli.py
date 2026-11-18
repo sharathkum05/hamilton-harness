@@ -33,7 +33,7 @@ from hamilton_harness.sim import load_scenarios, replay_model, run_scenarios
 from hamilton_harness.standin import offline_model
 from hamilton_harness.storage import agent_storage
 from hamilton_harness.tools import ToolError, ToolRegistry
-from hamilton_harness.web.auth import AdminLogin, Credentials, admin_login, sign_in_hint
+from hamilton_harness.web.auth import Account, AdminLogin, admin_login, sign_in_hint
 
 
 def _live_model(pack: Pack) -> Model:
@@ -158,6 +158,14 @@ def _admin_login(state: Path) -> AdminLogin:
         raise PackError(str(exc)) from exc
 
 
+def _admin_account(state: Path) -> tuple[Account, AdminLogin]:
+    """The admin account, and how to sign in to it. A passcode changed in the dashboard is kept."""
+    try:
+        return Account.from_state(state)
+    except ValueError as exc:
+        raise PackError(str(exc)) from exc
+
+
 def build_web_app(args: argparse.Namespace):
     """The web app for `serve`, built separately so it can be tested without a server."""
     from hamilton_harness.web.app import create_app
@@ -170,8 +178,7 @@ def build_web_app(args: argparse.Namespace):
     agent = Agent(pack, model, **storage)
     login = None
     if args.admin:
-        email, password, _ = _admin_login(state)
-        login = Credentials.from_password(email, password)
+        login, _ = _admin_account(state)
     app = create_app(
         agent,
         debug=args.debug,
@@ -220,8 +227,8 @@ def cmd_demo(args: argparse.Namespace) -> int:
         )
     sites = demo.prepare(packs, state, first_port=args.port, keep=args.keep)
     token = admin_token(state)
-    login = _admin_login(state)
-    credentials = Credentials.from_password(login.email, login.password)
+    # One account for every rep, so a passcode changed on one dashboard holds on all.
+    credentials, login = _admin_account(state)
     apps = [
         (
             demo.build_app(

@@ -24,7 +24,7 @@ from hamilton_harness.pack import Pack, PackError, load_pack
 from hamilton_harness.records import FileRecordStore
 from hamilton_harness.runtime import Agent
 from hamilton_harness.standin import offline_model
-from hamilton_harness.web.auth import AdminLogin, Credentials, sign_in_hint
+from hamilton_harness.web.auth import Account, AdminLogin, Credentials, sign_in_hint
 
 # Written into every folder a demo creates. A folder without it is never deleted.
 MARKER = ".hamilton-demo"
@@ -90,7 +90,7 @@ def build_app(
     *,
     live: bool,
     admin_token: str,
-    credentials: Credentials | None = None,
+    credentials: Credentials | Account | None = None,
     allow_origins: Sequence[str] = (),
 ) -> FastAPI:
     from hamilton_harness.web.app import create_app

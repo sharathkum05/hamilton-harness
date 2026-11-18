@@ -176,16 +176,16 @@ def test_serve_admin_switches_the_dashboard_on(tmp_path, monkeypatch):
     assert off.get("/api/admin/pack", headers=headers).status_code == 404
 
 
-def test_serve_admin_takes_the_admin_email_and_password(tmp_path, monkeypatch):
+def test_serve_admin_takes_the_admin_user_id_and_passcode(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
 
     from hamilton_harness.cli import build_parser, build_web_app
 
-    monkeypatch.setenv("HAMILTON_ADMIN_EMAIL", "owner@shop.com")
+    monkeypatch.setenv("HAMILTON_ADMIN_USER", "owner")
     monkeypatch.setenv("HAMILTON_ADMIN_PASSWORD", "a-long-password")
     args = ["serve", str(DEMO_PACK), "--offline", "--admin", "--state", str(tmp_path)]
     client = TestClient(build_web_app(build_parser().parse_args(args)))
-    login = {"email": "owner@shop.com", "password": "a-long-password"}
+    login = {"user": "owner", "passcode": "a-long-password"}
     assert client.post("/api/admin/session", json=login).status_code == 200
     assert client.get("/api/admin/pack").status_code == 200
 
@@ -212,7 +212,7 @@ def test_studio_makes_a_blank_rep_once_and_serves_it_for_setup(tmp_path, monkeyp
     assert cli.main(["studio", str(root), "--state", str(tmp_path / "state")]) == 0
     out = capsys.readouterr().out
     assert "made a blank rep" in out and "stand-in" in out
-    assert "/admin" in out and "sign in as admin@hamilton.local" in out
+    assert "/admin" in out and "user ID admin, passcode" in out
     assert "The setup opens first" in out
 
     client = TestClient(served[0])

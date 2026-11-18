@@ -154,9 +154,9 @@ def test_describe_lists_every_rep_and_dashboard(sites):
 def test_describe_says_how_to_sign_in(sites):
     from hamilton_harness.web.auth import AdminLogin
 
-    login = AdminLogin("admin@hamilton.local", "pw-shown-once", False)
+    login = AdminLogin("admin", "1234-5678-9012", "demo")
     text = demo.describe(sites, host="127.0.0.1", live=False, admin_token=TOKEN, login=login)
-    assert "sign in as admin@hamilton.local, password: pw-shown-once" in text
+    assert "Dashboard: user ID admin, passcode 1234-5678-9012" in text
     assert "Dashboards, already signed in:" in text
 
 
