@@ -1,7 +1,7 @@
 // The dashboard's sign-in screen: the admin user ID and passcode the server
 // printed when it started, or the admin token instead.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import {
   EyeIcon,
@@ -32,6 +32,25 @@ const POINTS: [typeof WorkflowIcon, string][] = [
   [KeyRoundIcon, 'Signing in lasts 12 hours. The passcode is kept only as a hash.'],
 ]
 
+// The last user ID that signed in on this computer, to fill in next time. Never the passcode.
+const LAST_USER = 'hamilton:admin-user'
+
+function lastUser() {
+  try {
+    return localStorage.getItem(LAST_USER) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function rememberUser(user: string) {
+  try {
+    localStorage.setItem(LAST_USER, user)
+  } catch {
+    /* a private window may refuse storage; typing it again is fine */
+  }
+}
+
 export function SignIn({
   onSignedIn,
   onToken,
@@ -42,7 +61,7 @@ export function SignIn({
   tokenRejected: boolean
 }) {
   const [withToken, setWithToken] = useState(tokenRejected)
-  const [user, setUser] = useState('')
+  const [user, setUser] = useState(lastUser)
   const [passcode, setPasscode] = useState('')
   const [token, setToken] = useState('')
   const [shown, setShown] = useState(false)
@@ -59,6 +78,7 @@ export function SignIn({
     setError('')
     try {
       await signIn(user.trim(), passcode)
+      rememberUser(user.trim())
       onSignedIn()
     } catch (failure) {
       setError(failure instanceof Error ? sentence(failure.message) : 'Could not sign in.')
@@ -67,6 +87,10 @@ export function SignIn({
       setBusy(false)
     }
   }
+
+  useEffect(() => {
+    document.title = 'Sign in · Hamilton'
+  }, [])
 
   const watchCaps = (event: KeyboardEvent<HTMLInputElement>) =>
     setCapsLock(event.getModifierState('CapsLock'))
@@ -143,7 +167,7 @@ export function SignIn({
                     autoComplete="username"
                     autoCapitalize="none"
                     spellCheck={false}
-                    autoFocus
+                    autoFocus={!user}
                     placeholder="admin"
                     value={user}
                     onChange={(e) => setUser(e.target.value)}
@@ -158,6 +182,8 @@ export function SignIn({
                   </InputGroupAddon>
                   <InputGroupInput
                     id="admin-passcode"
+                    // A remembered user ID leaves only the passcode to type.
+                    autoFocus={Boolean(user)}
                     type={shown ? 'text' : 'password'}
                     autoComplete="current-password"
                     spellCheck={false}
