@@ -46,16 +46,17 @@ export async function tryOnDemo(page: Page, text: string): Promise<Locator> {
   return turn
 }
 
-/** Sign in to the dashboard with the admin email and password. */
+/** Sign in to the dashboard with the admin user ID and passcode. */
 export async function signIn(page: Page, section = 'overview') {
   await page.goto(`/admin#${section}`)
-  const email = page.getByLabel('Email')
-  if (await email.isVisible().catch(() => false)) {
-    await email.fill(ADMIN.email)
-    await page.getByLabel('Password').fill(ADMIN.password)
+  const user = page.getByLabel('User ID')
+  if (await user.isVisible().catch(() => false)) {
+    await user.fill(ADMIN.user)
+    await page.getByLabel('Passcode', { exact: true }).fill(ADMIN.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
   }
-  await expect(page.getByRole('button', { name: 'Sign out' }).first()).toBeAttached()
+  // The sidebar names whoever signed in.
+  await expect(page.getByText(ADMIN.user, { exact: true }).first()).toBeVisible()
 }
 
 /** Open one dashboard screen from the sidebar. */

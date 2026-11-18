@@ -63,7 +63,7 @@ export default defineConfig({
       timeout: 60_000,
       env: {
         HAMILTON_ADMIN_TOKEN: ADMIN.token,
-        HAMILTON_ADMIN_EMAIL: ADMIN.email,
+        HAMILTON_ADMIN_USER: ADMIN.user,
         HAMILTON_ADMIN_PASSWORD: ADMIN.password,
         HAMILTON_IDENTITY_SECRET: ADMIN.identitySecret,
       },

@@ -11,7 +11,7 @@ export const PHP = `http://127.0.0.1:${PHP_PORT}`
 // Only ever used against the local test server, which these tests start themselves.
 export const ADMIN = {
   token: 'e2e-admin-token-not-a-secret',
-  email: 'interviewer@example.com',
+  user: 'interviewer',
   password: 'e2e-password-not-a-secret',
   identitySecret: 'e2e-identity-secret',
 }
