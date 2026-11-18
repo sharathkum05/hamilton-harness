@@ -6,14 +6,18 @@ import { expect, test } from '@playwright/test'
 import { ADMIN } from './env'
 import { openSection, signIn } from './helpers'
 
-test('the dashboard needs the admin email and password', async ({ page }) => {
+test('the dashboard needs the admin user ID and passcode', async ({ page }) => {
   await page.goto('/admin')
-  await page.getByLabel('Email').fill(ADMIN.email)
-  await page.getByLabel('Password').fill('not-the-password')
+  await page.getByLabel('User ID').fill(ADMIN.user)
+  const passcode = page.getByLabel('Passcode', { exact: true })
+  await passcode.fill('not-the-passcode')
+  // The passcode can be shown, to check what was typed.
+  await page.getByRole('button', { name: 'Show passcode' }).click()
+  await expect(passcode).toHaveAttribute('type', 'text')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByRole('alert')).toHaveText('That email and password do not match.')
+  await expect(page.getByRole('alert')).toHaveText('That user ID and passcode do not match.')
 
-  await page.getByLabel('Password').fill(ADMIN.password)
+  await passcode.fill(ADMIN.password)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Maya at Loop Sneakers')
 })
@@ -64,4 +68,17 @@ test('every change can be tested against the fake customers', async ({ page }) =
   await openSection(page, 'Test')
   await page.getByRole('button', { name: 'Run fake customers' }).click()
   await expect(page.getByText(/^(\d+) of \1 passed$/)).toBeVisible({ timeout: 30_000 })
+})
+
+test('the account screen shows who is signed in, and signs out', async ({ page }) => {
+  await signIn(page)
+  await page.getByText(ADMIN.user, { exact: true }).first().click()
+  await page.getByRole('menuitem', { name: 'Account' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Account' })).toBeVisible()
+  await expect(page.getByText(/^Until (today|tomorrow) at/)).toBeVisible()
+  // This server's passcode comes from the environment, so it is changed there, not here.
+  await expect(page.getByText(/HAMILTON_ADMIN_PASSWORD; change it there/)).toBeVisible()
+
+  await page.getByRole('main').getByRole('button', { name: 'Sign out' }).click()
+  await expect(page.getByRole('heading', { name: 'Sign in to the dashboard' })).toBeVisible()
 })
