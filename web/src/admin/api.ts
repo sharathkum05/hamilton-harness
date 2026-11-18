@@ -206,13 +206,25 @@ export type SetupAnswers = {
   accent: string
 }
 
-// `demo`: the public, read-only dashboard of the hosted demo, open to anyone.
-export type AdminSession = { email: string | null; password: boolean; demo: boolean }
+export type AdminSession = {
+  // Null when signed in with the admin token, which belongs to no one.
+  user: string | null
+  password: boolean
+  // The public, read-only dashboard of the hosted demo, open to anyone.
+  demo: boolean
+  // When the sign-in cookie runs out, in seconds since 1970; null for the token.
+  expires_at: number | null
+  can_change_passcode?: boolean
+  // Why the passcode cannot be changed here, when it cannot.
+  passcode_note?: string
+}
 
 export const getSession = (token: string) => request<AdminSession>('/api/admin/session', { token })
-export const signIn = (email: string, password: string) =>
-  request<{ email: string }>('/api/admin/session', { body: { email, password } })
+export const signIn = (user: string, passcode: string) =>
+  request<{ user: string; expires_at: number }>('/api/admin/session', { body: { user, passcode } })
 export const signOut = () => request('/api/admin/session', { method: 'DELETE' })
+export const changePasscode = (token: string, current: string, next: string) =>
+  request<{ changed: boolean }>('/api/admin/passcode', { body: { current, new: next }, token })
 
 export function adminApi(token: string) {
   const call = <T>(path: string, init: { method?: string; body?: unknown } = {}) =>
